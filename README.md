@@ -1,3 +1,3 @@
 # Tefa Parkir
 
-Project teaching factory sistem parkit
+Project teaching factory sistem parkir
