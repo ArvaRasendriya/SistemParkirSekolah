@@ -11,25 +11,23 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   // Service
-  final authservice = AuthService();
+  final authService = AuthService();
 
   // Controller
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   // Login Function
   void login() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
+    final email = _emailController.text;
+    final password = _passwordController.text;
 
     try {
-      await authservice.signInWithEmailPassword(email, password);
+      await authService.signInWithEmailPassword(email, password);
       // TODO: Navigasi setelah login berhasil
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")),);
       }
     }
   }

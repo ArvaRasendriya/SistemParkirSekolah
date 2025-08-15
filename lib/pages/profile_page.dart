@@ -10,13 +10,16 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
 
-  final authservice = AuthService();
+  final authService = AuthService();
   void logout() async{
-    await authservice.signOut();
+    await authService.signOut();
   }
 
   @override
   Widget build(BuildContext context) {
+
+    final currentEmail = authService.getCurrentUserEmail();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Profile"),
@@ -27,6 +30,8 @@ class _ProfilePageState extends State<ProfilePage> {
           )
         ],
       ),
+
+      body: Center(child: Text(currentEmail.toString()),),
     );
   }
 }

@@ -21,9 +21,9 @@ class AuthGate extends StatelessWidget {
         }
 
         // check if there is a valid session
-        final Session = snapshot.hasData ? snapshot.data!.session : null;
+        final session = snapshot.hasData ? snapshot.data!.session : null;
 
-        if (Session != null){
+        if (session != null){
           return const ProfilePage();
         } else {
           return const LoginPage();

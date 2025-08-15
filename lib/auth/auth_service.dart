@@ -14,8 +14,7 @@ class AuthService {
 
   // Sign up with email and password
   Future<AuthResponse> signUpWithEmailPassword(
-    String email, String password
-  ) async {
+    String email, String password) async {
     return await _supabase.auth.signUp(
       email: email,
       password: password,
@@ -29,8 +28,8 @@ class AuthService {
 
   // Get user email
   String? getCurrentUserEmail() {
-    final Session = _supabase.auth.currentSession;
-    final user = Session?.user;
+    final session = _supabase.auth.currentSession;
+    final user = session?.user;
     return user?.email;
   }
 }

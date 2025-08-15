@@ -10,17 +10,17 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final authservice = AuthService();
+  final authService = AuthService();
 
   // Controllers
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   void signUp() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
+    final email = _emailController.text;
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -30,7 +30,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      await authservice.signUpWithEmailPassword(email, password);
+      await authService.signUpWithEmailPassword(email, password);
       Navigator.pop(context);
     } catch (e) {
       if (mounted) {
@@ -44,6 +44,9 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Sign Up"),
+      ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
