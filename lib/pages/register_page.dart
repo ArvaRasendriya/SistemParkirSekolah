@@ -31,7 +31,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       await authService.signUpWithEmailPassword(email, password);
-      Navigator.pop(context);
+      Navigator.pushReplacement(context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -44,9 +46,6 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Sign Up"),
-      ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
