@@ -43,6 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
       body: Column(
         children: [
           // Kartu profil
+          Text(currentEmail.toString()),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             padding: const EdgeInsets.all(16),

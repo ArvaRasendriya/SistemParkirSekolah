@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
 import 'package:tefa_parkir/pages/register_page.dart';
+import 'package:tefa_parkir/pages/profile_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -25,6 +26,12 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await authService.signInWithEmailPassword(email, password);
       // TODO: Navigasi setelah login berhasil
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfilePage()),
+      );
+    }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")),);
