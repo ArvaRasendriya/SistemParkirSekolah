@@ -30,10 +30,32 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      await authService.signUpWithEmailPassword(email, password);
-      Navigator.pushReplacement(context,
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      );
+    await authService.signUpWithEmailPassword(email, password);
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Verify Your Email"),
+            content: const Text(
+              "Please check your email for verification, thank you.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // close the dialog
+                },
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+
+        // Then go to login page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
