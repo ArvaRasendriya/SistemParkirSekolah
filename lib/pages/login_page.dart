@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
+import 'package:tefa_parkir/pages/daftar_page.dart';
 import 'package:tefa_parkir/pages/register_page.dart';
 
 class LoginPage extends StatefulWidget {
