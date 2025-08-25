@@ -35,22 +35,28 @@ class _DaftarPageState extends State<DaftarPage> {
   }
 
   Future<void> _DaftarUser() async {
+    if (_namaController.text.isEmpty ||
+        _kelasController.text.isEmpty ||
+        _jurusanController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Semua field wajib diisi")),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // 1. Buat unique id siswa
       final userId = const Uuid().v4();
       String? fotoUrl;
       String? qrUrl;
 
-      // 2. Upload SIM ke Supabase Storage (support Web + Mobile)
+      // Upload SIM
       if (_simImage != null) {
-        final fileName = "sim/$userId.png"; // 📂 masuk folder sim/
-
+        final fileName = "sim/$userId.png";
         if (kIsWeb) {
-          // 📌 Web: uploadBinary
           final bytes = await _simImage!.readAsBytes();
           await supabase.storage.from('siswa').uploadBinary(
                 fileName,
@@ -58,18 +64,16 @@ class _DaftarPageState extends State<DaftarPage> {
                 fileOptions: const FileOptions(contentType: 'image/png'),
               );
         } else {
-          // 📌 Mobile: upload File
           await supabase.storage.from('siswa').upload(
                 fileName,
                 File(_simImage!.path),
                 fileOptions: const FileOptions(contentType: 'image/png'),
               );
         }
-
         fotoUrl = supabase.storage.from('siswa').getPublicUrl(fileName);
       }
 
-      // 3. Generate QR Code dari userId
+      // Generate QR
       final qrPainter = QrPainter(
         data: userId,
         version: QrVersions.auto,
@@ -78,18 +82,15 @@ class _DaftarPageState extends State<DaftarPage> {
       final picData = await qrPainter.toImageData(300);
       final bytes = picData!.buffer.asUint8List();
 
-      // 4. Upload QR Code ke Supabase Storage
-      final qrFileName = "qr_codes/$userId.png"; // 📂 masuk folder qr_codes/
-
+      final qrFileName = "qr_codes/$userId.png";
       await supabase.storage.from('siswa').uploadBinary(
             qrFileName,
             bytes,
             fileOptions: const FileOptions(contentType: 'image/png'),
           );
-
       qrUrl = supabase.storage.from('siswa').getPublicUrl(qrFileName);
 
-      // 5. Insert data ke tabel siswa
+      // Insert DB
       await supabase.from('siswa').insert({
         'id': userId,
         'nama': _namaController.text,
@@ -100,10 +101,12 @@ class _DaftarPageState extends State<DaftarPage> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Pendaftaran berhasil!")),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SuccessPage(),
+          ),
         );
-        Navigator.pop(context);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -155,7 +158,7 @@ class _DaftarPageState extends State<DaftarPage> {
                   _buildTextField(_jurusanController, "Jurusan", Icons.school),
                   const SizedBox(height: 12),
 
-                  // tombol upload SIM
+                  // Upload SIM
                   GestureDetector(
                     onTap: _pickSimImage,
                     child: Container(
@@ -170,16 +173,26 @@ class _DaftarPageState extends State<DaftarPage> {
                         children: [
                           const Icon(Icons.credit_card, color: Colors.grey),
                           const SizedBox(width: 10),
-                          Text(
-                            _simImage == null
-                                ? "Upload Kartu SIM"
-                                : "SIM dipilih",
-                            style: const TextStyle(color: Colors.black54),
+                          Expanded(
+                            child: Text(
+                              _simImage == null
+                                  ? "Upload Kartu SIM"
+                                  : "SIM dipilih: ${_simImage!.name}",
+                              style: const TextStyle(color: Colors.black54),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
+                  if (_simImage != null) ...[
+                    const SizedBox(height: 10),
+                    kIsWeb
+                        ? Image.network(_simImage!.path, height: 120)
+                        : Image.file(File(_simImage!.path), height: 120),
+                  ],
+
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _DaftarUser,
@@ -219,6 +232,62 @@ class _DaftarPageState extends State<DaftarPage> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
+
+class SuccessPage extends StatelessWidget {
+  const SuccessPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Center(
+          child: Container(
+            margin: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle,
+                    size: 80, color: Colors.green),
+                const SizedBox(height: 16),
+                const Text(
+                  "Daftar Akun Berhasil",
+                  style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 32),
+                  ),
+                  child: const Text("Kembali"),
+                )
+              ],
+            ),
+          ),
         ),
       ),
     );
