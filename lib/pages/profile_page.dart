@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
 import 'riwayat_page.dart';
+import 'qr_scan_page.dart';
+import 'daftar_page.dart'; // Tambahkan import daftar_page
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -29,10 +31,8 @@ class _ProfilePageState extends State<ProfilePage> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {},
         ),
-        title: const Text(
-          "",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text("",
+            style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(
             onPressed: logout,
@@ -42,8 +42,9 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: Column(
         children: [
-          // Kartu profil
           Text(currentEmail.toString()),
+
+          // Kartu profil
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             padding: const EdgeInsets.all(16),
@@ -81,13 +82,11 @@ class _ProfilePageState extends State<ProfilePage> {
                         children: const [
                           Text(
                             "Jadwal Piket",
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 12),
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
                           ),
                           Text(
                             "Senin 04-08-2025",
-                            style:
-                                TextStyle(color: Colors.white, fontSize: 12),
+                            style: TextStyle(color: Colors.white, fontSize: 12),
                           ),
                         ],
                       )
@@ -164,36 +163,44 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
 
       // Bottom Navigation
-bottomNavigationBar: BottomNavigationBar(
-  backgroundColor: Colors.white,
-  selectedItemColor: Colors.blue[900],
-  unselectedItemColor: Colors.grey,
-  currentIndex: 0, // posisi default
-  onTap: (index) {
-    if (index == 0) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const RiwayatPage()),
-      );
-    }
-    // index 1 = SCAN, index 2 = Tambah (belum diatur)
-  },
-  items: const [
-    BottomNavigationBarItem(
-      icon: Icon(Icons.history),
-      label: 'Riwayat',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.qr_code_scanner),
-      label: 'SCAN',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.add),
-      label: 'Tambah',
-    ),
-  ],
-),
-
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.white,
+        selectedItemColor: Colors.blue[900],
+        unselectedItemColor: Colors.grey,
+        currentIndex: 0, // posisi default
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const RiwayatPage()),
+            );
+          } else if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const QrScanPage()),
+            );
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const DaftarPage()),
+            );
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'Riwayat',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code_scanner),
+            label: 'SCAN',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add),
+            label: 'Tambah',
+          ),
+        ],
+      ),
     );
   }
 }
