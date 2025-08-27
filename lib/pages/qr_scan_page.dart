@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../models/user_data.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class QrScanPage extends StatefulWidget {
   const QrScanPage({super.key});
@@ -11,75 +10,123 @@ class QrScanPage extends StatefulWidget {
 }
 
 class _QrScanPageState extends State<QrScanPage> {
-  String? scannedData;
+  Map<String, dynamic>? userData;
   bool isProcessing = false;
 
-  void _onDetect(BarcodeCapture capture) {
-    if (isProcessing) return; // biar ga spam detect
-    final List<Barcode> barcodes = capture.barcodes;
+  final supabase = Supabase.instance.client;
 
-    if (barcodes.isNotEmpty) {
-      final code = barcodes.first.rawValue;
-      if (code != null) {
+  Future<void> _fetchUser(String userId) async {
+    try {
+      final response = await supabase
+          .from('siswa')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (response != null) {
         setState(() {
-          isProcessing = true;
-          scannedData = code;
+          userData = response;
         });
-
-        // kasih delay sedikit sebelum bisa scan lagi
-        Future.delayed(const Duration(seconds: 3), () {
-          setState(() {
-            isProcessing = false;
-          });
+      } else {
+        setState(() {
+          userData = {"error": "❌ Data tidak ditemukan"};
         });
       }
+    } catch (e) {
+      setState(() {
+        userData = {"error": "⚠️ Error: $e"};
+      });
     }
   }
 
-  Widget _buildUserInfo(String data) {
-    try {
-      final decoded = jsonDecode(data);
-      final user = UserData.fromJson(decoded);
+  void _onDetect(BarcodeCapture capture) async {
+    if (isProcessing) return;
+    final code = capture.barcodes.first.rawValue;
+    if (code != null) {
+      setState(() => isProcessing = true);
 
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("Nama: ${user.nama}"),
-          Text("Status SIM: ${user.statusSim}"),
-          Text("Tanggal: ${user.tanggal}"),
-          Text("Waktu: ${user.waktu}"),
-          Text("Jenis: ${user.jenis}"),
-          Text("No Kendaraan: ${user.noKendaraan}"),
-          const SizedBox(height: 20),
-          user.statusSim == "Punya SIM"
-              ? const Text("✅ Punya SIM", style: TextStyle(color: Colors.green, fontSize: 18))
-              : const Text("❌ Tidak punya SIM", style: TextStyle(color: Colors.red, fontSize: 18)),
-        ],
-      );
-    } catch (e) {
-      return const Text("QR Code tidak valid");
+      await _fetchUser(code);
+
+      Future.delayed(const Duration(seconds: 3), () {
+        setState(() => isProcessing = false);
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text("Scan QR")),
       body: Column(
         children: [
-          // Kamera scanner
           Expanded(
-            flex: 4,
+            flex: 3,
             child: MobileScanner(
               onDetect: _onDetect,
             ),
           ),
-          // Hasil scan
           Expanded(
             flex: 2,
             child: Center(
-              child: scannedData != null
-                  ? _buildUserInfo(scannedData!)
-                  : const Text("Scan a QR Code"),
+              child: userData == null
+                  ? const Text("📷 Arahkan kamera ke QR Code")
+                  : userData!.containsKey("error")
+                      ? Text(userData!["error"],
+                          style: const TextStyle(color: Colors.red))
+                      : Card(
+                          margin: const EdgeInsets.all(16),
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.person,
+                                    size: 48, color: Colors.blueAccent),
+                                const SizedBox(height: 10),
+                                Text(userData!["nama"] ?? "-",
+                                    style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold)),
+                                const Divider(),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text("Kelas:"),
+                                    Text(userData!["kelas"] ?? "-"),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text("Jurusan:"),
+                                    Text(userData!["jurusan"] ?? "-"),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text("Status SIM:"),
+                                    Text(userData!["statusSim"] ?? "-"),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text("Tanggal:"),
+                                    Text(userData!["tanggal"] ?? "-"),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
             ),
           ),
         ],
