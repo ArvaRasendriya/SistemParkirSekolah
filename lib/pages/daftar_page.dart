@@ -1,11 +1,14 @@
-import 'dart:io' show File;
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart'; // buat kIsWeb
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'daftar_berhasil_page.dart';
+import 'daftar_gagal_page.dart';
 
 class DaftarPage extends StatefulWidget {
   const DaftarPage({super.key});
@@ -15,48 +18,45 @@ class DaftarPage extends StatefulWidget {
 }
 
 class _DaftarPageState extends State<DaftarPage> {
-  final _namaController = TextEditingController();
-  final _kelasController = TextEditingController();
-  final _jurusanController = TextEditingController();
-
-  XFile? _simImage;
-  bool _isLoading = false;
-
   final supabase = Supabase.instance.client;
 
+  final namaC = TextEditingController();
+  final kelasC = TextEditingController();
+  final jurusanC = TextEditingController();
+  final emailC = TextEditingController();
+
+  File? _simImage;
+  bool _isLoading = false;
+
+  // Ambil foto SIM
   Future<void> _pickSimImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
+
     if (picked != null) {
       setState(() {
-        _simImage = picked;
+        _simImage = File(picked.path);
       });
     }
   }
 
   Future<void> _DaftarUser() async {
-    if (_namaController.text.isEmpty ||
-        _kelasController.text.isEmpty ||
-        _jurusanController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Semua field wajib diisi")),
-      );
-      return;
-    }
-
     setState(() {
       _isLoading = true;
     });
 
     try {
+      // 1. Buat unique id siswa
       final userId = const Uuid().v4();
       String? fotoUrl;
       String? qrUrl;
 
-      // Upload SIM
+      // 2. Upload SIM ke Supabase Storage (support Web + Mobile)
       if (_simImage != null) {
-        final fileName = "sim/$userId.png";
+        final fileName = "sim/$userId.png"; // 📂 masuk folder sim/
+
         if (kIsWeb) {
+          // 📌 Web: uploadBinary
           final bytes = await _simImage!.readAsBytes();
           await supabase.storage.from('siswa').uploadBinary(
                 fileName,
@@ -64,33 +64,40 @@ class _DaftarPageState extends State<DaftarPage> {
                 fileOptions: const FileOptions(contentType: 'image/png'),
               );
         } else {
+          // 📌 Mobile: upload File
           await supabase.storage.from('siswa').upload(
                 fileName,
                 File(_simImage!.path),
                 fileOptions: const FileOptions(contentType: 'image/png'),
               );
         }
+
         fotoUrl = supabase.storage.from('siswa').getPublicUrl(fileName);
       }
 
-      // Generate QR
+      // 3. Generate QR Code dari userId
       final qrPainter = QrPainter(
-        data: userId,
+        data: id,
         version: QrVersions.auto,
         gapless: true,
       );
-      final picData = await qrPainter.toImageData(300);
-      final bytes = picData!.buffer.asUint8List();
 
-      final qrFileName = "qr_codes/$userId.png";
+      final uiImage = await qrPainter.toImage(300);
+      final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
+      final Uint8List qrBytes = byteData!.buffer.asUint8List();
+
+      // 4. Upload QR Code ke Supabase Storage
+      final qrFileName = "qr_codes/$userId.png"; // 📂 masuk folder qr_codes/
+
       await supabase.storage.from('siswa').uploadBinary(
             qrFileName,
             bytes,
             fileOptions: const FileOptions(contentType: 'image/png'),
           );
+
       qrUrl = supabase.storage.from('siswa').getPublicUrl(qrFileName);
 
-      // Insert DB
+      // 5. Insert data ke tabel siswa
       await supabase.from('siswa').insert({
         'id': userId,
         'nama': _namaController.text,
@@ -101,21 +108,21 @@ class _DaftarPageState extends State<DaftarPage> {
       });
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SuccessPage(),
-          ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Pendaftaran berhasil!")),
         );
+        Navigator.pop(context);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      debugPrint("Error daftar: $e");
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DaftarGagalPage()),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -151,14 +158,17 @@ class _DaftarPageState extends State<DaftarPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildTextField(_namaController, "Nama", Icons.person),
+                  _buildTextField(namaC, "Nama", Icons.person),
                   const SizedBox(height: 12),
-                  _buildTextField(_kelasController, "Kelas", Icons.class_),
+                  _buildTextField(kelasC, "Kelas", Icons.class_),
                   const SizedBox(height: 12),
-                  _buildTextField(_jurusanController, "Jurusan", Icons.school),
+                  _buildTextField(jurusanC, "Jurusan", Icons.school),
+                  const SizedBox(height: 12),
+                  _buildTextField(emailC, "Email", Icons.email,
+                      keyboardType: TextInputType.emailAddress),
                   const SizedBox(height: 12),
 
-                  // Upload SIM
+                  // tombol upload SIM
                   GestureDetector(
                     onTap: _pickSimImage,
                     child: Container(
@@ -186,16 +196,11 @@ class _DaftarPageState extends State<DaftarPage> {
                       ),
                     ),
                   ),
-                  if (_simImage != null) ...[
-                    const SizedBox(height: 10),
-                    kIsWeb
-                        ? Image.network(_simImage!.path, height: 120)
-                        : Image.file(File(_simImage!.path), height: 120),
-                  ],
-
                   const SizedBox(height: 20),
+
+                  // Tombol submit
                   ElevatedButton(
-                    onPressed: _isLoading ? null : _DaftarUser,
+                    onPressed: _isLoading ? null : _daftarUser,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
@@ -203,12 +208,14 @@ class _DaftarPageState extends State<DaftarPage> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                       padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 32),
+                        vertical: 12,
+                        horizontal: 32,
+                      ),
                     ),
                     child: _isLoading
                         ? const CircularProgressIndicator()
                         : const Text("Selesai"),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -218,10 +225,12 @@ class _DaftarPageState extends State<DaftarPage> {
     );
   }
 
-  Widget _buildTextField(
-      TextEditingController controller, String hint, IconData icon) {
+  Widget _buildTextField(TextEditingController controller, String hint,
+      IconData icon,
+      {TextInputType keyboardType = TextInputType.text}) {
     return TextField(
       controller: controller,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Colors.grey),
         hintText: hint,

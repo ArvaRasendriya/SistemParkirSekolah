@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../models/user_data.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'qr_result_page.dart';
 
 class QrScanPage extends StatefulWidget {
   const QrScanPage({super.key});
@@ -11,79 +11,50 @@ class QrScanPage extends StatefulWidget {
 }
 
 class _QrScanPageState extends State<QrScanPage> {
-  String? scannedData;
   bool isProcessing = false;
+  final supabase = Supabase.instance.client;
 
-  void _onDetect(BarcodeCapture capture) {
-    if (isProcessing) return; // biar ga spam detect
-    final List<Barcode> barcodes = capture.barcodes;
+  Future<void> _fetchUserAndNavigate(String userId) async {
+    try {
+      final response =
+          await supabase.from('siswa').select().eq('id', userId).maybeSingle();
 
-    if (barcodes.isNotEmpty) {
-      final code = barcodes.first.rawValue;
-      if (code != null) {
-        setState(() {
-          isProcessing = true;
-          scannedData = code;
-        });
-
-        // kasih delay sedikit sebelum bisa scan lagi
-        Future.delayed(const Duration(seconds: 3), () {
-          setState(() {
-            isProcessing = false;
-          });
-        });
+      if (response != null) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ScanResultPage(userData: response),
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Data tidak ditemukan")),
+        );
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("⚠️ Error: $e")),
+      );
     }
   }
 
-  Widget _buildUserInfo(String data) {
-    try {
-      final decoded = jsonDecode(data);
-      final user = UserData.fromJson(decoded);
-
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("Nama: ${user.nama}"),
-          Text("Status SIM: ${user.statusSim}"),
-          Text("Tanggal: ${user.tanggal}"),
-          Text("Waktu: ${user.waktu}"),
-          Text("Jenis: ${user.jenis}"),
-          Text("No Kendaraan: ${user.noKendaraan}"),
-          const SizedBox(height: 20),
-          user.statusSim == "Punya SIM"
-              ? const Text("✅ Punya SIM", style: TextStyle(color: Colors.green, fontSize: 18))
-              : const Text("❌ Tidak punya SIM", style: TextStyle(color: Colors.red, fontSize: 18)),
-        ],
-      );
-    } catch (e) {
-      return const Text("QR Code tidak valid");
+  void _onDetect(BarcodeCapture capture) async {
+    if (isProcessing) return;
+    final code = capture.barcodes.first.rawValue;
+    if (code != null) {
+      setState(() => isProcessing = true);
+      await _fetchUserAndNavigate(code);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          // Kamera scanner
-          Expanded(
-            flex: 4,
-            child: MobileScanner(
-              onDetect: _onDetect,
-            ),
-          ),
-          // Hasil scan
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: scannedData != null
-                  ? _buildUserInfo(scannedData!)
-                  : const Text("Scan a QR Code"),
-            ),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text("Scan QR")),
+      body: MobileScanner(onDetect: _onDetect),
     );
   }
 }
