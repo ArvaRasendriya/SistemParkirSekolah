@@ -1,134 +1,135 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
-class QrResultPage extends StatelessWidget {
-  final String nama;
-  final String kelas;
-  final String jurusan;
-  final String qrUrl;
-
-  const QrResultPage({
-    super.key,
-    required this.nama,
-    required this.kelas,
-    required this.jurusan,
-    required this.qrUrl,
-  });
+class ScanResultPage extends StatelessWidget {
+  final Map<String, dynamic> userData;
+  const ScanResultPage({super.key, required this.userData});
 
   @override
   Widget build(BuildContext context) {
+    // Ambil waktu sekarang
+    final now = DateTime.now();
+    final formattedTime = DateFormat("HH:mm").format(now);
+    final formattedDate = DateFormat("dd-MM-yyyy").format(now);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("QR Code Anda"),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF0083B0),
-      ),
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      backgroundColor: const Color(0xFF2196F3),
+      body: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20),
           ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Container(
-              margin: const EdgeInsets.all(24),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.95),
-                borderRadius: BorderRadius.circular(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // SIM
+              Container(
+                height: 120,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: userData["sim_url"] != null
+                    ? Image.network(userData["sim_url"], fit: BoxFit.contain)
+                    : const Icon(Icons.credit_card, size: 60),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Pendaftaran Berhasil 🎉",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-                  // Data siswa
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.person, color: Colors.black54),
-                      const SizedBox(width: 8),
-                      Text("Nama: $nama",
-                          style: const TextStyle(fontSize: 16)),
-                    ],
+              // Info Status
+              Row(
+                children: const [
+                  Text(
+                    "Status:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.class_, color: Colors.black54),
-                      const SizedBox(width: 8),
-                      Text("Kelas: $kelas",
-                          style: const TextStyle(fontSize: 16)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.school, color: Colors.black54),
-                      const SizedBox(width: 8),
-                      Text("Jurusan: $jurusan",
-                          style: const TextStyle(fontSize: 16)),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // QR Code dari Supabase
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300, width: 2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.all(12),
-                    child: Image.network(
-                      qrUrl,
-                      width: 200,
-                      height: 200,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.error, color: Colors.red, size: 100),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  const Text(
-                    "Simpan QR Code ini untuk keperluan absensi / validasi.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                  const SizedBox(height: 20),
-
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context); // balik ke daftar/login
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0083B0),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 32),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    icon: const Icon(Icons.arrow_back),
-                    label: const Text("Kembali"),
-                  ),
+                  SizedBox(width: 8),
+                  Icon(Icons.check_circle, color: Colors.green, size: 20),
                 ],
               ),
-            ),
+              const SizedBox(height: 8),
+
+              // Nama
+              Row(
+                children: [
+                  const Text(
+                    "Nama:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(userData["nama"] ?? "-"),
+                ],
+              ),
+
+              // Kelas
+              Row(
+                children: [
+                  const Text(
+                    "Kelas:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(userData["kelas"] ?? "-"),
+                ],
+              ),
+
+              // Jurusan
+              Row(
+                children: [
+                  const Text(
+                    "Jurusan:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(userData["jurusan"] ?? "-"),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Waktu
+              Row(
+                children: [
+                  const Text(
+                    "Waktu:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(formattedTime),
+                ],
+              ),
+
+              // Tanggal
+              Row(
+                children: [
+                  const Text(
+                    "Tanggal:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(formattedDate),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                ),
+                child: const Text("Selesai"),
+              ),
+            ],
           ),
         ),
       ),
