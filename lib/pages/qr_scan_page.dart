@@ -20,6 +20,16 @@ class _QrScanPageState extends State<QrScanPage> {
           await supabase.from('siswa').select().eq('id', userId).maybeSingle();
 
       if (response != null) {
+        // ✅ log scan to parkir table
+        final success = await logScan(siswaId: userId, supabase: supabase); // 👈
+        if (!success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("⚠️ Gagal mencatat riwayat parkir")),
+            );
+          }
+        }
+
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -38,6 +48,25 @@ class _QrScanPageState extends State<QrScanPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("⚠️ Error: $e")),
       );
+    }
+  }
+
+  Future<bool> logScan({
+    required String siswaId,
+    required SupabaseClient supabase,
+  }) async {
+    try {
+      final scannedBy =
+          supabase.auth.currentUser?.email ?? supabase.auth.currentUser?.id;
+      await supabase.from('parkir').insert({
+        'siswa_id': siswaId,
+        'scanned_by': scannedBy,
+        // waktu & tanggal are auto-filled by DB defaults
+      });
+      return true;
+    } catch (e) {
+      debugPrint('Failed to log scan: $e');
+      return false;
     }
   }
 

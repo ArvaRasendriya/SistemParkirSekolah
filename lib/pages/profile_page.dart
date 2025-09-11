@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // 👈
 import 'riwayat_page.dart';
 import 'qr_scan_page.dart';
-import 'daftar_page.dart'; // Tambahkan import daftar_page
+import 'daftar_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -13,9 +14,35 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final authService = AuthService();
+  final supabase = Supabase.instance.client; // 👈
+  List<Map<String, dynamic>> todayHistory = []; // 👈
+
+  @override
+  void initState() {
+    super.initState();
+    fetchTodayHistory(); // 👈
+  }
 
   void logout() async {
     await authService.signOut();
+  }
+
+  Future<void> fetchTodayHistory() async {
+    try {
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+
+      final response = await supabase
+          .from('parkir')
+          .select('id, waktu, siswa(nama, kelas)')
+          .eq('tanggal', today)
+          .order('waktu', ascending: false);
+
+      setState(() {
+        todayHistory = (response as List).cast<Map<String, dynamic>>();
+      });
+    } catch (e) {
+      debugPrint("Error fetching today history: $e");
+    }
   }
 
   @override
@@ -63,23 +90,23 @@ class _ProfilePageState extends State<ProfilePage> {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
+                    children: const [
+                      Text(
                         "Nama: Aditya Braja Mustika",
                         style: TextStyle(color: Colors.white, fontSize: 14),
                       ),
-                      const Text(
+                      Text(
                         "Kelas: XII RPL 3",
                         style: TextStyle(color: Colors.white, fontSize: 14),
                       ),
-                      const Text(
+                      Text(
                         "Status: Anggota satgas",
                         style: TextStyle(color: Colors.white, fontSize: 14),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
+                        children: [
                           Text(
                             "Jadwal Piket",
                             style: TextStyle(color: Colors.white70, fontSize: 12),
@@ -117,45 +144,55 @@ class _ProfilePageState extends State<ProfilePage> {
                       fontSize: 16),
                 ),
                 const SizedBox(height: 8),
-                Column(
-                  children: List.generate(5, (index) {
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[300],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: const [
-                          CircleAvatar(
-                            backgroundColor: Colors.white,
-                            child: Icon(Icons.person,
-                                color: Colors.grey, size: 20),
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                // 👇 Replace dummy list with real history
+                todayHistory.isEmpty
+                    ? const Text("Belum ada absensi hari ini",
+                        style: TextStyle(color: Colors.white70))
+                    : Column(
+                        children: todayHistory.map((item) {
+                          final siswa = item['siswa'];
+                          final nama = siswa['nama'];
+                          final waktu = item['waktu']; // "HH:MM:SS"
+                          final jam = waktu.toString().substring(0, 5); // HH:MM
+
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[300],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
                               children: [
-                                Text(
-                                  "Ardika Muhammad Lazuardi",
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 14),
+                                const CircleAvatar(
+                                  backgroundColor: Colors.white,
+                                  child: Icon(Icons.person,
+                                      color: Colors.grey, size: 20),
                                 ),
-                                Text(
-                                  "10 November, 06:25",
-                                  style: TextStyle(
-                                      color: Colors.white70, fontSize: 12),
-                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        nama,
+                                        style: const TextStyle(
+                                            color: Colors.white, fontSize: 14),
+                                      ),
+                                      Text(
+                                        jam,
+                                        style: const TextStyle(
+                                            color: Colors.white70, fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                )
                               ],
                             ),
-                          )
-                        ],
+                          );
+                        }).toList(),
                       ),
-                    );
-                  }),
-                ),
               ],
             ),
           ),
@@ -167,7 +204,7 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: Colors.white,
         selectedItemColor: Colors.blue[900],
         unselectedItemColor: Colors.grey,
-        currentIndex: 0, // posisi default
+        currentIndex: 0,
         onTap: (index) {
           if (index == 0) {
             Navigator.push(

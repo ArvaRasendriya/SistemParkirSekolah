@@ -1,136 +1,161 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class RiwayatPage extends StatelessWidget {
+class RiwayatPage extends StatefulWidget {
   const RiwayatPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.lightBlue[300],
-      appBar: AppBar(
-        backgroundColor: Colors.lightBlue[300],
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.white),
-            onPressed: () {},
-          )
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Filter bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[800],
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                  ),
-                  icon: const Icon(Icons.calendar_today, size: 16),
-                  label: const Text("Tanggal"),
-                ),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[800],
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                  ),
-                  child: const Text("Kelas >"),
-                ),
-              ],
-            ),
-          ),
+  State<RiwayatPage> createState() => _RiwayatPageState();
+}
 
-          // List riwayat
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    buildTanggalSection("Hari ini, 10 November 2025", [
-                      ["Ardika Muhammad Lazuardi", "10 November, 06:25"],
-                      ["Nanda Saskia Ramadhani", "10 November, 06:22"],
-                      ["Cicaa Caciii", "10 November, 06:20"],
-                    ]),
-                    buildTanggalSection("Kemarin, 9 November 2025", [
-                      ["Kurt Cobain", "9 November, 06:07"],
-                      ["Maman Firdaus", "9 November, 06:09"],
-                    ]),
-                    buildTanggalSection("8 November 2025", [
-                      ["Thom Yorke", "8 November, 06:20"],
-                      ["Abdul Mamang Kasep", "8 November, 06:23"],
-                    ]),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+class _RiwayatPageState extends State<RiwayatPage> {
+  final supabase = Supabase.instance.client;
+  bool _loading = false;
+  List<Map<String, dynamic>> _rows = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchRiwayat();
   }
 
-  Widget buildTanggalSection(String title, List<List<String>> data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 8),
-        Text(
-          title,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Column(
-          children: data.map((item) {
-            return Container(
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.blue[800],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, color: Colors.grey),
+  Future<void> fetchRiwayat() async {
+    setState(() => _loading = true);
+
+    try {
+      final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+
+      final response = await supabase
+          .from('parkir')
+          .select('id, created_at, siswa(nama, kelas)')
+          .gte('created_at', thirtyDaysAgo)
+          .order('created_at', ascending: false);
+
+      // response is expected to be a List of maps
+      final List<Map<String, dynamic>> rows = (response as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+
+      setState(() {
+        _rows = rows;
+      });
+    } catch (e) {
+      debugPrint('fetchRiwayat error: $e');
+      // optionally show snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengambil riwayat: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  DateTime startOfDay(DateTime t) => DateTime(t.year, t.month, t.day);
+
+  String formatTime(DateTime t) => DateFormat('dd MMM yyyy HH:mm').format(t);
+
+  // Partitioned grouping (no overlaps)
+  Map<String, List<Map<String, dynamic>>> groupRows() {
+    final Map<String, List<Map<String, dynamic>>> groups = {
+      'Today': [],
+      'Yesterday': [],
+      'Last 7 Days': [],
+      'Last Month': [],
+    };
+
+    final now = DateTime.now();
+    final startToday = startOfDay(now);
+    final startYesterday = startToday.subtract(const Duration(days: 1));
+    final start7 = startToday.subtract(const Duration(days: 7));
+    final start30 = startToday.subtract(const Duration(days: 30));
+
+    for (final r in _rows) {
+      final createdAtRaw = r['created_at'];
+      if (createdAtRaw == null) continue;
+      final createdAt = DateTime.parse(createdAtRaw).toLocal();
+
+      if (createdAt.isAfter(startToday) || createdAt.isAtSameMomentAs(startToday)) {
+        groups['Today']!.add(r);
+      } else if (createdAt.isAfter(startYesterday) || createdAt.isAtSameMomentAs(startYesterday)) {
+        groups['Yesterday']!.add(r);
+      } else if (createdAt.isAfter(start7) || createdAt.isAtSameMomentAs(start7)) {
+        // between start7 (inclusive) and startYesterday (exclusive)
+        groups['Last 7 Days']!.add(r);
+      } else if (createdAt.isAfter(start30) || createdAt.isAtSameMomentAs(start30)) {
+        groups['Last Month']!.add(r);
+      }
+    }
+
+    return groups;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final grouped = groupRows();
+    final displayOrder = ['Today', 'Yesterday', 'Last 7 Days', 'Last Month'];
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Riwayat Parkir')),
+      body: RefreshIndicator(
+        onRefresh: fetchRiwayat,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _rows.isEmpty
+                ? ListView(
+                    // make pull-to-refresh possible when empty
+                    children: const [
+                      SizedBox(height: 150),
+                      Center(child: Text('Belum ada riwayat parkir')),
+                    ],
+                  )
+                : ListView(
+                    children: [
+                      for (final key in displayOrder)
+                        if ((grouped[key]?.isNotEmpty ?? false))
+                          ExpansionTile(
+                            initiallyExpanded: key == 'Today',
+                            title: Text(key),
+                            children: grouped[key]!.map((r) {
+                              final siswa = (r['siswa'] ?? {}) as Map<String, dynamic>;
+                              final nama = siswa['nama'] ?? '—';
+                              final kelas = siswa['kelas'] ?? '—';
+                              final createdAt = DateTime.parse(r['created_at']).toLocal();
+                              return ListTile(
+                                title: Text(nama),
+                                subtitle: Text('Kelas: $kelas'),
+                                trailing: Text(formatTime(createdAt)),
+                                onTap: () {
+                                  // optional: show details or open profile
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: Text(nama),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Kelas: $kelas'),
+                                          Text('Waktu: ${formatTime(createdAt)}'),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context),
+                                          child: const Text('OK'),
+                                        )
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            }).toList(),
+                          ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item[0],
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 14)),
-                        Text(item[1],
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.check_circle,
-                      color: Colors.white, size: 24),
-                ],
-              ),
-            );
-          }).toList(),
-        )
-      ],
+      ),
     );
   }
 }
