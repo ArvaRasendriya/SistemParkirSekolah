@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'daftar_berhasil_page.dart';
 import 'daftar_gagal_page.dart';
+import 'profile_page.dart'; // ✅ Tambah import ProfilePage
 
 class DaftarPage extends StatefulWidget {
   const DaftarPage({super.key});
@@ -17,7 +18,8 @@ class DaftarPage extends StatefulWidget {
   State<DaftarPage> createState() => _DaftarPageState();
 }
 
-class _DaftarPageState extends State<DaftarPage> {
+class _DaftarPageState extends State<DaftarPage>
+    with SingleTickerProviderStateMixin {
   final supabase = Supabase.instance.client;
 
   final namaC = TextEditingController();
@@ -27,6 +29,29 @@ class _DaftarPageState extends State<DaftarPage> {
 
   File? _simImage;
   bool _isLoading = false;
+
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..forward();
+
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   // Ambil foto SIM
   Future<void> _pickSimImage() async {
@@ -138,95 +163,178 @@ class _DaftarPageState extends State<DaftarPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ✅ AppBar tetap ada
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF2193b0),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            );
+          },
+        ),
+        title: const Text(
+          "",
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
+      ),
+
+      // ✅ REVISI BAGIAN INI (layout)
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
+            colors: [Color(0xFF2193b0), Color(0xFF6dd5ed)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Daftar Akun Siswa",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+        child: Column(
+          children: [
+            const SizedBox(height: 150),
+            Expanded(
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(40),
+                      topRight: Radius.circular(40),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  _buildTextField(namaC, "Nama", Icons.person),
-                  const SizedBox(height: 12),
-                  _buildTextField(kelasC, "Kelas", Icons.class_),
-                  const SizedBox(height: 12),
-                  _buildTextField(jurusanC, "Jurusan", Icons.school),
-                  const SizedBox(height: 12),
-                  _buildTextField(emailC, "Email", Icons.email,
-                      keyboardType: TextInputType.emailAddress),
-                  const SizedBox(height: 12),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 16),
 
-                  // Tombol upload SIM
-                  GestureDetector(
-                    onTap: _pickSimImage,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: Colors.grey.shade400),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.credit_card, color: Colors.grey),
-                          const SizedBox(width: 10),
-                          Text(
-                            _simImage == null
-                                ? "Upload Kartu SIM"
-                                : "SIM dipilih",
-                            style: const TextStyle(color: Colors.black54),
+                        // ✅ Judul lebih besar + subtitle
+                        const Text(
+                          "Daftar Akun Siswa",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2193b0),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          "Silakan isi data diri dengan benar",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                          ),
+                        ),
+
+                        const SizedBox(height: 28),
+
+                        _buildTextField(namaC, "Nama", Icons.person),
+                        const SizedBox(height: 16),
+                        _buildTextField(kelasC, "Kelas", Icons.class_),
+                        const SizedBox(height: 16),
+                        _buildTextField(jurusanC, "Jurusan", Icons.school),
+                        const SizedBox(height: 16),
+                        _buildTextField(emailC, "Email", Icons.email,
+                            keyboardType: TextInputType.emailAddress),
+                        const SizedBox(height: 20),
+
+                        // ✅ Tombol upload SIM lebih jelas
+                        GestureDetector(
+                          onTap: _pickSimImage,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: _simImage == null
+                                  ? Colors.grey[200]
+                                  : Colors.green[50],
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(
+                                color: _simImage == null
+                                    ? Colors.grey.shade400
+                                    : Colors.green,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.credit_card,
+                                      color: _simImage == null
+                                          ? Colors.grey
+                                          : Colors.green,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      _simImage == null
+                                          ? "Upload Kartu SIM (jpg/png)"
+                                          : "SIM berhasil dipilih",
+                                      style: TextStyle(
+                                        color: _simImage == null
+                                            ? Colors.black54
+                                            : Colors.green,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Icon(
+                                  Icons.cloud_upload_outlined,
+                                  color: _simImage == null
+                                      ? Colors.grey
+                                      : Colors.green,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _daftarUser,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2193b0),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 32,
+                            ),
+                            elevation: 6,
+                            shadowColor: Colors.black.withOpacity(0.2),
+                          ),
+                          child: _isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  "Selesai",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ],
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // Tombol submit
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _daftarUser,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 32,
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text("Selesai"),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -239,10 +347,17 @@ class _DaftarPageState extends State<DaftarPage> {
       controller: controller,
       keyboardType: keyboardType,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.grey),
+        prefixIcon: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Icon(icon, color: const Color(0xFF2193b0), size: 22),
+        ),
         hintText: hint,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Colors.grey[100],
         contentPadding:
             const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         border: OutlineInputBorder(
