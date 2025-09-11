@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'qr_result_page.dart';
 
 class QrScanPage extends StatefulWidget {
   const QrScanPage({super.key});
@@ -10,32 +11,62 @@ class QrScanPage extends StatefulWidget {
 }
 
 class _QrScanPageState extends State<QrScanPage> {
-  Map<String, dynamic>? userData;
   bool isProcessing = false;
-
   final supabase = Supabase.instance.client;
 
-  Future<void> _fetchUser(String userId) async {
+  Future<void> _fetchUserAndNavigate(String userId) async {
     try {
-      final response = await supabase
-          .from('siswa')
-          .select()
-          .eq('id', userId)
-          .maybeSingle();
+      final response =
+          await supabase.from('siswa').select().eq('id', userId).maybeSingle();
 
       if (response != null) {
-        setState(() {
-          userData = response;
-        });
+        // ✅ log scan to parkir table
+        final success = await logScan(siswaId: userId, supabase: supabase); // 👈
+        if (!success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("⚠️ Gagal mencatat riwayat parkir")),
+            );
+          }
+        }
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ScanResultPage(userData: response),
+          ),
+        );
       } else {
-        setState(() {
-          userData = {"error": "❌ Data tidak ditemukan"};
-        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Data tidak ditemukan")),
+        );
       }
     } catch (e) {
-      setState(() {
-        userData = {"error": "⚠️ Error: $e"};
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("⚠️ Error: $e")),
+      );
+    }
+  }
+
+  Future<bool> logScan({
+    required String siswaId,
+    required SupabaseClient supabase,
+  }) async {
+    try {
+      final scannedBy =
+          supabase.auth.currentUser?.email ?? supabase.auth.currentUser?.id;
+      await supabase.from('parkir').insert({
+        'siswa_id': siswaId,
+        'scanned_by': scannedBy,
+        // waktu & tanggal are auto-filled by DB defaults
       });
+      return true;
+    } catch (e) {
+      debugPrint('Failed to log scan: $e');
+      return false;
     }
   }
 
@@ -44,12 +75,7 @@ class _QrScanPageState extends State<QrScanPage> {
     final code = capture.barcodes.first.rawValue;
     if (code != null) {
       setState(() => isProcessing = true);
-
-      await _fetchUser(code);
-
-      Future.delayed(const Duration(seconds: 3), () {
-        setState(() => isProcessing = false);
-      });
+      await _fetchUserAndNavigate(code);
     }
   }
 
@@ -57,80 +83,7 @@ class _QrScanPageState extends State<QrScanPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Scan QR")),
-      body: Column(
-        children: [
-          Expanded(
-            flex: 3,
-            child: MobileScanner(
-              onDetect: _onDetect,
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: userData == null
-                  ? const Text("📷 Arahkan kamera ke QR Code")
-                  : userData!.containsKey("error")
-                      ? Text(userData!["error"],
-                          style: const TextStyle(color: Colors.red))
-                      : Card(
-                          margin: const EdgeInsets.all(16),
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.person,
-                                    size: 48, color: Colors.blueAccent),
-                                const SizedBox(height: 10),
-                                Text(userData!["nama"] ?? "-",
-                                    style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold)),
-                                const Divider(),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text("Kelas:"),
-                                    Text(userData!["kelas"] ?? "-"),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text("Jurusan:"),
-                                    Text(userData!["jurusan"] ?? "-"),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text("Status SIM:"),
-                                    Text(userData!["statusSim"] ?? "-"),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text("Tanggal:"),
-                                    Text(userData!["tanggal"] ?? "-"),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-            ),
-          ),
-        ],
-      ),
+      body: MobileScanner(onDetect: _onDetect),
     );
   }
 }
