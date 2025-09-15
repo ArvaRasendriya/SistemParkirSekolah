@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -25,7 +25,7 @@ class _DaftarPageState extends State<DaftarPage> {
   final jurusanC = TextEditingController();
   final emailC = TextEditingController();
 
-  File? _simImage;
+  Uint8List? _simImageBytes;
   bool _isLoading = false;
 
   // Ambil foto SIM
@@ -34,15 +34,16 @@ class _DaftarPageState extends State<DaftarPage> {
     final picked = await picker.pickImage(source: ImageSource.gallery);
 
     if (picked != null) {
+      final bytes = await picked.readAsBytes();
       setState(() {
-        _simImage = File(picked.path);
+        _simImageBytes = bytes;
       });
     }
   }
 
   Future<void> _daftarUser() async {
     try {
-      if (_simImage == null) {
+      if (_simImageBytes == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Pilih foto SIM dulu")),
         );
@@ -56,7 +57,11 @@ class _DaftarPageState extends State<DaftarPage> {
       // 1. Upload SIM
       final simFileName = "${DateTime.now().millisecondsSinceEpoch}.jpg";
       final simPath = "sim/$simFileName";
-      await supabase.storage.from("siswa").upload(simPath, _simImage!);
+      await supabase.storage.from("siswa").uploadBinary(
+        simPath,
+        _simImageBytes!,
+        fileOptions: const FileOptions(contentType: "image/jpeg"),
+      );
       final simUrl = supabase.storage.from("siswa").getPublicUrl(simPath);
 
       // 2. Insert siswa
@@ -193,7 +198,7 @@ class _DaftarPageState extends State<DaftarPage> {
                           const Icon(Icons.credit_card, color: Colors.grey),
                           const SizedBox(width: 10),
                           Text(
-                            _simImage == null
+                            _simImageBytes == null
                                 ? "Upload Kartu SIM"
                                 : "SIM dipilih",
                             style: const TextStyle(color: Colors.black54),
