@@ -74,14 +74,30 @@ class _DaftarPageState extends State<DaftarPage> {
         "sim_url": simUrl,
       });
 
-      // 3. Generate QR
+      // 3. Generate QR with white background and padding
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      const qrSize = 300.0;
+      const padding = 10.0;
+      const totalSize = qrSize + 2 * padding;
+
+      // Draw white background
+      final paint = Paint()..color = Colors.white;
+      canvas.drawRect(Rect.fromLTWH(0, 0, totalSize, totalSize), paint);
+
+      // Draw QR code with padding
+      canvas.save();
+      canvas.translate(padding, padding);
       final qrPainter = QrPainter(
         data: id,
         version: QrVersions.auto,
         gapless: true,
       );
+      qrPainter.paint(canvas, Size(qrSize, qrSize));
+      canvas.restore();
 
-      final uiImage = await qrPainter.toImage(300);
+      final picture = recorder.endRecording();
+      final uiImage = await picture.toImage(totalSize.toInt(), totalSize.toInt());
       final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List qrBytes = byteData!.buffer.asUint8List();
 

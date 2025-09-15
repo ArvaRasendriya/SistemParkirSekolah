@@ -19,6 +19,7 @@ class QrGeneratePage extends StatelessWidget {
           data: dataString,
           version: QrVersions.auto,
           size: 250,
+          backgroundColor: Colors.white,
         ),
       ),
     );

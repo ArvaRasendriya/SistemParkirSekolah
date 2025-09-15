@@ -34,6 +34,13 @@ serve(async (req) => {
       },
     });
 
+    // Fetch QR code image
+    const qrResponse = await fetch(qr_url);
+    const qrBlob = await qrResponse.blob();
+    const qrArrayBuffer = await qrBlob.arrayBuffer();
+    const qrUint8Array = new Uint8Array(qrArrayBuffer);
+    const qrBase64 = btoa(String.fromCharCode(...qrUint8Array));
+
     // Kirim email
     await client.send({
       from: GMAIL_USER,
@@ -48,7 +55,36 @@ Data pendaftaran kamu berhasil disimpan:
 
 Berikut QR Code kamu:
 ${qr_url}
+
+Untuk mengunduh QR Code, silakan lihat lampiran email ini.
       `,
+      html: `
+<html>
+<body>
+<p>Halo ${nama},</p>
+
+<p>Data pendaftaran kamu berhasil disimpan:</p>
+<ul>
+<li>Kelas: ${kelas}</li>
+<li>Jurusan: ${jurusan}</li>
+</ul>
+
+<p>Berikut QR Code kamu:</p>
+<img src="cid:qr_image" alt="QR Code" style="max-width: 300px;">
+
+<p>Untuk mengunduh QR Code, silakan lihat lampiran email ini.</p>
+</body>
+</html>
+      `,
+      attachments: [
+        {
+          filename: "qr_code.png",
+          content: qrBase64,
+          encoding: "base64",
+          contentType: "image/png",
+          contentID: "qr_image",
+        },
+      ],
     });
 
     await client.close();
