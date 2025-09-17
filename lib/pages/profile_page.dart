@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // 👈
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'riwayat_page.dart';
 import 'qr_scan_page.dart';
 import 'daftar_page.dart';
@@ -14,13 +14,13 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final authService = AuthService();
-  final supabase = Supabase.instance.client; // 👈
-  List<Map<String, dynamic>> todayHistory = []; // 👈
+  final supabase = Supabase.instance.client;
+  List<Map<String, dynamic>> todayHistory = [];
 
   @override
   void initState() {
     super.initState();
-    fetchTodayHistory(); // 👈
+    fetchTodayHistory();
   }
 
   void logout() async {
@@ -50,193 +50,239 @@ class _ProfilePageState extends State<ProfilePage> {
     final currentEmail = authService.getCurrentUserEmail();
 
     return Scaffold(
-      backgroundColor: Colors.lightBlue[300],
-      appBar: AppBar(
-        backgroundColor: Colors.lightBlue[300],
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {},
-        ),
-        title: const Text("",
-            style: TextStyle(color: Colors.white)),
-        actions: [
-          IconButton(
-            onPressed: logout,
-            icon: const Icon(Icons.logout, color: Colors.white),
-          )
-        ],
-      ),
-      body: Column(
-        children: [
-          Text(currentEmail.toString()),
-
-          // Kartu profil
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue[900],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.person, size: 40, color: Colors.grey),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        "Nama: Aditya Braja Mustika",
-                        style: TextStyle(color: Colors.white, fontSize: 14),
-                      ),
-                      Text(
-                        "Kelas: XII RPL 3",
-                        style: TextStyle(color: Colors.white, fontSize: 14),
-                      ),
-                      Text(
-                        "Status: Anggota satgas",
-                        style: TextStyle(color: Colors.white, fontSize: 14),
-                      ),
-                      SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Jadwal Piket",
-                            style: TextStyle(color: Colors.white70, fontSize: 12),
-                          ),
-                          Text(
-                            "Senin 04-08-2025",
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
-                )
-              ],
-            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF0F2027), // hitam kebiruan
+              Color(0xFF203A43), // biru gelap
+              Color(0xFF2C5364), // abu kebiruan
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-
-          // Riwayat Absensi
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue[400],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Riwayat Absensi hari ini",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16),
+        ),
+        child: Column(
+          children: [
+            // Custom AppBar
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () {},
+                    ),
+                    IconButton(
+                      onPressed: logout,
+                      icon: const Icon(Icons.logout, color: Colors.white),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
+              ),
+            ),
 
-                // 👇 Replace dummy list with real history
-                todayHistory.isEmpty
-                    ? const Text("Belum ada absensi hari ini",
-                        style: TextStyle(color: Colors.white70))
-                    : Column(
-                        children: todayHistory.map((item) {
-                          final siswa = item['siswa'];
-                          final nama = siswa['nama'];
-                          final waktu = item['waktu']; // "HH:MM:SS"
-                          final jam = waktu.toString().substring(0, 5); // HH:MM
+            // Email User
+            Text(
+              currentEmail.toString(),
+              style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w300),
+            ),
 
-                          return Container(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[300],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                const CircleAvatar(
-                                  backgroundColor: Colors.white,
-                                  child: Icon(Icons.person,
-                                      color: Colors.grey, size: 20),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+            // Card Profile
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1), // efek kaca
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 32,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.person, size: 40, color: Colors.grey),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text("Aditya Braja Mustika",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16)),
+                        SizedBox(height: 2),
+                        Text("XII RPL 3",
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 14)),
+                        SizedBox(height: 2),
+                        Text("Anggota Satgas",
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 13)),
+                        SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Jadwal Piket",
+                                style: TextStyle(
+                                    color: Colors.white54, fontSize: 12)),
+                            Text("Senin 04-08-2025",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12)),
+                          ],
+                        )
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+
+            // Riwayat Absensi
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Riwayat Absensi Hari Ini",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15),
+                    ),
+                    const SizedBox(height: 12),
+
+                    todayHistory.isEmpty
+                        ? const Text("Belum ada absensi hari ini",
+                            style: TextStyle(color: Colors.white60))
+                        : Expanded(
+                            child: ListView.builder(
+                              itemCount: todayHistory.length,
+                              itemBuilder: (context, index) {
+                                final item = todayHistory[index];
+                                final siswa = item['siswa'];
+                                final nama = siswa['nama'];
+                                final waktu = item['waktu'];
+                                final jam = waktu.toString().substring(0, 5);
+
+                                return Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Row(
                                     children: [
-                                      Text(
-                                        nama,
-                                        style: const TextStyle(
-                                            color: Colors.white, fontSize: 14),
+                                      const CircleAvatar(
+                                        radius: 18,
+                                        backgroundColor: Colors.white,
+                                        child: Icon(Icons.person,
+                                            color: Colors.grey, size: 18),
                                       ),
-                                      Text(
-                                        jam,
-                                        style: const TextStyle(
-                                            color: Colors.white70, fontSize: 12),
-                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(nama,
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight.w500)),
+                                            Text(jam,
+                                                style: const TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 12)),
+                                          ],
+                                        ),
+                                      )
                                     ],
                                   ),
-                                )
-                              ],
+                                );
+                              },
                             ),
-                          );
-                        }).toList(),
-                      ),
-              ],
+                          ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
 
       // Bottom Navigation
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        selectedItemColor: Colors.blue[900],
-        unselectedItemColor: Colors.grey,
-        currentIndex: 0,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const RiwayatPage()),
-            );
-          } else if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const QrScanPage()),
-            );
-          } else if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const DaftarPage()),
-            );
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner),
-            label: 'SCAN',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Tambah',
-          ),
-        ],
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+        child: BottomNavigationBar(
+          backgroundColor: const Color(0xFF1C1C1E),
+          selectedItemColor: Colors.tealAccent,
+          unselectedItemColor: Colors.grey[500],
+          currentIndex: 0,
+          onTap: (index) {
+            if (index == 0) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RiwayatPage()),
+              );
+            } else if (index == 1) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const QrScanPage()),
+              );
+            } else if (index == 2) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DaftarPage()),
+              );
+            }
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.history),
+              label: 'Riwayat',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.qr_code_scanner),
+              label: 'SCAN',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.add),
+              label: 'Tambah',
+            ),
+          ],
+        ),
       ),
     );
   }
