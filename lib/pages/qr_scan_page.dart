@@ -125,7 +125,11 @@ class _QrScanPageState extends State<QrScanPage>
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF2193b0), Color(0xFF6dd5ed)],
+            colors: [
+              Color(0xFF0F2027), // hitam kebiruan
+              Color(0xFF203A43), // biru gelap
+              Color(0xFF2C5364), // abu kebiruan
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -154,7 +158,7 @@ class _QrScanPageState extends State<QrScanPage>
                   child: Icon(
                     torchOn ? Icons.flash_on : Icons.flash_off,
                     key: ValueKey(torchOn),
-                    color: Colors.white,
+                    color: Colors.cyanAccent,
                     size: 30,
                   ),
                 ),
@@ -184,7 +188,7 @@ class _QrScanPageState extends State<QrScanPage>
                             shadows: [
                               Shadow(
                                 blurRadius: 12,
-                                color: Colors.blueAccent,
+                                color: Colors.cyanAccent,
                                 offset: Offset(0, 0),
                               ),
                             ],
@@ -207,12 +211,13 @@ class _QrScanPageState extends State<QrScanPage>
                           height: 250,
                           decoration: BoxDecoration(
                             border: Border.all(
-                                color: Colors.white.withOpacity(0.9), width: 3),
+                                color: Colors.cyanAccent.withOpacity(0.9),
+                                width: 3),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blueAccent.withOpacity(0.6),
-                                blurRadius: 20,
+                                color: Colors.cyanAccent.withOpacity(0.5),
+                                blurRadius: 25,
                                 spreadRadius: 2,
                               )
                             ],
@@ -230,7 +235,7 @@ class _QrScanPageState extends State<QrScanPage>
                               height: 4,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Colors.cyan, Colors.white],
+                                  colors: [Colors.cyanAccent, Colors.white],
                                 ),
                                 borderRadius: BorderRadius.circular(4),
                               ),
@@ -253,9 +258,9 @@ class _QrScanPageState extends State<QrScanPage>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      backgroundColor: Colors.white,
+                      backgroundColor: Colors.cyanAccent,
                       shadowColor: Colors.black45,
-                      elevation: 5,
+                      elevation: 6,
                     ),
                     onPressed: () {
                       Navigator.pop(context); // kembali ke halaman sebelumnya
@@ -263,7 +268,7 @@ class _QrScanPageState extends State<QrScanPage>
                     child: const Text(
                       "KEMBALI",
                       style: TextStyle(
-                        color: Colors.black,
+                        color: Colors.black87,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
