@@ -1,14 +1,7 @@
-<<<<<<< HEAD
-import 'dart:convert';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-import 'package:flutter/foundation.dart';
-=======
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:io' show Platform; // 👈 untuk cek Android/iOS
 import 'package:flutter/foundation.dart' show kIsWeb;
->>>>>>> ui_arva
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
@@ -36,23 +29,12 @@ class _DaftarPageState extends State<DaftarPage>
   final jurusanC = TextEditingController();
   final emailC = TextEditingController();
 
-<<<<<<< HEAD
-  Uint8List? _simImageBytes;
-=======
   Uint8List? _simBytes;
->>>>>>> ui_arva
   bool _isLoading = false;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
 
-<<<<<<< HEAD
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
-      setState(() {
-        _simImageBytes = bytes;
-      });
-=======
   @override
   void initState() {
     super.initState();
@@ -122,18 +104,13 @@ class _DaftarPageState extends State<DaftarPage>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error ambil foto SIM: $e")),
       );
->>>>>>> ui_arva
     }
   }
 
   /// 🔑 Proses daftar user (punya kamu tetap sama)
   Future<void> _daftarUser() async {
     try {
-<<<<<<< HEAD
-      if (_simImageBytes == null) {
-=======
       if (_simBytes == null) {
->>>>>>> ui_arva
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Foto SIM dulu sebelum daftar")),
         );
@@ -148,11 +125,7 @@ class _DaftarPageState extends State<DaftarPage>
       final simPath = "sim/$simFileName";
       await supabase.storage.from("siswa").uploadBinary(
         simPath,
-<<<<<<< HEAD
-        _simImageBytes!,
-=======
         _simBytes!,
->>>>>>> ui_arva
         fileOptions: const FileOptions(contentType: "image/jpeg"),
       );
       final simUrl = supabase.storage.from("siswa").getPublicUrl(simPath);
@@ -166,33 +139,13 @@ class _DaftarPageState extends State<DaftarPage>
         "sim_url": simUrl,
       });
 
-<<<<<<< HEAD
-      // 3. Generate QR with white background and padding
-      final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder);
-      const qrSize = 300.0;
-      const padding = 10.0;
-      const totalSize = qrSize + 2 * padding;
-
-      // Draw white background
-      final paint = Paint()..color = Colors.white;
-      canvas.drawRect(Rect.fromLTWH(0, 0, totalSize, totalSize), paint);
-
-      // Draw QR code with padding
-      canvas.save();
-      canvas.translate(padding, padding);
-=======
->>>>>>> ui_arva
       final qrPainter = QrPainter(
         data: id,
         version: QrVersions.auto,
         gapless: true,
       );
-      qrPainter.paint(canvas, Size(qrSize, qrSize));
-      canvas.restore();
 
-      final picture = recorder.endRecording();
-      final uiImage = await picture.toImage(totalSize.toInt(), totalSize.toInt());
+      final uiImage = await qrPainter.toImage(300);
       final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List qrBytes = byteData!.buffer.asUint8List();
 
@@ -294,39 +247,6 @@ class _DaftarPageState extends State<DaftarPage>
                       color: Colors.white.withOpacity(0.15),
                     ),
                   ),
-<<<<<<< HEAD
-                  const SizedBox(height: 20),
-                  _buildTextField(namaC, "Nama", Icons.person),
-                  const SizedBox(height: 12),
-                  _buildTextField(kelasC, "Kelas", Icons.class_),
-                  const SizedBox(height: 12),
-                  _buildTextField(jurusanC, "Jurusan", Icons.school),
-                  const SizedBox(height: 12),
-                  _buildTextField(emailC, "Email", Icons.email,
-                      keyboardType: TextInputType.emailAddress),
-                  const SizedBox(height: 12),
-
-                  // Tombol upload SIM
-                  GestureDetector(
-                    onTap: _pickSimImage,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: Colors.grey.shade400),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.credit_card, color: Colors.grey),
-                          const SizedBox(width: 10),
-                          Text(
-                            _simImageBytes == null
-                                ? "Upload Kartu SIM"
-                                : "SIM dipilih",
-                            style: const TextStyle(color: Colors.black54),
-=======
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
                     child: Column(
@@ -339,7 +259,6 @@ class _DaftarPageState extends State<DaftarPage>
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
->>>>>>> ui_arva
                           ),
                         ),
                         const SizedBox(height: 6),
