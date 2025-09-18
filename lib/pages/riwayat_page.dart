@@ -13,6 +13,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
   final supabase = Supabase.instance.client;
   bool _loading = false;
   List<Map<String, dynamic>> _rows = [];
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -54,7 +55,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
   DateTime startOfDay(DateTime t) => DateTime(t.year, t.month, t.day);
 
-  String formatTime(DateTime t) => DateFormat('dd MMM yyyy HH:mm').format(t);
+  String formatTime(DateTime t) =>
+      DateFormat('dd MMM yyyy HH:mm').format(t);
 
   Map<String, List<Map<String, dynamic>>> groupRows() {
     final Map<String, List<Map<String, dynamic>>> groups = {
@@ -99,105 +101,63 @@ class _RiwayatPageState extends State<RiwayatPage> {
     final displayOrder = ['Today', 'Yesterday', 'Last 7 Days', 'Last Month'];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Riwayat Parkir"),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        titleTextStyle: const TextStyle(
-            color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold) 
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: RefreshIndicator(
-          onRefresh: fetchRiwayat,
-          child: _loading
-              ? const Center(child: CircularProgressIndicator(color: Colors.white))
-              : _rows.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 150),
-                        Center(
-                          child: Text(
-                            'Belum ada riwayat parkir',
-                            style: TextStyle(color: Colors.white70, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    )
-                  : ListView(
-                      children: [
-                        for (final key in displayOrder)
-                          if ((grouped[key]?.isNotEmpty ?? false))
-                            Theme(
-                              data: Theme.of(context).copyWith(
-                                dividerColor: Colors.transparent,
-                                unselectedWidgetColor: Colors.white70,
-                              ),
-                              child: ExpansionTile(
-                                initiallyExpanded: key == 'Today',
-                                title: Text(
-                                  key,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                children: grouped[key]!.map((r) {
-                                  final siswa =
-                                      (r['siswa'] ?? {}) as Map<String, dynamic>;
-                                  final nama = siswa['nama'] ?? '—';
-                                  final kelas = siswa['kelas'] ?? '—';
-                                  final createdAt =
-                                      DateTime.parse(r['created_at']).toLocal();
-
-                                  return Card(
-                                    color: Colors.white.withOpacity(0.1),
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: ListTile(
-                                      leading: const Icon(Icons.person,
-                                          color: Colors.white70),
-                                      title: Text(
-                                        nama,
-                                        style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600),
+      appBar: AppBar(title: const Text('Riwayat Parkir')),
+      body: RefreshIndicator(
+        onRefresh: fetchRiwayat,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _rows.isEmpty
+                ? ListView(
+                    // make pull-to-refresh possible when empty
+                    children: const [
+                      SizedBox(height: 150),
+                      Center(child: Text('Belum ada riwayat parkir')),
+                    ],
+                  )
+                : ListView(
+                    children: [
+                      for (final key in displayOrder)
+                        if ((grouped[key]?.isNotEmpty ?? false))
+                          ExpansionTile(
+                            initiallyExpanded: key == 'Today',
+                            title: Text(key),
+                            children: grouped[key]!.map((r) {
+                              final siswa = (r['siswa'] ?? {}) as Map<String, dynamic>;
+                              final nama = siswa['nama'] ?? '—';
+                              final kelas = siswa['kelas'] ?? '—';
+                              final createdAt = DateTime.parse(r['created_at']).toLocal();
+                              return ListTile(
+                                title: Text(nama),
+                                subtitle: Text('Kelas: $kelas'),
+                                trailing: Text(formatTime(createdAt)),
+                                onTap: () {
+                                  // optional: show details or open profile
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: Text(nama),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Kelas: $kelas'),
+                                          Text('Waktu: ${formatTime(createdAt)}'),
+                                        ],
                                       ),
-                                      subtitle: Text(
-                                        "Kelas: $kelas",
-                                        style: const TextStyle(color: Colors.white70),
-                                      ),
-                                      trailing: Text(
-                                        formatTime(createdAt),
-                                        style: const TextStyle(
-                                            color: Colors.white70, fontSize: 12),
-                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context),
+                                          child: const Text('OK'),
+                                        )
+                                      ],
                                     ),
                                   );
-                                }).toList(),
-                              ),
-                            ),
-                      ],
-                    ),
-        ),
+                                },
+                              );
+                            }).toList(),
+                          ),
+                    ],
+                  ),
       ),
     );
   }
