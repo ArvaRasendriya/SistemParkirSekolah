@@ -1,5 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -26,7 +29,7 @@ class _DaftarPageState extends State<DaftarPage>
   final jurusanC = TextEditingController();
   final emailC = TextEditingController();
 
-  Uint8List? _simBytes;
+  File? _simImage;
   bool _isLoading = false;
 
   late AnimationController _animController;
@@ -61,22 +64,16 @@ class _DaftarPageState extends State<DaftarPage>
         imageQuality: 85,
       );
 
-      if (picked != null) {
-        final bytes = await picked.readAsBytes();
-        setState(() {
-          _simBytes = bytes;
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal ambil foto SIM: $e")),
-      );
+    if (picked != null) {
+      setState(() {
+        _simImage = File(picked.path);
+      });
     }
   }
 
   Future<void> _daftarUser() async {
     try {
-      if (_simBytes == null) {
+      if (_simImage == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Foto SIM dulu sebelum daftar")),
         );
@@ -89,11 +86,7 @@ class _DaftarPageState extends State<DaftarPage>
 
       final simFileName = "${DateTime.now().millisecondsSinceEpoch}.jpg";
       final simPath = "sim/$simFileName";
-      await supabase.storage.from("siswa").uploadBinary(
-        simPath,
-        _simBytes!,
-        fileOptions: const FileOptions(contentType: "image/jpeg"),
-      );
+      await supabase.storage.from("siswa").upload(simPath, _simImage!);
       final simUrl = supabase.storage.from("siswa").getPublicUrl(simPath);
 
       await supabase.from("siswa").insert({
@@ -105,13 +98,17 @@ class _DaftarPageState extends State<DaftarPage>
         "sim_url": simUrl,
       });
 
+      // 3. Generate QR
       final qrPainter = QrPainter(
         data: id,
         version: QrVersions.auto,
         gapless: true,
       );
+      qrPainter.paint(canvas, Size(qrSize, qrSize));
+      canvas.restore();
 
-      final uiImage = await qrPainter.toImage(300);
+      final picture = recorder.endRecording();
+      final uiImage = await picture.toImage(totalSize.toInt(), totalSize.toInt());
       final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List qrBytes = byteData!.buffer.asUint8List();
 
@@ -253,51 +250,31 @@ class _DaftarPageState extends State<DaftarPage>
 
                         const SizedBox(height: 20),
 
-                        // Foto SIM
-                        GestureDetector(
-                          onTap: _pickSimImage,
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.25),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.camera_alt_rounded,
-                                    color: _simBytes == null
-                                        ? Colors.white70
-                                        : Colors.greenAccent),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _simBytes == null
-                                        ? "Foto SIM"
-                                        : "SIM berhasil difoto",
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                if (_simBytes != null)
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.memory(
-                                      _simBytes!,
-                                      width: 60,
-                                      height: 40,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                  // Tombol upload SIM
+                  GestureDetector(
+                    onTap: _pickSimImage,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Colors.grey.shade400),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.credit_card, color: Colors.grey),
+                          const SizedBox(width: 10),
+                          Text(
+                            _simImage == null
+                                ? "Upload Kartu SIM"
+                                : "SIM dipilih",
+                            style: const TextStyle(color: Colors.black54),
                           ),
-                        ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                         const SizedBox(height: 32),
 
