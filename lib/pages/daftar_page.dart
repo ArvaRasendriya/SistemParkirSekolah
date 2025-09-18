@@ -1,7 +1,10 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:io' show Platform; // 👈 untuk cek Android/iOS
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:camera/camera.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -52,28 +55,59 @@ class _DaftarPageState extends State<DaftarPage>
     super.dispose();
   }
 
+  /// 🔑 Hybrid function ambil foto SIM
   Future<void> _pickSimImage() async {
     try {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(
-        source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.rear,
-        imageQuality: 85,
-      );
+      Uint8List? bytes;
 
-      if (picked != null) {
-        final bytes = await picked.readAsBytes();
-        setState(() {
-          _simBytes = bytes;
-        });
+      if (kIsWeb) {
+        // 👉 Mode Web pakai camera
+        final cameras = await availableCameras();
+        final controller = CameraController(
+          cameras.first,
+          ResolutionPreset.medium,
+        );
+        await controller.initialize();
+
+        final picture = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => _CameraCapturePage(controller: controller),
+          ),
+        );
+
+        controller.dispose();
+        if (picture != null) {
+          bytes = await picture.readAsBytes();
+        }
+      } else if (Platform.isAndroid || Platform.isIOS) {
+        // 👉 Mode Mobile pakai image_picker
+        final picker = ImagePicker();
+        final picked = await picker.pickImage(
+          source: ImageSource.camera,
+          preferredCameraDevice: CameraDevice.rear,
+          imageQuality: 85,
+        );
+        if (picked != null) {
+          bytes = await picked.readAsBytes();
+        }
+      }
+
+      if (bytes != null) {
+        setState(() => _simBytes = bytes);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gagal ambil foto SIM")),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal ambil foto SIM: $e")),
+        SnackBar(content: Text("Error ambil foto SIM: $e")),
       );
     }
   }
 
+  /// 🔑 Proses daftar user (punya kamu tetap sama)
   Future<void> _daftarUser() async {
     try {
       if (_simBytes == null) {
@@ -364,6 +398,27 @@ class _DaftarPageState extends State<DaftarPage>
           borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(color: Colors.white, width: 1.5),
         ),
+      ),
+    );
+  }
+}
+
+/// 👇 Halaman kamera khusus Web
+class _CameraCapturePage extends StatelessWidget {
+  final CameraController controller;
+  const _CameraCapturePage({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Ambil Foto SIM")),
+      body: CameraPreview(controller),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.camera_alt),
+        onPressed: () async {
+          final picture = await controller.takePicture();
+          Navigator.pop(context, picture);
+        },
       ),
     );
   }
