@@ -136,4 +136,19 @@ class AuthService {
       rethrow;
     }
   }
+
+  // Get all satgas accounts (approved and pending)
+  Future<List<Map<String, dynamic>>> getSatgasAccounts() async {
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select('id, email, full_name, role, status, created_at')
+          .eq('role', 'satgas')
+          .order('created_at', ascending: false);
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('Error fetching satgas accounts: $e');
+      return [];
+    }
+  }
 }

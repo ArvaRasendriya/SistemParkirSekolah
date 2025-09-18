@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'riwayat_page.dart';
 import 'qr_scan_page.dart';
 import 'daftar_page.dart';
-import 'admin_approval_page.dart';
+import 'admin_dashboard_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -34,6 +34,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void logout() async {
     await authService.signOut();
+    // After sign out, navigate to login page and clear navigation stack
+    if (mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    }
   }
 
   Future<void> fetchTodayHistory() async {
@@ -95,11 +99,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const AdminApprovalPage()),
+                      MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
                     );
                   },
                   icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
-                  tooltip: 'Admin Approvals',
+                  tooltip: 'Admin Dashboard',
                 );
               }
               return const SizedBox.shrink();
