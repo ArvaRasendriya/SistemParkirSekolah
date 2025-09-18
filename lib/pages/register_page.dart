@@ -30,7 +30,12 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      await authservice.signUpWithEmailPassword(email, password);
+      final response = await authservice.signUpWithEmailPassword(email, password);
+      final user = response.user;
+      if (user != null) {
+        // Create profile with pending status after successful sign up
+        await authservice.createProfile(user.id, email);
+      }
       Navigator.pop(context);
     } catch (e) {
       if (mounted) {

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'riwayat_page.dart';
 import 'qr_scan_page.dart';
 import 'daftar_page.dart';
+import 'admin_approval_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -86,6 +87,24 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text("",
             style: TextStyle(color: Colors.white)),
         actions: [
+          FutureBuilder<String?>(
+            future: authService.getUserRole(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data == 'admin') {
+                return IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AdminApprovalPage()),
+                    );
+                  },
+                  icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                  tooltip: 'Admin Approvals',
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           IconButton(
             onPressed: logout,
             icon: const Icon(Icons.logout, color: Colors.white),
@@ -119,7 +138,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             "Nama: Aditya Braja Mustika",
                             style: TextStyle(color: Colors.white, fontSize: 14),
@@ -128,9 +147,61 @@ class _ProfilePageState extends State<ProfilePage> {
                             "Kelas: XII RPL 3",
                             style: TextStyle(color: Colors.white, fontSize: 14),
                           ),
-                          Text(
-                            "Status: Anggota satgas",
-                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              FutureBuilder<String?>(
+                                future: authService.getUserRole(),
+                                builder: (context, snapshot) {
+                                  String roleText = "Status: Loading...";
+                                  if (snapshot.connectionState == ConnectionState.done) {
+                                    if (snapshot.hasData && snapshot.data != null) {
+                                      final role = snapshot.data!;
+                                      if (role == 'admin') {
+                                        roleText = "Status: Admin";
+                                      } else if (role == 'satgas') {
+                                        roleText = "Status: Anggota satgas";
+                                      } else {
+                                        roleText = "Status: $role";
+                                      }
+                                    } else {
+                                      roleText = "Status: Unknown";
+                                    }
+                                  }
+                                  return Text(
+                                    roleText,
+                                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 4),
+                              FutureBuilder<String?>(
+                                future: authService.getUserStatus(),
+                                builder: (context, snapshot) {
+                                  String statusText = "";
+                                  Color statusColor = Colors.white;
+                                  if (snapshot.connectionState == ConnectionState.done) {
+                                    if (snapshot.hasData && snapshot.data != null) {
+                                      final status = snapshot.data!;
+                                      if (status == 'approved') {
+                                        statusText = "Account: Approved";
+                                        statusColor = Colors.green;
+                                      } else if (status == 'pending') {
+                                        statusText = "Account: Pending Approval";
+                                        statusColor = Colors.orange;
+                                      } else if (status == 'rejected') {
+                                        statusText = "Account: Rejected";
+                                        statusColor = Colors.red;
+                                      }
+                                    }
+                                  }
+                                  return Text(
+                                    statusText,
+                                    style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold),
+                                  );
+                                },
+                              ),
+                            ],
                           ),
                           SizedBox(height: 4),
                           Row(
