@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'riwayat_page.dart';
 import 'qr_scan_page.dart';
 import 'daftar_page.dart';
+import 'admin_approval_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -78,6 +79,24 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text("",
             style: TextStyle(color: Colors.white)),
         actions: [
+          FutureBuilder<String?>(
+            future: authService.getUserRole(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data == 'admin') {
+                return IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AdminApprovalPage()),
+                    );
+                  },
+                  icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                  tooltip: 'Admin Approvals',
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           IconButton(
             onPressed: logout,
             icon: const Icon(Icons.logout, color: Colors.white),
@@ -88,58 +107,58 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           Text(currentEmail.toString()),
 
-          // Kartu profil
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue[900],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.person, size: 40, color: Colors.grey),
+              // Kartu profil
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue[900],
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        "Nama: Aditya Braja Mustika",
-                        style: TextStyle(color: Colors.white, fontSize: 14),
-                      ),
-                      Text(
-                        "Kelas: XII RPL 3",
-                        style: TextStyle(color: Colors.white, fontSize: 14),
-                      ),
-                      Text(
-                        "Status: Anggota satgas",
-                        style: TextStyle(color: Colors.white, fontSize: 14),
-                      ),
-                      SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 28,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.person, size: 40, color: Colors.grey),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
                           Text(
-                            "Jadwal Piket",
-                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                            "Nama: Aditya Braja Mustika",
+                            style: TextStyle(color: Colors.white, fontSize: 14),
                           ),
                           Text(
-                            "Senin 04-08-2025",
-                            style: TextStyle(color: Colors.white, fontSize: 12),
+                            "Kelas: XII RPL 3",
+                            style: TextStyle(color: Colors.white, fontSize: 14),
                           ),
+                          Text(
+                            "Status: Anggota satgas",
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                          SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Jadwal Piket",
+                                style: TextStyle(color: Colors.white70, fontSize: 12),
+                              ),
+                              Text(
+                                "Senin 04-08-2025",
+                                style: TextStyle(color: Colors.white, fontSize: 12),
+                              ),
+                            ],
+                          )
                         ],
-                      )
-                    ],
-                  ),
-                )
-              ],
-            ),
-          ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
 
           // Riwayat Absensi
           Container(
