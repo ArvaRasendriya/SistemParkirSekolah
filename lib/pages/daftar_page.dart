@@ -25,6 +25,18 @@ class _DaftarPageState extends State<DaftarPage> {
   final jurusanC = TextEditingController();
   final emailC = TextEditingController();
 
+  // Dropdown values for kelas
+  String? _selectedGrade;
+  String? _selectedMajor;
+  String? _selectedClass;
+  String? _selectedJurusan;
+
+  // Dropdown options
+  static const List<String> grades = ['X', 'XI', 'XII'];
+  static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ'];
+  static const List<String> classes = ['1', '2', '3', '4', '5', '6'];
+  static const List<String> jurusans = ['Rekayasa Perangkat Lunak', 'Desain Komunikasi Visual', 'Teknik Otomotif Industri', 'Teknik Audio Video', 'Teknik Komputer Jaringan'];
+
   Uint8List? _simImageBytes;
   bool _isLoading = false;
 
@@ -46,6 +58,26 @@ class _DaftarPageState extends State<DaftarPage> {
       if (_simImageBytes == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Pilih foto SIM dulu")),
+        );
+        return;
+      }
+
+      // Set kelas from dropdowns
+      if (_selectedGrade != null && _selectedMajor != null && _selectedClass != null) {
+        kelasC.text = '$_selectedGrade $_selectedMajor $_selectedClass';
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Pilih kelas lengkap")),
+        );
+        return;
+      }
+
+      // Set jurusan from dropdown
+      if (_selectedJurusan != null) {
+        jurusanC.text = _selectedJurusan!;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Pilih jurusan")),
         );
         return;
       }
@@ -190,9 +222,117 @@ class _DaftarPageState extends State<DaftarPage> {
                   const SizedBox(height: 20),
                   _buildTextField(namaC, "Nama", Icons.person),
                   const SizedBox(height: 12),
-                  _buildTextField(kelasC, "Kelas", Icons.class_),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedGrade,
+                          hint: const Text('Grade'),
+                          items: grades.map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedGrade = newValue;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedMajor,
+                          hint: const Text('Major'),
+                          items: majors.map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedMajor = newValue;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedClass,
+                          hint: const Text('Class'),
+                          items: classes.map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedClass = newValue;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
-                  _buildTextField(jurusanC, "Jurusan", Icons.school),
+
+                  DropdownButtonFormField<String>(
+                    value: _selectedJurusan,
+                    hint: const Text('Jurusan'),
+                    items: jurusans.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedJurusan = newValue;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   _buildTextField(emailC, "Email", Icons.email,
                       keyboardType: TextInputType.emailAddress),

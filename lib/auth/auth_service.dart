@@ -89,13 +89,16 @@ class AuthService {
   }
 
   // Create profile with pending status
-  Future<void> createProfile(String userId, String email, {String role = 'satgas'}) async {
+  Future<void> createProfile(String userId, String email, {String role = 'satgas', String? full_name, String? kelas, String? jurusan}) async {
     try {
       await _supabase.from('profiles').upsert({
         'id': userId,
         'email': email,
         'role': role,
         'status': 'pending',
+        'full_name': full_name,
+        'kelas': kelas,
+        'jurusan': jurusan,
       });
     } catch (e) {
       debugPrint('Error creating profile: $e');
