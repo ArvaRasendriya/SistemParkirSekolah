@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'riwayat_page.dart';
 import 'qr_scan_page.dart';
 import 'daftar_page.dart';
+import 'login_page.dart'; // pastikan ada file login_page.dart
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -25,6 +26,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void logout() async {
     await authService.signOut();
+
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   Future<void> fetchTodayHistory() async {
@@ -47,16 +55,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentEmail = authService.getCurrentUserEmail();
-
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0F2027), // hitam kebiruan
-              Color(0xFF203A43), // biru gelap
-              Color(0xFF2C5364), // abu kebiruan
+              Color(0xFF0F2027),
+              Color(0xFF203A43),
+              Color(0xFF2C5364),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -69,12 +75,8 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () {},
-                    ),
                     IconButton(
                       onPressed: logout,
                       icon: const Icon(Icons.logout, color: Colors.white),
@@ -84,21 +86,12 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
 
-            // Email User
-            Text(
-              currentEmail.toString(),
-              style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w300),
-            ),
-
             // Card Profile
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1), // efek kaca
+                color: Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: Colors.white.withOpacity(0.2)),
                 boxShadow: [

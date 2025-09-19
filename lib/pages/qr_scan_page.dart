@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:audioplayers/audioplayers.dart'; // 🔵 tambahan
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart'; // ✅ untuk kIsWeb
 import 'dart:async';
 import 'qr_result_page.dart';
 
@@ -16,10 +17,10 @@ class _QrScanPageState extends State<QrScanPage>
     with TickerProviderStateMixin {
   bool isProcessing = false;
   bool torchOn = false;
-  bool showCircle = false; // 🔵 animasi lingkaran
+  bool showCircle = false;
   final supabase = Supabase.instance.client;
   final MobileScannerController cameraController = MobileScannerController();
-  final AudioPlayer _audioPlayer = AudioPlayer(); // 🔵 player suara beep
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   late AnimationController _lineController;
   late Animation<double> _lineAnimation;
@@ -57,8 +58,16 @@ class _QrScanPageState extends State<QrScanPage>
     _lineController.dispose();
     _textController.dispose();
     cameraController.dispose();
-    _audioPlayer.dispose(); // 🔵 dispose audio
+    _audioPlayer.dispose();
     super.dispose();
+  }
+
+  Future<void> _playBeep() async {
+    if (kIsWeb) {
+      await _audioPlayer.play(UrlSource("assets/sounds/beep.mp3"));
+    } else {
+      await _audioPlayer.play(AssetSource("sounds/beep.mp3"));
+    }
   }
 
   Future<void> _fetchUserAndNavigate(String userId) async {
@@ -121,13 +130,14 @@ class _QrScanPageState extends State<QrScanPage>
     if (code != null) {
       setState(() => isProcessing = true);
 
-      // 🔵 Tampilkan lingkaran + delay
       setState(() => showCircle = true);
-      await _audioPlayer.play(AssetSource("sounds/beep.mp3")); // ✅ sesuai path
+      await _playBeep();
       await Future.delayed(const Duration(milliseconds: 600));
 
       setState(() => showCircle = false);
       await _fetchUserAndNavigate(code);
+
+      setState(() => isProcessing = false);
     }
   }
 
@@ -148,10 +158,13 @@ class _QrScanPageState extends State<QrScanPage>
         ),
         child: Stack(
           children: [
-            // Kamera scanner
-            MobileScanner(
-              controller: cameraController,
-              onDetect: _onDetect,
+            // Kamera scanner full screen
+            Positioned.fill(
+              child: MobileScanner(
+                controller: cameraController,
+                onDetect: _onDetect,
+                fit: BoxFit.cover, // ✅ biar ga kepotong
+              ),
             ),
 
             // Tombol flashlight
@@ -212,68 +225,70 @@ class _QrScanPageState extends State<QrScanPage>
                 ),
                 const SizedBox(height: 16),
 
-                // Kotak QR
-                SizedBox(
-                  height: 300,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                        width: 250,
-                        height: 250,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color: Colors.cyanAccent.withOpacity(0.9),
-                              width: 3),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.cyanAccent.withOpacity(0.5),
-                              blurRadius: 25,
-                              spreadRadius: 2,
-                            )
-                          ],
-                        ),
-                      ),
-
-                      // garis scan
-                      AnimatedBuilder(
-                        animation: _lineAnimation,
-                        builder: (context, child) {
-                          return Positioned(
-                            top: 40 + (180 * _lineAnimation.value),
-                            left: MediaQuery.of(context).size.width / 2 - 125,
-                            child: Container(
-                              width: 250,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Colors.cyanAccent, Colors.white],
-                                ),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-
-                      // 🔵 Lingkaran animasi ketika berhasil scan
-                      if (showCircle)
-                        AnimatedScale(
-                          scale: showCircle ? 1.5 : 0,
-                          duration: const Duration(milliseconds: 500),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.cyanAccent,
-                            ),
+                // Kotak QR (selalu center, tidak kepotong)
+                Center(
+                  child: SizedBox(
+                    height: 300,
+                    width: 300,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: Colors.cyanAccent.withOpacity(0.9),
+                                width: 3),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.cyanAccent.withOpacity(0.5),
+                                blurRadius: 25,
+                                spreadRadius: 2,
+                              )
+                            ],
                           ),
                         ),
-                    ],
+
+                        // garis scan
+                        AnimatedBuilder(
+                          animation: _lineAnimation,
+                          builder: (context, child) {
+                            return Positioned(
+                              top: 300 * _lineAnimation.value,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Colors.cyanAccent, Colors.white],
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+
+                        // lingkaran animasi ketika berhasil scan
+                        if (showCircle)
+                          AnimatedScale(
+                            scale: showCircle ? 1.5 : 0,
+                            duration: const Duration(milliseconds: 500),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.cyanAccent,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
+
                 const Spacer(),
 
                 // Tombol kembali
