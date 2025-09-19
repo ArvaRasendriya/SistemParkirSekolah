@@ -13,7 +13,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
   final supabase = Supabase.instance.client;
   bool _loading = false;
   List<Map<String, dynamic>> _rows = [];
-  String _searchQuery = '';
 
   @override
   void initState() {
@@ -55,8 +54,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
   DateTime startOfDay(DateTime t) => DateTime(t.year, t.month, t.day);
 
-  String formatTime(DateTime t) =>
-      DateFormat('dd MMM yyyy HH:mm').format(t);
+  String formatTime(DateTime t) => DateFormat('dd MMM yyyy HH:mm').format(t);
 
   Map<String, List<Map<String, dynamic>>> groupRows() {
     final Map<String, List<Map<String, dynamic>>> groups = {
@@ -102,204 +100,113 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Riwayat Parkir',
-          style: TextStyle(color: Colors.white),
+        title: const Text("Riwayat Parkir"),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
         ),
-        backgroundColor: const Color(0xFF2193b0), // Ocean Breeze Start
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context); // balik ke Homepage
-          },
-        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: const TextStyle(
+            color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
       ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF2193b0), // biru lautan
-              Color(0xFF6dd5ed)  // langit cerah
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
-        child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: fetchRiwayat,
-            child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: Colors.white))
-                : Column(
-                    children: [
-                      // 🔍 Search Box
-                      Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: TextField(
-                          onChanged: (value) {
-                            setState(() {
-                              _searchQuery = value.toLowerCase();
-                            });
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'Cari berdasarkan nama atau kelas...',
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.9),
-                            prefixIcon: const Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
+        child: RefreshIndicator(
+          onRefresh: fetchRiwayat,
+          child: _loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white))
+              : _rows.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 150),
+                        Center(
+                          child: Text(
+                            'Belum ada riwayat parkir',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 16),
                           ),
                         ),
-                      ),
+                      ],
+                    )
+                  : ListView(
+                      children: [
+                        for (final key in displayOrder)
+                          if ((grouped[key]?.isNotEmpty ?? false))
+                            Theme(
+                              data: Theme.of(context).copyWith(
+                                dividerColor: Colors.transparent,
+                                unselectedWidgetColor: Colors.white70,
+                              ),
+                              child: ExpansionTile(
+                                initiallyExpanded: key == 'Today',
+                                iconColor: Colors.white, // warna panah terbuka
+                                collapsedIconColor:
+                                    Colors.white, // warna panah tertutup
+                                title: Text(
+                                  key,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                children: grouped[key]!.map((r) {
+                                  final siswa =
+                                      (r['siswa'] ?? {}) as Map<String, dynamic>;
+                                  final nama = siswa['nama'] ?? '—';
+                                  final kelas = siswa['kelas'] ?? '—';
+                                  final createdAt =
+                                      DateTime.parse(r['created_at']).toLocal();
 
-                      // List Data
-                      Expanded(
-                        child: _rows.isEmpty
-                            ? ListView(
-                                children: const [
-                                  SizedBox(height: 150),
-                                  Center(
-                                    child: Text(
-                                      'Belum ada riwayat parkir',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
+                                  return Card(
+                                    color: Colors.white.withOpacity(0.1),
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: ListTile(
+                                      leading: const Icon(Icons.person,
+                                          color: Colors.white70),
+                                      title: Text(
+                                        nama,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        "Kelas: $kelas",
+                                        style: const TextStyle(
+                                            color: Colors.white70),
+                                      ),
+                                      trailing: Text(
+                                        formatTime(createdAt),
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              )
-                            : ListView(
-                                padding: const EdgeInsets.all(12),
-                                children: [
-                                  for (final key in displayOrder)
-                                    if ((grouped[key]?.isNotEmpty ?? false))
-                                      Card(
-                                        color: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                        ),
-                                        margin: const EdgeInsets.symmetric(
-                                            vertical: 6),
-                                        elevation: 4,
-                                        child: ExpansionTile(
-                                          collapsedIconColor:
-                                              const Color(0xFF2193b0),
-                                          iconColor: const Color(0xFF2193b0),
-                                          title: Text(
-                                            key,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF2193b0),
-                                            ),
-                                          ),
-                                          children: grouped[key]!
-                                              .where((r) {
-                                                final siswa =
-                                                    (r['siswa'] ?? {})
-                                                        as Map<String, dynamic>;
-                                                final nama = (siswa['nama'] ??
-                                                        '—')
-                                                    .toString()
-                                                    .toLowerCase();
-                                                final kelas = (siswa['kelas'] ??
-                                                        '—')
-                                                    .toString()
-                                                    .toLowerCase();
-                                                return nama.contains(
-                                                        _searchQuery) ||
-                                                    kelas.contains(
-                                                        _searchQuery);
-                                              })
-                                              .map((r) {
-                                                final siswa =
-                                                    (r['siswa'] ?? {}) as Map<
-                                                        String, dynamic>;
-                                                final nama =
-                                                    siswa['nama'] ?? '—';
-                                                final kelas =
-                                                    siswa['kelas'] ?? '—';
-                                                final createdAt =
-                                                    DateTime.parse(
-                                                            r['created_at'])
-                                                        .toLocal();
-                                                return ListTile(
-                                                  leading: CircleAvatar(
-                                                    backgroundColor:
-                                                        const Color(
-                                                            0xFF2193b0),
-                                                    child: Text(
-                                                      nama.isNotEmpty
-                                                          ? nama[0]
-                                                          : '?',
-                                                      style: const TextStyle(
-                                                          color:
-                                                              Colors.white),
-                                                    ),
-                                                  ),
-                                                  title: Text(
-                                                    nama,
-                                                    style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                  subtitle: Text(
-                                                      'Kelas: $kelas'),
-                                                  trailing: Text(
-                                                    formatTime(createdAt),
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                                  onTap: () {
-                                                    showDialog(
-                                                      context: context,
-                                                      builder: (_) =>
-                                                          AlertDialog(
-                                                        title: Text(nama),
-                                                        content: Column(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Text(
-                                                                'Kelas: $kelas'),
-                                                            Text(
-                                                                'Waktu: ${formatTime(createdAt)}'),
-                                                          ],
-                                                        ),
-                                                        actions: [
-                                                          TextButton(
-                                                            onPressed: () =>
-                                                                Navigator.pop(
-                                                                    context),
-                                                            child: const Text(
-                                                                'OK'),
-                                                          )
-                                                        ],
-                                                      ),
-                                                    );
-                                                  },
-                                                );
-                                              })
-                                              .toList(),
-                                        ),
-                                      ),
-                                ],
+                                  );
+                                }).toList(),
                               ),
-                      ),
-                    ],
-                  ),
-          ),
+                            ),
+                      ],
+                    ),
         ),
       ),
     );

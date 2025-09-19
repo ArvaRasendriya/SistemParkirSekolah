@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:audioplayers/audioplayers.dart'; // 🔵 tambahan
+import 'dart:async';
 import 'qr_result_page.dart';
 
 class QrScanPage extends StatefulWidget {
@@ -14,8 +16,10 @@ class _QrScanPageState extends State<QrScanPage>
     with TickerProviderStateMixin {
   bool isProcessing = false;
   bool torchOn = false;
+  bool showCircle = false; // 🔵 animasi lingkaran
   final supabase = Supabase.instance.client;
   final MobileScannerController cameraController = MobileScannerController();
+  final AudioPlayer _audioPlayer = AudioPlayer(); // 🔵 player suara beep
 
   late AnimationController _lineController;
   late Animation<double> _lineAnimation;
@@ -53,6 +57,7 @@ class _QrScanPageState extends State<QrScanPage>
     _lineController.dispose();
     _textController.dispose();
     cameraController.dispose();
+    _audioPlayer.dispose(); // 🔵 dispose audio
     super.dispose();
   }
 
@@ -115,6 +120,13 @@ class _QrScanPageState extends State<QrScanPage>
     final code = capture.barcodes.first.rawValue;
     if (code != null) {
       setState(() => isProcessing = true);
+
+      // 🔵 Tampilkan lingkaran + delay
+      setState(() => showCircle = true);
+      await _audioPlayer.play(AssetSource("sounds/beep.mp3")); // ✅ sesuai path
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      setState(() => showCircle = false);
       await _fetchUserAndNavigate(code);
     }
   }
@@ -126,9 +138,9 @@ class _QrScanPageState extends State<QrScanPage>
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0F2027), // hitam kebiruan
-              Color(0xFF203A43), // biru gelap
-              Color(0xFF2C5364), // abu kebiruan
+              Color(0xFF0F2027),
+              Color(0xFF203A43),
+              Color(0xFF2C5364),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -142,7 +154,7 @@ class _QrScanPageState extends State<QrScanPage>
               onDetect: _onDetect,
             ),
 
-            // Tombol flashlight dengan animasi
+            // Tombol flashlight
             Positioned(
               top: 40,
               right: 20,
@@ -165,14 +177,14 @@ class _QrScanPageState extends State<QrScanPage>
               ),
             ),
 
-            // Overlay kotak scan + teks ZON4
+            // Overlay kotak scan + teks
             Column(
               children: [
                 const Spacer(),
 
-                // Teks ZON4 dengan animasi pulse
+                // Teks ZON4
                 SizedBox(
-                  width: 250, // sama dengan lebar kotak QR
+                  width: 250,
                   child: AnimatedBuilder(
                     animation: _textAnimation,
                     builder: (context, child) {
@@ -204,26 +216,27 @@ class _QrScanPageState extends State<QrScanPage>
                 SizedBox(
                   height: 300,
                   child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Center(
-                        child: Container(
-                          width: 250,
-                          height: 250,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: Colors.cyanAccent.withOpacity(0.9),
-                                width: 3),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.cyanAccent.withOpacity(0.5),
-                                blurRadius: 25,
-                                spreadRadius: 2,
-                              )
-                            ],
-                          ),
+                      Container(
+                        width: 250,
+                        height: 250,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              color: Colors.cyanAccent.withOpacity(0.9),
+                              width: 3),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.cyanAccent.withOpacity(0.5),
+                              blurRadius: 25,
+                              spreadRadius: 2,
+                            )
+                          ],
                         ),
                       ),
+
+                      // garis scan
                       AnimatedBuilder(
                         animation: _lineAnimation,
                         builder: (context, child) {
@@ -243,6 +256,21 @@ class _QrScanPageState extends State<QrScanPage>
                           );
                         },
                       ),
+
+                      // 🔵 Lingkaran animasi ketika berhasil scan
+                      if (showCircle)
+                        AnimatedScale(
+                          scale: showCircle ? 1.5 : 0,
+                          duration: const Duration(milliseconds: 500),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.cyanAccent,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -263,7 +291,7 @@ class _QrScanPageState extends State<QrScanPage>
                       elevation: 6,
                     ),
                     onPressed: () {
-                      Navigator.pop(context); // kembali ke halaman sebelumnya
+                      Navigator.pop(context);
                     },
                     child: const Text(
                       "KEMBALI",
