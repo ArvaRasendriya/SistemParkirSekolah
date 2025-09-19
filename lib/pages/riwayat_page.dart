@@ -13,6 +13,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
   final supabase = Supabase.instance.client;
   bool _loading = false;
   List<Map<String, dynamic>> _rows = [];
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -124,89 +125,153 @@ class _RiwayatPageState extends State<RiwayatPage> {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: RefreshIndicator(
-          onRefresh: fetchRiwayat,
-          child: _loading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white))
-              : _rows.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 150),
-                        Center(
-                          child: Text(
-                            'Belum ada riwayat parkir',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 16),
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: fetchRiwayat,
+            child: _loading
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.white))
+                : Column(
+                    children: [
+                      // 🔍 Search box
+                      Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: TextField(
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value.toLowerCase();
+                            });
+                          },
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: "Cari berdasarkan nama atau kelas...",
+                            hintStyle: const TextStyle(color: Colors.white70),
+                            prefixIcon:
+                                const Icon(Icons.search, color: Colors.white70),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.1),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
-                      ],
-                    )
-                  : ListView(
-                      children: [
-                        for (final key in displayOrder)
-                          if ((grouped[key]?.isNotEmpty ?? false))
-                            Theme(
-                              data: Theme.of(context).copyWith(
-                                dividerColor: Colors.transparent,
-                                unselectedWidgetColor: Colors.white70,
-                              ),
-                              child: ExpansionTile(
-                                initiallyExpanded: key == 'Today',
-                                iconColor: Colors.white, // warna panah terbuka
-                                collapsedIconColor:
-                                    Colors.white, // warna panah tertutup
-                                title: Text(
-                                  key,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                children: grouped[key]!.map((r) {
-                                  final siswa =
-                                      (r['siswa'] ?? {}) as Map<String, dynamic>;
-                                  final nama = siswa['nama'] ?? '—';
-                                  final kelas = siswa['kelas'] ?? '—';
-                                  final createdAt =
-                                      DateTime.parse(r['created_at']).toLocal();
+                      ),
 
-                                  return Card(
-                                    color: Colors.white.withOpacity(0.1),
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                      // 🔽 List data
+                      Expanded(
+                        child: _rows.isEmpty
+                            ? ListView(
+                                children: const [
+                                  SizedBox(height: 150),
+                                  Center(
+                                    child: Text(
+                                      'Belum ada riwayat parkir',
+                                      style: TextStyle(
+                                          color: Colors.white70, fontSize: 16),
                                     ),
-                                    child: ListTile(
-                                      leading: const Icon(Icons.person,
-                                          color: Colors.white70),
-                                      title: Text(
-                                        nama,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
+                                  ),
+                                ],
+                              )
+                            : ListView(
+                                children: [
+                                  for (final key in displayOrder)
+                                    if ((grouped[key]?.isNotEmpty ?? false))
+                                      Theme(
+                                        data: Theme.of(context).copyWith(
+                                          dividerColor: Colors.transparent,
+                                          unselectedWidgetColor: Colors.white70,
+                                        ),
+                                        child: ExpansionTile(
+                                          initiallyExpanded: key == 'Today',
+                                          iconColor: Colors.white,
+                                          collapsedIconColor: Colors.white,
+                                          title: Text(
+                                            key,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          children: grouped[key]!
+                                              .where((r) {
+                                                final siswa = (r['siswa'] ?? {})
+                                                    as Map<String, dynamic>;
+                                                final nama =
+                                                    (siswa['nama'] ?? '—')
+                                                        .toString()
+                                                        .toLowerCase();
+                                                final kelas =
+                                                    (siswa['kelas'] ?? '—')
+                                                        .toString()
+                                                        .toLowerCase();
+                                                return nama.contains(
+                                                        _searchQuery) ||
+                                                    kelas.contains(
+                                                        _searchQuery);
+                                              })
+                                              .map((r) {
+                                                final siswa =
+                                                    (r['siswa'] ?? {}) as Map<
+                                                        String, dynamic>;
+                                                final nama =
+                                                    siswa['nama'] ?? '—';
+                                                final kelas =
+                                                    siswa['kelas'] ?? '—';
+                                                final createdAt =
+                                                    DateTime.parse(
+                                                            r['created_at'])
+                                                        .toLocal();
+
+                                                return Card(
+                                                  color: Colors.white
+                                                      .withOpacity(0.1),
+                                                  margin: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 6),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                  ),
+                                                  child: ListTile(
+                                                    leading: const Icon(
+                                                        Icons.person,
+                                                        color: Colors.white70),
+                                                    title: Text(
+                                                      nama,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    subtitle: Text(
+                                                      "Kelas: $kelas",
+                                                      style: const TextStyle(
+                                                          color:
+                                                              Colors.white70),
+                                                    ),
+                                                    trailing: Text(
+                                                      formatTime(createdAt),
+                                                      style: const TextStyle(
+                                                        color: Colors.white70,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              })
+                                              .toList(),
                                         ),
                                       ),
-                                      subtitle: Text(
-                                        "Kelas: $kelas",
-                                        style: const TextStyle(
-                                            color: Colors.white70),
-                                      ),
-                                      trailing: Text(
-                                        formatTime(createdAt),
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
+                                ],
                               ),
-                            ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
       ),
     );
