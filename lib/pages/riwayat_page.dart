@@ -28,6 +28,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
     try {
       final thirtyDaysAgo =
           DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+      final thirtyDaysAgo =
+          DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
 
       final response = await supabase
           .from('parkir')
@@ -79,13 +81,21 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
       if (createdAt.isAfter(startToday) ||
           createdAt.isAtSameMomentAs(startToday)) {
+      if (createdAt.isAfter(startToday) ||
+          createdAt.isAtSameMomentAs(startToday)) {
         groups['Today']!.add(r);
+      } else if (createdAt.isAfter(startYesterday) ||
+          createdAt.isAtSameMomentAs(startYesterday)) {
       } else if (createdAt.isAfter(startYesterday) ||
           createdAt.isAtSameMomentAs(startYesterday)) {
         groups['Yesterday']!.add(r);
       } else if (createdAt.isAfter(start7) ||
           createdAt.isAtSameMomentAs(start7)) {
+      } else if (createdAt.isAfter(start7) ||
+          createdAt.isAtSameMomentAs(start7)) {
         groups['Last 7 Days']!.add(r);
+      } else if (createdAt.isAfter(start30) ||
+          createdAt.isAtSameMomentAs(start30)) {
       } else if (createdAt.isAfter(start30) ||
           createdAt.isAtSameMomentAs(start30)) {
         groups['Last Month']!.add(r);

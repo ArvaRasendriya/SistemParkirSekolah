@@ -1,15 +1,18 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'package:flutter/foundation.dart';
+import 'dart:io' show Platform; // 👈 untuk cek Android/iOS
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:camera/camera.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'daftar_berhasil_page.dart';
 import 'daftar_gagal_page.dart';
+import 'profile_page.dart';
 import 'profile_page.dart';
 
 class DaftarPage extends StatefulWidget {
@@ -21,6 +24,8 @@ class DaftarPage extends StatefulWidget {
 
 class _DaftarPageState extends State<DaftarPage>
     with SingleTickerProviderStateMixin {
+class _DaftarPageState extends State<DaftarPage>
+    with SingleTickerProviderStateMixin {
   final supabase = Supabase.instance.client;
 
   final namaC = TextEditingController();
@@ -28,7 +33,19 @@ class _DaftarPageState extends State<DaftarPage>
   final jurusanC = TextEditingController();
   final emailC = TextEditingController();
 
-  Uint8List? _simImageBytes;
+  // Dropdown values for kelas
+  String? _selectedGrade;
+  String? _selectedMajor;
+  String? _selectedClass;
+  String? _selectedJurusan;
+
+  // Dropdown options
+  static const List<String> grades = ['X', 'XI', 'XII'];
+  static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ'];
+  static const List<String> classes = ['1', '2', '3', '4', '5', '6'];
+  static const List<String> jurusans = ['Rekayasa Perangkat Lunak', 'Desain Komunikasi Visual', 'Teknik Otomotif Industri', 'Teknik Audio Video', 'Teknik Komputer Jaringan'];
+
+  Uint8List? _simBytes;
   bool _isLoading = false;
 
   late AnimationController _animController;
@@ -71,9 +88,30 @@ class _DaftarPageState extends State<DaftarPage>
     }
   }
 
+  /// 🔑 Proses daftar user (punya kamu tetap sama)
   Future<void> _daftarUser() async {
     try {
-      if (_simImageBytes == null) {
+      if (_simBytes == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Foto SIM dulu sebelum daftar")),
+        );
+        return;
+      }
+
+      // Set kelas from dropdowns
+      if (_selectedGrade != null && _selectedMajor != null && _selectedClass != null) {
+        kelasC.text = '$_selectedGrade $_selectedMajor $_selectedClass';
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Pilih kelas lengkap")),
+        );
+        return;
+      }
+
+      // Set jurusan from dropdown
+      if (_selectedJurusan != null) {
+        jurusanC.text = _selectedJurusan!;
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Foto SIM dulu sebelum daftar")),
         );
@@ -88,7 +126,7 @@ class _DaftarPageState extends State<DaftarPage>
       final simPath = "sim/$simFileName";
       await supabase.storage.from("siswa").uploadBinary(
         simPath,
-        _simImageBytes!,
+        _simBytes!,
         fileOptions: const FileOptions(contentType: "image/jpeg"),
       );
       final simUrl = supabase.storage.from("siswa").getPublicUrl(simPath);
@@ -102,30 +140,13 @@ class _DaftarPageState extends State<DaftarPage>
         "sim_url": simUrl,
       });
 
-      // 3. Generate QR with white background and padding
-      final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder);
-      const qrSize = 300.0;
-      const padding = 10.0;
-      const totalSize = qrSize + 2 * padding;
-
-      // Draw white background
-      final paint = Paint()..color = Colors.white;
-      canvas.drawRect(Rect.fromLTWH(0, 0, totalSize, totalSize), paint);
-
-      // Draw QR code with padding
-      canvas.save();
-      canvas.translate(padding, padding);
       final qrPainter = QrPainter(
         data: id,
         version: QrVersions.auto,
         gapless: true,
       );
-      qrPainter.paint(canvas, Size(qrSize, qrSize));
-      canvas.restore();
 
-      final picture = recorder.endRecording();
-      final uiImage = await picture.toImage(totalSize.toInt(), totalSize.toInt());
+      final uiImage = await qrPainter.toImage(300);
       final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List qrBytes = byteData!.buffer.asUint8List();
 
@@ -184,6 +205,19 @@ class _DaftarPageState extends State<DaftarPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0F2027),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white70),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            );
+          },
+        ),
+      ),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F2027),
         elevation: 0,
@@ -283,7 +317,7 @@ class _DaftarPageState extends State<DaftarPage>
                           const Icon(Icons.credit_card, color: Colors.grey),
                           const SizedBox(width: 10),
                           Text(
-                            _simImageBytes == null
+                            _simBytes == null
                                 ? "Upload Kartu SIM"
                                 : "SIM dipilih",
                             style: const TextStyle(color: Colors.black54),
@@ -344,13 +378,18 @@ class _DaftarPageState extends State<DaftarPage>
       controller: controller,
       keyboardType: keyboardType,
       style: GoogleFonts.poppins(color: Colors.white),
+      style: GoogleFonts.poppins(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: GoogleFonts.poppins(color: Colors.white70),
         prefixIcon: Icon(icon, color: Colors.white70, size: 22),
+        hintStyle: GoogleFonts.poppins(color: Colors.white70),
+        prefixIcon: Icon(icon, color: Colors.white70, size: 22),
         filled: true,
         fillColor: Colors.white.withOpacity(0.12),
+        fillColor: Colors.white.withOpacity(0.12),
         border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
           borderRadius: BorderRadius.circular(20),
           borderSide: BorderSide.none,
         ),

@@ -16,6 +16,19 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _fullNameController = TextEditingController();
+
+  // Dropdown values
+  String? _selectedGrade;
+  String? _selectedMajor;
+  String? _selectedClass;
+  String? _selectedJurusan;
+
+  // Dropdown options
+  static const List<String> grades = ['X', 'XI', 'XII'];
+  static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ'];
+  static const List<String> classes = ['1', '2', '3', '4', '5', '6'];
+  static const List<String> jurusans = ['Rekayasa Perangkat Lunak', 'Desain Komunikasi Visual', 'Teknik Otomotif Industri', 'Teknik Audio Video', 'Teknik Komputer Jaringan'];
 
   void signUp() async {
     final email = _emailController.text.trim();
@@ -30,7 +43,25 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      await authservice.signUpWithEmailPassword(email, password);
+      final response = await authservice.signUpWithEmailPassword(email, password);
+      final user = response.user;
+      if (user != null) {
+        // Create profile with pending status after successful sign up
+        final fullName = _fullNameController.text.trim();
+        final kelas = _selectedGrade != null && _selectedMajor != null && _selectedClass != null
+            ? '$_selectedGrade $_selectedMajor $_selectedClass'
+            : '';
+        final jurusan = _selectedJurusan ?? '';
+
+        if (fullName.isEmpty || kelas.isEmpty || jurusan.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Please fill in all required fields")),
+          );
+          return;
+        }
+
+        await authservice.createProfile(user.id, email, full_name: fullName, kelas: kelas, jurusan: jurusan);
+      }
       Navigator.pop(context);
     } catch (e) {
       if (mounted) {
@@ -87,6 +118,124 @@ class _RegisterPageState extends State<RegisterPage> {
                 controller: _confirmPasswordController,
                 hintText: 'Confirm Password',
                 obscureText: true,
+              ),
+              const SizedBox(height: 15),
+
+              CustomInputField(
+                controller: _fullNameController,
+                hintText: 'Full Name',
+              ),
+              const SizedBox(height: 15),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedGrade,
+                      hint: const Text('Grade'),
+                      items: grades.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedGrade = newValue;
+                        });
+                      },
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedMajor,
+                      hint: const Text('Major'),
+                      items: majors.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedMajor = newValue;
+                        });
+                      },
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedClass,
+                      hint: const Text('Class'),
+                      items: classes.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedClass = newValue;
+                        });
+                      },
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+
+              DropdownButtonFormField<String>(
+                value: _selectedJurusan,
+                hint: const Text('Jurusan'),
+                items: jurusans.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedJurusan = newValue;
+                  });
+                },
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
               ),
               const SizedBox(height: 30),
 
