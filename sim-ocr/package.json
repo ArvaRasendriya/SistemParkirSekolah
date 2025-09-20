@@ -1,0 +1,7 @@
+{
+  "name": "ocr-server",
+  "version": "1.0.0",
+  "dependencies": {
+    "tesseract.js": "^4.0.2"
+  }
+}
