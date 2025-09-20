@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'riwayat_page.dart';
 import 'qr_scan_page.dart';
 import 'daftar_page.dart';
+import 'login_page.dart'; // pastikan ada file login_page.dart
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -33,6 +35,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void logout() async {
     await authService.signOut();
+
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   Future<void> fetchTodayHistory() async {
@@ -72,8 +81,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentEmail = authService.getCurrentUserEmail();
-
     return Scaffold(
       backgroundColor: Colors.lightBlue[300],
       appBar: AppBar(
@@ -231,43 +238,47 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
 
       // Bottom Navigation
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        selectedItemColor: Colors.blue[900],
-        unselectedItemColor: Colors.grey,
-        currentIndex: 0,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const RiwayatPage()),
-            );
-          } else if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const QrScanPage()),
-            );
-          } else if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const DaftarPage()),
-            );
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner),
-            label: 'SCAN',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Tambah',
-          ),
-        ],
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+        child: BottomNavigationBar(
+          backgroundColor: const Color(0xFF1C1C1E),
+          selectedItemColor: Colors.tealAccent,
+          unselectedItemColor: Colors.grey[500],
+          currentIndex: 0,
+          onTap: (index) {
+            if (index == 0) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RiwayatPage()),
+              );
+            } else if (index == 1) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const QrScanPage()),
+              );
+            } else if (index == 2) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DaftarPage()),
+              );
+            }
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.history),
+              label: 'Riwayat',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.qr_code_scanner),
+              label: 'SCAN',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.add),
+              label: 'Tambah',
+            ),
+          ],
+        ),
       ),
     );
   }
