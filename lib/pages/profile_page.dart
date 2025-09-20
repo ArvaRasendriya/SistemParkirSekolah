@@ -5,6 +5,8 @@ import 'riwayat_page.dart';
 import 'qr_scan_page.dart';
 import 'daftar_page.dart';
 import 'admin_dashboard_page.dart';
+import 'login_page.dart'; // pastikan ada file login_page.dart
+import 'edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -19,11 +21,35 @@ class _ProfilePageState extends State<ProfilePage> {
   List<Map<String, dynamic>> todayHistory = [];
   RealtimeChannel? channel;
 
+  Map<String, dynamic>? profileData;
+
   @override
   void initState() {
     super.initState();
     fetchTodayHistory();
     setupRealtimeSubscription();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final data = await supabase
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (data != null) {
+        setState(() {
+          profileData = data;
+        });
+      }
+    } catch (e) {
+      debugPrint("Gagal memuat profil: $e");
+    }
   }
 
   @override
@@ -34,10 +60,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void logout() async {
     await authService.signOut();
-    // After sign out, navigate to login page and clear navigation stack
-    if (mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-    }
+
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   Future<void> fetchTodayHistory() async {
@@ -80,269 +109,341 @@ class _ProfilePageState extends State<ProfilePage> {
     final currentEmail = authService.getCurrentUserEmail();
 
     return Scaffold(
-      backgroundColor: Colors.lightBlue[300],
-      appBar: AppBar(
-        backgroundColor: Colors.lightBlue[300],
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {},
-        ),
-        title: const Text("",
-            style: TextStyle(color: Colors.white)),
-        actions: [
-          FutureBuilder<String?>(
-            future: authService.getUserRole(),
-            builder: (context, snapshot) {
-              if (snapshot.hasData && snapshot.data == 'admin') {
-                return IconButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
-                    );
-                  },
-                  icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
-                  tooltip: 'Admin Dashboard',
-                );
-              }
-              return const SizedBox.shrink();
-            },
+      extendBody: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF0F2027),
+              Color(0xFF203A43),
+              Color(0xFF2C5364),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          IconButton(
-            onPressed: logout,
-            icon: const Icon(Icons.logout, color: Colors.white),
-          )
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              Text(currentEmail.toString()),
-
-              // Kartu profil
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue[900],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.person, size: 40, color: Colors.grey),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Nama: Aditya Braja Mustika",
-                            style: TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                          Text(
-                            "Kelas: XII RPL 3",
-                            style: TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              FutureBuilder<String?>(
-                                future: authService.getUserRole(),
-                                builder: (context, snapshot) {
-                                  String roleText = "Status: Loading...";
-                                  if (snapshot.connectionState == ConnectionState.done) {
-                                    if (snapshot.hasData && snapshot.data != null) {
-                                      final role = snapshot.data!;
-                                      if (role == 'admin') {
-                                        roleText = "Status: Admin";
-                                      } else if (role == 'satgas') {
-                                        roleText = "Status: Anggota satgas";
-                                      } else {
-                                        roleText = "Status: $role";
-                                      }
-                                    } else {
-                                      roleText = "Status: Unknown";
-                                    }
-                                  }
-                                  return Text(
-                                    roleText,
-                                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 4),
-                              FutureBuilder<String?>(
-                                future: authService.getUserStatus(),
-                                builder: (context, snapshot) {
-                                  String statusText = "";
-                                  Color statusColor = Colors.white;
-                                  if (snapshot.connectionState == ConnectionState.done) {
-                                    if (snapshot.hasData && snapshot.data != null) {
-                                      final status = snapshot.data!;
-                                      if (status == 'approved') {
-                                        statusText = "Account: Approved";
-                                        statusColor = Colors.green;
-                                      } else if (status == 'pending') {
-                                        statusText = "Account: Pending Approval";
-                                        statusColor = Colors.orange;
-                                      } else if (status == 'rejected') {
-                                        statusText = "Account: Rejected";
-                                        statusColor = Colors.red;
-                                      }
-                                    }
-                                  }
-                                  return Text(
-                                    statusText,
-                                    style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 4),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Jadwal Piket",
-                                style: TextStyle(color: Colors.white70, fontSize: 12),
-                              ),
-                              Text(
-                                "Senin 04-08-2025",
-                                style: TextStyle(color: Colors.white, fontSize: 12),
-                              ),
-                            ],
-                          )
-                        ],
+        ),
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _refresh,
+            child: Column(
+              children: [
+                // Custom AppBar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      FutureBuilder<String?>(
+                        future: authService.getUserRole(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData && snapshot.data == 'admin') {
+                            return IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+                                );
+                              },
+                              icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                              tooltip: 'Admin Dashboard',
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
                       ),
-                    )
-                  ],
+                      IconButton(
+                        onPressed: logout,
+                        icon: const Icon(Icons.logout, color: Colors.white),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              // Riwayat Absensi
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue[400],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Riwayat Absensi hari ini",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Replace dummy list with real history
-                    todayHistory.isEmpty
-                        ? const Text("Belum ada absensi hari ini",
-                            style: TextStyle(color: Colors.white70))
-                        : Column(
-                            children: todayHistory.map((item) {
-                              final siswa = item['siswa'];
-                              final nama = siswa['nama'];
-                              final waktu = item['waktu']; // "HH:MM:SS"
-                              final jam = waktu.toString().substring(0, 5); // HH:MM
-
-                              return Container(
-                                margin: const EdgeInsets.symmetric(vertical: 4),
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[300],
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const CircleAvatar(
-                                      backgroundColor: Colors.white,
-                                      child: Icon(Icons.person,
-                                          color: Colors.grey, size: 20),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                // Card Profile
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.25),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 32,
+                            backgroundColor: Colors.white,
+                            child: Icon(Icons.person, size: 40, color: Colors.grey),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: profileData == null
+                                ? const Text("Memuat...",
+                                    style: TextStyle(color: Colors.white))
+                                : Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        profileData!['full_name'] ?? '-',
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        profileData!['kelas'] ?? '-',
+                                        style: const TextStyle(
+                                            color: Colors.white70, fontSize: 14),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      FutureBuilder<String?>(
+                                        future: authService.getUserRole(),
+                                        builder: (context, snapshot) {
+                                          String roleText = "Anggota Satgas";
+                                          if (snapshot.connectionState == ConnectionState.done) {
+                                            if (snapshot.hasData && snapshot.data != null) {
+                                              final role = snapshot.data!;
+                                              if (role == 'admin') {
+                                                roleText = "Admin";
+                                              } else if (role == 'satgas') {
+                                                roleText = "Anggota Satgas";
+                                              } else {
+                                                roleText = role;
+                                              }
+                                            } else {
+                                              roleText = "Unknown";
+                                            }
+                                          }
+                                          return Text(roleText,
+                                              style: const TextStyle(
+                                                  color: Colors.white70, fontSize: 13));
+                                        },
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
+                                          const Text("Jadwal Piket",
+                                              style: TextStyle(
+                                                  color: Colors.white54, fontSize: 12)),
                                           Text(
-                                            nama,
+                                            profileData!['jadwal_piket'] ?? '-',
                                             style: const TextStyle(
-                                                color: Colors.white, fontSize: 14),
-                                          ),
-                                          Text(
-                                            jam,
-                                            style: const TextStyle(
-                                                color: Colors.white70, fontSize: 12),
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 12),
                                           ),
                                         ],
                                       ),
-                                    )
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                  ],
+                                      const SizedBox(height: 4),
+                                      FutureBuilder<String?>(
+                                        future: authService.getUserStatus(),
+                                        builder: (context, snapshot) {
+                                          String statusText = "";
+                                          Color statusColor = Colors.white;
+                                          if (snapshot.connectionState == ConnectionState.done) {
+                                            if (snapshot.hasData && snapshot.data != null) {
+                                              final status = snapshot.data!;
+                                              if (status == 'approved') {
+                                                statusText = "Account: Approved";
+                                                statusColor = Colors.green;
+                                              } else if (status == 'pending') {
+                                                statusText = "Account: Pending Approval";
+                                                statusColor = Colors.orange;
+                                              } else if (status == 'rejected') {
+                                                statusText = "Account: Rejected";
+                                                statusColor = Colors.red;
+                                              }
+                                            }
+                                          }
+                                          return Text(
+                                            statusText,
+                                            style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                          )
+                        ],
+                      ),
+
+                      // Tombol Edit
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.white),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const EditProfilePage()),
+                            ).then((_) {
+                              _loadProfile(); // ⬅️ refresh profil setelah edit
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+
+                // Riwayat Absensi
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Riwayat Absensi Hari Ini",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15),
+                        ),
+                        const SizedBox(height: 12),
+
+                        todayHistory.isEmpty
+                            ? const Text("Belum ada absensi hari ini",
+                                style: TextStyle(color: Colors.white60))
+                            : Expanded(
+                                child: ListView.builder(
+                                  itemCount: todayHistory.length,
+                                  itemBuilder: (context, index) {
+                                    final item = todayHistory[index];
+                                    final siswa = item['siswa'];
+                                    final nama = siswa['nama'];
+                                    final waktu = item['waktu'];
+                                    final jam = waktu.toString().substring(0, 5);
+
+                                    return Container(
+                                      margin:
+                                          const EdgeInsets.symmetric(vertical: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 10, horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const CircleAvatar(
+                                            radius: 18,
+                                            backgroundColor: Colors.white,
+                                            child: Icon(Icons.person,
+                                                color: Colors.grey, size: 18),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(nama,
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w500)),
+                                                Text(jam,
+                                                    style: const TextStyle(
+                                                        color: Colors.white70,
+                                                        fontSize: 12)),
+                                              ],
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
 
       // Bottom Navigation
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        selectedItemColor: Colors.blue[900],
-        unselectedItemColor: Colors.grey,
-        currentIndex: 0,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const RiwayatPage()),
-            );
-          } else if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const QrScanPage()),
-            );
-          } else if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const DaftarPage()),
-            );
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Riwayat',
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF0F2027),
+              Color(0xFF203A43),
+              Color(0xFF2C5364),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner),
-            label: 'SCAN',
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+          child: BottomNavigationBar(
+            backgroundColor: Colors.transparent,
+            selectedItemColor: Colors.tealAccent,
+            unselectedItemColor: Colors.grey[500],
+            currentIndex: 0,
+            onTap: (index) {
+              if (index == 0) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RiwayatPage()),
+                );
+              } else if (index == 1) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const QrScanPage()),
+                );
+              } else if (index == 2) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DaftarPage()),
+                );
+              }
+            },
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.history),
+                label: 'Riwayat',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.qr_code_scanner),
+                label: 'SCAN',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.add),
+                label: 'Tambah',
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Tambah',
-          ),
-        ],
+        ),
       ),
     );
   }

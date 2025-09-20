@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart'; // ✅ untuk kIsWeb
+import 'dart:async';
 import 'qr_result_page.dart';
 
 class QrScanPage extends StatefulWidget {
@@ -10,9 +13,62 @@ class QrScanPage extends StatefulWidget {
   State<QrScanPage> createState() => _QrScanPageState();
 }
 
-class _QrScanPageState extends State<QrScanPage> {
+class _QrScanPageState extends State<QrScanPage>
+    with TickerProviderStateMixin {
   bool isProcessing = false;
+  bool torchOn = false;
+  bool showCircle = false;
   final supabase = Supabase.instance.client;
+  final MobileScannerController cameraController = MobileScannerController();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  late AnimationController _lineController;
+  late Animation<double> _lineAnimation;
+
+  late AnimationController _textController;
+  late Animation<double> _textAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // animasi garis scanner
+    _lineController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: false);
+
+    _lineAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _lineController, curve: Curves.linear),
+    );
+
+    // animasi teks pulse
+    _textController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _textAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lineController.dispose();
+    _textController.dispose();
+    cameraController.dispose();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _playBeep() async {
+    if (kIsWeb) {
+      await _audioPlayer.play(UrlSource("assets/sounds/beep.mp3"));
+    } else {
+      await _audioPlayer.play(AssetSource("sounds/beep.mp3"));
+    }
+  }
 
   Future<void> _fetchUserAndNavigate(String userId) async {
     try {
@@ -20,8 +76,7 @@ class _QrScanPageState extends State<QrScanPage> {
           await supabase.from('siswa').select().eq('id', userId).maybeSingle();
 
       if (response != null) {
-        // ✅ log scan to parkir table
-        final success = await logScan(siswaId: userId, supabase: supabase); // 👈
+        final success = await logScan(siswaId: userId, supabase: supabase);
         if (!success) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -61,7 +116,6 @@ class _QrScanPageState extends State<QrScanPage> {
       await supabase.from('parkir').insert({
         'siswa_id': siswaId,
         'scanned_by': scannedBy,
-        // waktu & tanggal are auto-filled by DB defaults
       });
       return true;
     } catch (e) {
@@ -75,15 +129,200 @@ class _QrScanPageState extends State<QrScanPage> {
     final code = capture.barcodes.first.rawValue;
     if (code != null) {
       setState(() => isProcessing = true);
+
+      setState(() => showCircle = true);
+      await _playBeep();
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      setState(() => showCircle = false);
       await _fetchUserAndNavigate(code);
+
+      setState(() => isProcessing = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Scan QR")),
-      body: MobileScanner(onDetect: _onDetect),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF0F2027),
+              Color(0xFF203A43),
+              Color(0xFF2C5364),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Kamera scanner full screen
+            Positioned.fill(
+              child: MobileScanner(
+                controller: cameraController,
+                onDetect: _onDetect,
+                fit: BoxFit.cover, // ✅ biar ga kepotong
+              ),
+            ),
+
+            // Tombol flashlight
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                onPressed: () {
+                  cameraController.toggleTorch();
+                  setState(() => torchOn = !torchOn);
+                },
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, anim) =>
+                      ScaleTransition(scale: anim, child: child),
+                  child: Icon(
+                    torchOn ? Icons.flash_on : Icons.flash_off,
+                    key: ValueKey(torchOn),
+                    color: Colors.cyanAccent,
+                    size: 30,
+                  ),
+                ),
+              ),
+            ),
+
+            // Overlay kotak scan + teks
+            Column(
+              children: [
+                const Spacer(),
+
+                // Teks ZON4
+                SizedBox(
+                  width: 250,
+                  child: AnimatedBuilder(
+                    animation: _textAnimation,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _textAnimation.value,
+                        child: const Text(
+                          "ZON4",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 12,
+                                color: Colors.cyanAccent,
+                                offset: Offset(0, 0),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Kotak QR (selalu center, tidak kepotong)
+                Center(
+                  child: SizedBox(
+                    height: 300,
+                    width: 300,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: Colors.cyanAccent.withOpacity(0.9),
+                                width: 3),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.cyanAccent.withOpacity(0.5),
+                                blurRadius: 25,
+                                spreadRadius: 2,
+                              )
+                            ],
+                          ),
+                        ),
+
+                        // garis scan
+                        AnimatedBuilder(
+                          animation: _lineAnimation,
+                          builder: (context, child) {
+                            return Positioned(
+                              top: 300 * _lineAnimation.value,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Colors.cyanAccent, Colors.white],
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+
+                        // lingkaran animasi ketika berhasil scan
+                        if (showCircle)
+                          AnimatedScale(
+                            scale: showCircle ? 1.5 : 0,
+                            duration: const Duration(milliseconds: 500),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.cyanAccent,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const Spacer(),
+
+                // Tombol kembali
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 32),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 14, horizontal: 32),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      backgroundColor: Colors.cyanAccent,
+                      shadowColor: Colors.black45,
+                      elevation: 6,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text(
+                      "KEMBALI",
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
