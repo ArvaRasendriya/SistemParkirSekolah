@@ -1,18 +1,16 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'dart:io' show Platform; // 👈 untuk cek Android/iOS
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:camera/camera.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'daftar_berhasil_page.dart';
 import 'daftar_gagal_page.dart';
-import 'profile_page.dart';
 import 'profile_page.dart';
 
 class DaftarPage extends StatefulWidget {
@@ -24,8 +22,6 @@ class DaftarPage extends StatefulWidget {
 
 class _DaftarPageState extends State<DaftarPage>
     with SingleTickerProviderStateMixin {
-class _DaftarPageState extends State<DaftarPage>
-    with SingleTickerProviderStateMixin {
   final supabase = Supabase.instance.client;
 
   final namaC = TextEditingController();
@@ -33,7 +29,7 @@ class _DaftarPageState extends State<DaftarPage>
   final jurusanC = TextEditingController();
   final emailC = TextEditingController();
 
-  // Dropdown values for kelas
+  // Dropdown values
   String? _selectedGrade;
   String? _selectedMajor;
   String? _selectedClass;
@@ -43,7 +39,13 @@ class _DaftarPageState extends State<DaftarPage>
   static const List<String> grades = ['X', 'XI', 'XII'];
   static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ'];
   static const List<String> classes = ['1', '2', '3', '4', '5', '6'];
-  static const List<String> jurusans = ['Rekayasa Perangkat Lunak', 'Desain Komunikasi Visual', 'Teknik Otomotif Industri', 'Teknik Audio Video', 'Teknik Komputer Jaringan'];
+  static const List<String> jurusans = [
+    'Rekayasa Perangkat Lunak',
+    'Desain Komunikasi Visual',
+    'Teknik Otomotif Industri',
+    'Teknik Audio Video',
+    'Teknik Komputer Jaringan'
+  ];
 
   Uint8List? _simBytes;
   bool _isLoading = false;
@@ -80,15 +82,17 @@ class _DaftarPageState extends State<DaftarPage>
         imageQuality: 85,
       );
 
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
-      setState(() {
-        _simImageBytes = bytes;
-      });
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _simBytes = bytes; // ✅ sudah benar
+        });
+      }
+    } catch (e) {
+      debugPrint("Error ambil gambar SIM: $e");
     }
   }
 
-  /// 🔑 Proses daftar user (punya kamu tetap sama)
   Future<void> _daftarUser() async {
     try {
       if (_simBytes == null) {
@@ -98,8 +102,10 @@ class _DaftarPageState extends State<DaftarPage>
         return;
       }
 
-      // Set kelas from dropdowns
-      if (_selectedGrade != null && _selectedMajor != null && _selectedClass != null) {
+      // Set kelas dari dropdown
+      if (_selectedGrade != null &&
+          _selectedMajor != null &&
+          _selectedClass != null) {
         kelasC.text = '$_selectedGrade $_selectedMajor $_selectedClass';
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -108,12 +114,12 @@ class _DaftarPageState extends State<DaftarPage>
         return;
       }
 
-      // Set jurusan from dropdown
+      // Set jurusan
       if (_selectedJurusan != null) {
         jurusanC.text = _selectedJurusan!;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Foto SIM dulu sebelum daftar")),
+          const SnackBar(content: Text("Pilih jurusan dulu")),
         );
         return;
       }
@@ -122,6 +128,7 @@ class _DaftarPageState extends State<DaftarPage>
 
       final id = const Uuid().v4();
 
+      // Upload SIM
       final simFileName = "${DateTime.now().millisecondsSinceEpoch}.jpg";
       final simPath = "sim/$simFileName";
       await supabase.storage.from("siswa").uploadBinary(
@@ -131,6 +138,7 @@ class _DaftarPageState extends State<DaftarPage>
       );
       final simUrl = supabase.storage.from("siswa").getPublicUrl(simPath);
 
+      // Insert siswa
       await supabase.from("siswa").insert({
         "id": id,
         "nama": namaC.text,
@@ -140,6 +148,7 @@ class _DaftarPageState extends State<DaftarPage>
         "sim_url": simUrl,
       });
 
+      // Generate QR
       final qrPainter = QrPainter(
         data: id,
         version: QrVersions.auto,
@@ -163,6 +172,7 @@ class _DaftarPageState extends State<DaftarPage>
         "qr_url": qrUrl,
       }).eq("id", id);
 
+      // Kirim email
       final response = await supabase.functions.invoke(
         "sendEmailQr",
         body: {
@@ -205,19 +215,6 @@ class _DaftarPageState extends State<DaftarPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0F2027),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white70),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfilePage()),
-            );
-          },
-        ),
-      ),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F2027),
         elevation: 0,
@@ -301,31 +298,32 @@ class _DaftarPageState extends State<DaftarPage>
 
                         const SizedBox(height: 20),
 
-                  // Tombol upload SIM
-                  GestureDetector(
-                    onTap: _pickSimImage,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: Colors.grey.shade400),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.credit_card, color: Colors.grey),
-                          const SizedBox(width: 10),
-                          Text(
-                            _simBytes == null
-                                ? "Upload Kartu SIM"
-                                : "SIM dipilih",
-                            style: const TextStyle(color: Colors.black54),
+                        // Upload SIM
+                        GestureDetector(
+                          onTap: _pickSimImage,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(color: Colors.grey.shade400),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.credit_card,
+                                    color: Colors.grey),
+                                const SizedBox(width: 10),
+                                Text(
+                                  _simBytes == null
+                                      ? "Upload Kartu SIM"
+                                      : "SIM dipilih",
+                                  style: const TextStyle(color: Colors.black54),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
+                        ),
 
                         const SizedBox(height: 32),
 
@@ -371,25 +369,20 @@ class _DaftarPageState extends State<DaftarPage>
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint,
-      IconData icon,
+  Widget _buildTextField(
+      TextEditingController controller, String hint, IconData icon,
       {TextInputType keyboardType = TextInputType.text}) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       style: GoogleFonts.poppins(color: Colors.white),
-      style: GoogleFonts.poppins(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: GoogleFonts.poppins(color: Colors.white70),
         prefixIcon: Icon(icon, color: Colors.white70, size: 22),
-        hintStyle: GoogleFonts.poppins(color: Colors.white70),
-        prefixIcon: Icon(icon, color: Colors.white70, size: 22),
         filled: true,
         fillColor: Colors.white.withOpacity(0.12),
-        fillColor: Colors.white.withOpacity(0.12),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
           borderRadius: BorderRadius.circular(20),
           borderSide: BorderSide.none,
         ),

@@ -112,7 +112,7 @@ class _ProfilePageState extends State<ProfilePage> {
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
-              Text(currentEmail.toString()),
+             
 
               // Kartu profil
               Container(

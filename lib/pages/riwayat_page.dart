@@ -28,8 +28,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
     try {
       final thirtyDaysAgo =
           DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
-      final thirtyDaysAgo =
-          DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
 
       final response = await supabase
           .from('parkir')
@@ -81,21 +79,13 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
       if (createdAt.isAfter(startToday) ||
           createdAt.isAtSameMomentAs(startToday)) {
-      if (createdAt.isAfter(startToday) ||
-          createdAt.isAtSameMomentAs(startToday)) {
         groups['Today']!.add(r);
-      } else if (createdAt.isAfter(startYesterday) ||
-          createdAt.isAtSameMomentAs(startYesterday)) {
       } else if (createdAt.isAfter(startYesterday) ||
           createdAt.isAtSameMomentAs(startYesterday)) {
         groups['Yesterday']!.add(r);
       } else if (createdAt.isAfter(start7) ||
           createdAt.isAtSameMomentAs(start7)) {
-      } else if (createdAt.isAfter(start7) ||
-          createdAt.isAtSameMomentAs(start7)) {
         groups['Last 7 Days']!.add(r);
-      } else if (createdAt.isAfter(start30) ||
-          createdAt.isAtSameMomentAs(start30)) {
       } else if (createdAt.isAfter(start30) ||
           createdAt.isAtSameMomentAs(start30)) {
         groups['Last Month']!.add(r);
@@ -182,7 +172,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                             ),
                             const SizedBox(width: 10),
                             // Dropdown kelas
-                            DropdownButton<String>(
+                            DropdownButton<String?>(
                               value: _selectedKelas,
                               hint: const Text(
                                 "Kelas",
@@ -192,7 +182,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                               style: const TextStyle(color: Colors.white),
                               iconEnabledColor: Colors.white,
                               items: [
-                                const DropdownMenuItem(
+                                const DropdownMenuItem<String?>(
                                   value: null,
                                   child: Text("Semua Kelas"),
                                 ),
@@ -298,17 +288,14 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                         if ((grouped[key]?.isNotEmpty ?? false))
                                           Theme(
                                             data: Theme.of(context).copyWith(
-                                              dividerColor:
-                                                  Colors.transparent,
+                                              dividerColor: Colors.transparent,
                                               unselectedWidgetColor:
                                                   Colors.white70,
                                             ),
                                             child: ExpansionTile(
-                                              initiallyExpanded:
-                                                  key == 'Today',
+                                              initiallyExpanded: key == 'Today',
                                               iconColor: Colors.white,
-                                              collapsedIconColor:
-                                                  Colors.white,
+                                              collapsedIconColor: Colors.white,
                                               title: Text(
                                                 key,
                                                 style: const TextStyle(
@@ -318,41 +305,39 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                               ),
                                               children: grouped[key]!
                                                   .where((r) {
-                                                    final siswa = (r['siswa'] ??
-                                                            {})
-                                                        as Map<String,
-                                                            dynamic>;
+                                                    final siswa =
+                                                        (r['siswa'] ?? {})
+                                                            as Map<String,
+                                                                dynamic>;
                                                     final nama =
                                                         (siswa['nama'] ?? '—')
                                                             .toString()
                                                             .toLowerCase();
-                                                    final kelas = (siswa[
-                                                                'kelas'] ??
-                                                            '—')
-                                                        .toString();
+                                                    final kelas =
+                                                        (siswa['kelas'] ?? '—')
+                                                            .toString();
 
                                                     final matchNama = nama
                                                         .contains(_searchQuery);
                                                     final matchKelas =
-                                                        _selectedKelas ==
-                                                                null ||
+                                                        _selectedKelas == null ||
                                                             kelas ==
                                                                 _selectedKelas;
                                                     return matchNama &&
                                                         matchKelas;
                                                   })
                                                   .map((r) {
-                                                    final siswa = (r['siswa'] ??
-                                                            {})
-                                                        as Map<String,
-                                                            dynamic>;
+                                                    final siswa =
+                                                        (r['siswa'] ?? {})
+                                                            as Map<String,
+                                                                dynamic>;
                                                     final nama =
                                                         siswa['nama'] ?? '—';
                                                     final kelas =
                                                         siswa['kelas'] ?? '—';
                                                     final createdAt =
-                                                        DateTime.parse(r[
-                                                                'created_at'])
+                                                        DateTime.parse(
+                                                                r['created_at'])
                                                             .toLocal();
 
                                                     return Card(
