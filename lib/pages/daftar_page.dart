@@ -304,7 +304,7 @@ class _DaftarPageState extends State<DaftarPage>
                           const Icon(Icons.credit_card, color: Colors.grey),
                           const SizedBox(width: 10),
                           Text(
-                            _simImageBytes == null
+                            _simBytes == null
                                 ? "Upload Kartu SIM"
                                 : "SIM dipilih",
                             style: const TextStyle(color: Colors.black54),
