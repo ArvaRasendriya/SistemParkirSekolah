@@ -41,85 +41,95 @@ class _SatgasListPageState extends State<SatgasListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Satgas Accounts'),
-        backgroundColor: Colors.blue[900],
+        title: const Text(
+          'Satgas Accounts',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: fetchSatgasAccounts,
           ),
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue[50]!, Colors.blue[100]!],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
         child: isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
             : satgasAccounts.isEmpty
                 ? const Center(
                     child: Text(
                       'No satgas accounts found',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                      style: TextStyle(fontSize: 16, color: Colors.white70),
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: satgasAccounts.length,
-                    itemBuilder: (context, index) {
-                      final account = satgasAccounts[index];
-                      final email = account['email'] ?? 'No email';
-                      final status = account['status'] ?? 'Unknown';
-                      final createdAt = account['created_at'];
-                      final formattedDate = createdAt != null
-                          ? DateTime.parse(createdAt).toLocal().toString().substring(0, 16)
-                          : 'Unknown date';
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.3), // box hitam transparan
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: satgasAccounts.length,
+                        itemBuilder: (context, index) {
+                          final account = satgasAccounts[index];
+                          final email = account['email'] ?? 'No email';
+                          final status = account['status'] ?? 'Unknown';
+                          final createdAt = account['created_at'];
+                          final formattedDate = createdAt != null
+                              ? DateTime.parse(createdAt).toLocal().toString().substring(0, 16)
+                              : 'Unknown date';
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                          return Card(
+                            color: Colors.white.withOpacity(0.08),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ListTile(
+                              leading: const Icon(Icons.person,
+                                  color: Colors.grey, size: 32),
+                              title: Text(
+                                email,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.person, color: Colors.blue),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      email,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Status: $status',
+                                    style: const TextStyle(
+                                        color: Colors.white70, fontSize: 13),
+                                  ),
+                                  Text(
+                                    'Registered: $formattedDate',
+                                    style: const TextStyle(
+                                        color: Colors.white70, fontSize: 13),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Status: $status',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                              Text(
-                                'Registered: $formattedDate',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
       ),
     );
