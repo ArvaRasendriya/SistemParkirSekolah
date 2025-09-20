@@ -1,8 +1,13 @@
-import 'dart:io';
+<<<<<<<<< Temporary merge branch 1
+=========
+import 'dart:convert';
+>>>>>>>>> Temporary merge branch 2
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:camera/camera.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tefa_parkir/pages/sim_scanner.dart';
@@ -66,21 +71,36 @@ class _DaftarPageState extends State<DaftarPage>
     super.dispose();
   }
 
-Future<void> _pickSimImage() async {
-  final file = await Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => const SimScannerPage()),
-  );
+  Future<void> _pickSimImage() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.rear,
+        imageQuality: 85,
+      );
 
-  if (file != null) {
-    final bytes = await file.readAsBytes();
-    setState(() {
-      _simBytes = bytes;
-    });
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _simBytes = bytes;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal ambil foto SIM: $e")),
+      );
+=========
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _simImageBytes = bytes;
+      });
+>>>>>>>>> Temporary merge branch 2
+    }
   }
-}
 
-
+  /// 🔑 Proses daftar user (punya kamu tetap sama)
   Future<void> _daftarUser() async {
     try {
       if (_simBytes == null) {
@@ -249,31 +269,31 @@ Future<void> _pickSimImage() async {
                       keyboardType: TextInputType.emailAddress),
                   const SizedBox(height: 12),
 
-                  // Tombol upload SIM
-                  GestureDetector(
-                    onTap: _pickSimImage,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: Colors.grey.shade400),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.credit_card, color: Colors.grey),
-                          const SizedBox(width: 10),
-                          Text(
-                            _simImageBytes == null
-                                ? "Upload Kartu SIM"
-                                : "SIM dipilih",
-                            style: const TextStyle(color: Colors.black54),
+                        // Tombol upload SIM
+                        GestureDetector(
+                          onTap: _pickSimImage,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(color: Colors.grey.shade400),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.credit_card, color: Colors.grey),
+                                const SizedBox(width: 10),
+                                Text(
+                                  _simImageBytes == null
+                                      ? "Upload Kartu SIM"
+                                      : "SIM dipilih",
+                                  style: const TextStyle(color: Colors.black54),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
+                        ),
 
                   const SizedBox(height: 20),
 
