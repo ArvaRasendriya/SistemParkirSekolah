@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
@@ -6,10 +7,28 @@ class AuthService {
   // Sign in with email and password
   Future<AuthResponse> signInWithEmailPassword(
     String email, String password) async {
-      return await _supabase.auth.signInWithPassword(
+      final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
+
+      if (response.user != null) {
+        // Check profile status
+        final profileResponse = await _supabase
+            .from('profiles')
+            .select('status')
+            .eq('email', email)
+            .single();
+
+        final status = profileResponse['status'] as String?;
+        if (status == 'pending') {
+          // Sign out user immediately
+          await _supabase.auth.signOut();
+          throw Exception('You are not approved yet, contact admin balbalbalbalba');
+        }
+      }
+
+      return response;
     }
 
   // Sign up with email and password
@@ -31,5 +50,108 @@ class AuthService {
     final session = _supabase.auth.currentSession;
     final user = session?.user;
     return user?.email;
+  }
+
+  // Get user role
+  Future<String?> getUserRole() async {
+    final email = getCurrentUserEmail();
+    if (email == null) return null;
+
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select('role')
+          .eq('email', email)
+          .single();
+      return response['role'] as String?;
+    } catch (e) {
+      debugPrint('Error fetching user role: $e');
+      return null;
+    }
+  }
+
+  // Get user status
+  Future<String?> getUserStatus() async {
+    final email = getCurrentUserEmail();
+    if (email == null) return null;
+
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select('status')
+          .eq('email', email)
+          .single();
+      return response['status'] as String?;
+    } catch (e) {
+      debugPrint('Error fetching user status: $e');
+      return null;
+    }
+  }
+
+  // Create profile with pending status
+  Future<void> createProfile(String userId, String email, {String role = 'satgas', String? full_name, String? kelas, String? jurusan}) async {
+    try {
+      await _supabase.from('profiles').upsert({
+        'id': userId,
+        'email': email,
+        'role': role,
+        'status': 'pending',
+        'full_name': full_name,
+        'kelas': kelas,
+        'jurusan': jurusan,
+      });
+    } catch (e) {
+      debugPrint('Error creating profile: $e');
+      rethrow;
+    }
+  }
+
+  // Get all pending profiles for admin approval
+  Future<List<Map<String, dynamic>>> getPendingProfiles() async {
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select('id, email, full_name, role, created_at')
+          .eq('status', 'pending')
+          .order('created_at', ascending: false);
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('Error fetching pending profiles: $e');
+      return [];
+    }
+  }
+
+  // Approve or reject a profile
+  Future<void> updateProfileStatus(String profileId, String status) async {
+    try {
+      final currentUserId = _supabase.auth.currentUser?.id;
+      final updateData = {'status': status};
+      if (currentUserId != null) {
+        updateData['approved_by'] = currentUserId;
+      }
+
+      await _supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', profileId);
+    } catch (e) {
+      debugPrint('Error updating profile status: $e');
+      rethrow;
+    }
+  }
+
+  // Get all satgas accounts (approved and pending)
+  Future<List<Map<String, dynamic>>> getSatgasAccounts() async {
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select('id, email, full_name, role, status, created_at')
+          .eq('role', 'satgas')
+          .order('created_at', ascending: false);
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('Error fetching satgas accounts: $e');
+      return [];
+    }
   }
 }

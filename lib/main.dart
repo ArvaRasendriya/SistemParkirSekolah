@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tefa_parkir/auth/auth.gate.dart';
 import 'pages/daftar_page.dart';
+import 'pages/login_page.dart';
+import 'pages/profile_page.dart';
+import 'pages/admin_dashboard_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,11 +20,17 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  @override 
+  @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: AuthGate(), // sementara tes daftar
+      home: const AuthGate(), // sementara tes daftar
+      routes: {
+        '/login': (context) => const LoginPage(),
+        '/profile': (context) => const ProfilePage(),
+        '/admin': (context) => const AdminDashboardPage(),
+        '/daftar': (context) => const DaftarPage(),
+      },
     );
   }
 }
