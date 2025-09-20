@@ -89,13 +89,16 @@ class AuthService {
   }
 
   // Create profile with pending status
-  Future<void> createProfile(String userId, String email, {String role = 'satgas'}) async {
+  Future<void> createProfile(String userId, String email, {String role = 'satgas', String? full_name, String? kelas, String? jurusan}) async {
     try {
       await _supabase.from('profiles').upsert({
         'id': userId,
         'email': email,
         'role': role,
         'status': 'pending',
+        'full_name': full_name,
+        'kelas': kelas,
+        'jurusan': jurusan,
       });
     } catch (e) {
       debugPrint('Error creating profile: $e');
@@ -134,6 +137,21 @@ class AuthService {
     } catch (e) {
       debugPrint('Error updating profile status: $e');
       rethrow;
+    }
+  }
+
+  // Get all satgas accounts (approved and pending)
+  Future<List<Map<String, dynamic>>> getSatgasAccounts() async {
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select('id, email, full_name, role, status, created_at')
+          .eq('role', 'satgas')
+          .order('created_at', ascending: false);
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('Error fetching satgas accounts: $e');
+      return [];
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../pages/login_page.dart';
 import '../pages/profile_page.dart';
+import '../pages/admin_dashboard_page.dart';
 import 'auth_service.dart';
 
 class AuthGate extends StatefulWidget {
@@ -44,7 +45,22 @@ class _AuthGateState extends State<AuthGate> {
 
               final status = statusSnapshot.data;
               if (status == 'approved') {
-                return const ProfilePage();
+                return FutureBuilder<String?>(
+                  future: authService.getUserRole(),
+                  builder: (context, roleSnapshot) {
+                    if (roleSnapshot.connectionState == ConnectionState.waiting) {
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    final role = roleSnapshot.data;
+                    if (role == 'admin') {
+                      return const AdminDashboardPage();
+                    } else {
+                      return const ProfilePage();
+                    }
+                  },
+                );
               } else if (status == 'pending') {
                 return const PendingApprovalPage();
               } else {
