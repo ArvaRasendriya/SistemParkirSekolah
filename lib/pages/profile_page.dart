@@ -1,8 +1,9 @@
+import 'dart:async'; // ⬅️ penting untuk Timer
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:intl/intl.dart'; // ⬅️ untuk format jam
+import 'package:intl/intl.dart';
 import 'riwayat_page.dart';
 import 'qr_scan_page.dart';
 import 'daftar_page.dart';
@@ -23,17 +24,28 @@ class _ProfilePageState extends State<ProfilePage> {
   List<Map<String, dynamic>> todayHistory = [];
   RealtimeChannel? channel;
 
+  late Timer timer;
+  String currentTime = DateFormat.Hms().format(DateTime.now()); // hh:mm:ss
+
   @override
   void initState() {
     super.initState();
     fetchProfile();
     fetchTodayHistory();
     setupRealtimeSubscription();
+
+    // Timer untuk update jam realtime tiap detik
+    timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() {
+        currentTime = DateFormat.Hms().format(DateTime.now());
+      });
+    });
   }
 
   @override
   void dispose() {
     channel?.unsubscribe();
+    timer.cancel();
     super.dispose();
   }
 
@@ -69,13 +81,15 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> fetchTodayHistory() async {
     try {
-      final today = DateTime.now().toIso8601String().substring(0, 10);
+      final today = DateTime.now();
+      final startOfDay =
+          DateTime(today.year, today.month, today.day).toIso8601String();
 
       final response = await supabase
           .from('parkir')
-          .select('id, waktu, siswa(nama, kelas)')
-          .eq('tanggal', today)
-          .order('waktu', ascending: false);
+          .select('id, created_at, siswa(nama, kelas)')
+          .gte('created_at', startOfDay)
+          .order('created_at', ascending: false);
 
       setState(() {
         todayHistory = (response as List).cast<Map<String, dynamic>>();
@@ -91,31 +105,23 @@ class _ProfilePageState extends State<ProfilePage> {
         event: PostgresChangeEvent.insert,
         schema: 'public',
         table: 'parkir',
-        callback: (payload) {
-          fetchTodayHistory();
-        },
+        callback: (payload) => fetchTodayHistory(),
+      )
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: 'parkir',
+        callback: (payload) => fetchTodayHistory(),
       )
       ..subscribe();
   }
 
-  /// 🔧 fungsi untuk parsing waktu (support TIME & TIMESTAMP dari supabase)
   String formatWaktu(dynamic waktu) {
     try {
-      // kalau tipe timestamp (contoh: 2025-09-20T08:00:00+00:00)
       final parsed = DateTime.parse(waktu.toString()).toLocal();
-      return DateFormat.Hm().format(parsed); // format 24 jam (08:00)
+      return DateFormat.Hm().format(parsed); // contoh: 14:32
     } catch (_) {
-      // fallback kalau tipe TIME (contoh: 08:00:00)
-      final parts = waktu.toString().split(':');
-      final now = DateTime.now();
-      final parsed = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        int.parse(parts[0]),
-        int.parse(parts[1]),
-      );
-      return DateFormat.Hm().format(parsed);
+      return waktu.toString();
     }
   }
 
@@ -123,10 +129,10 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: Colors.transparent, // transparan atas
+        statusBarColor: Colors.transparent,
       ),
       child: Scaffold(
-        extendBodyBehindAppBar: true, // biar gradient tembus ke atas
+        extendBodyBehindAppBar: true,
         body: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -153,12 +159,24 @@ class _ProfilePageState extends State<ProfilePage> {
                   floating: true,
                   pinned: false,
                   automaticallyImplyLeading: false,
-                  title: const Text(
-                    "Profil",
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20),
+                  title: Column(
+                    children: [
+                      const Text(
+                        "Profil",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                      Text(
+                        currentTime,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      )
+                    ],
                   ),
                   centerTitle: true,
                   leading: IconButton(
@@ -166,6 +184,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   actions: [
+                    // 🔄 Tombol reload manual
+                    IconButton(
+                      onPressed: () async {
+                        await fetchProfile();
+                        await fetchTodayHistory();
+                      },
+                      icon: const Icon(Icons.refresh, color: Colors.white),
+                    ),
                     IconButton(
                       onPressed: logout,
                       icon: const Icon(Icons.logout, color: Colors.white),
@@ -269,8 +295,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                 children: todayHistory.map((item) {
                                   final siswa = item['siswa'];
                                   final nama = siswa['nama'];
-                                  final waktu = item['waktu'];
-                                  final jam = formatWaktu(waktu);
+                                  final createdAt = item['created_at'];
+                                  final jam = formatWaktu(createdAt);
 
                                   return Container(
                                     margin:
@@ -315,7 +341,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 const SliverFillRemaining(
                   hasScrollBody: false,
-                  child: SizedBox.shrink(), // biar nutup layar penuh
+                  child: SizedBox.shrink(),
                 ),
               ],
             ),

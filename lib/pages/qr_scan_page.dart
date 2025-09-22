@@ -106,17 +106,48 @@ class _QrScanPageState extends State<QrScanPage>
     }
   }
 
+  // ✅ Revisi logScan: cek jarak 15 jam
   Future<bool> logScan({
     required String siswaId,
     required SupabaseClient supabase,
   }) async {
     try {
+      // Cek scan terakhir
+      final lastScan = await supabase
+          .from('parkir')
+          .select('created_at')
+          .eq('siswa_id', siswaId)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (lastScan != null) {
+        final lastTime = DateTime.parse(lastScan['created_at']).toLocal();
+        final diff = DateTime.now().difference(lastTime);
+
+        if (diff.inHours < 15) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  "⏳ Kamu sudah scan, coba lagi ${15 - diff.inHours} jam lagi",
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return false;
+        }
+      }
+
+      // Simpan data scan baru
       final scannedBy =
           supabase.auth.currentUser?.email ?? supabase.auth.currentUser?.id;
       await supabase.from('parkir').insert({
         'siswa_id': siswaId,
         'scanned_by': scannedBy,
       });
+
       return true;
     } catch (e) {
       debugPrint('Failed to log scan: $e');

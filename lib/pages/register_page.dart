@@ -13,20 +13,17 @@ class _RegisterPageState extends State<RegisterPage>
     with SingleTickerProviderStateMixin {
   final authservice = AuthService();
 
-  // Controllers
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
 
-  // Dropdown values
   String? _selectedGrade;
   String? _selectedMajor;
   String? _selectedClass;
   String? _selectedJurusan;
 
-  // Dropdown options
   static const List<String> grades = ['X', 'XI', 'XII'];
   static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ'];
   static const List<String> classes = ['1', '2', '3', '4', '5', '6'];
@@ -40,19 +37,16 @@ class _RegisterPageState extends State<RegisterPage>
 
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(seconds: 1));
-    _fadeAnimation =
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
     _controller.forward();
   }
 
@@ -107,7 +101,7 @@ class _RegisterPageState extends State<RegisterPage>
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 30),
+        padding: const EdgeInsets.symmetric(horizontal: 28),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -121,145 +115,140 @@ class _RegisterPageState extends State<RegisterPage>
         ),
         child: FadeTransition(
           opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 80),
-                  const Text(
-                    'Zona\$',
-                    style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 1.5,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 60),
+
+                // Logo animasi
+                ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 200,
+                    height: 200,
+                  ),
+                ),
+
+                const SizedBox(height: 32), // logo → form
+
+                CustomInputField(
+                  controller: _emailController,
+                  hintText: 'Email',
+                  icon: Icons.email,
+                ),
+                const SizedBox(height: 16),
+
+                CustomInputField(
+                  controller: _passwordController,
+                  hintText: 'Password',
+                  obscureText: true,
+                  icon: Icons.lock,
+                ),
+                const SizedBox(height: 16),
+
+                CustomInputField(
+                  controller: _confirmPasswordController,
+                  hintText: 'Confirm Password',
+                  obscureText: true,
+                  icon: Icons.lock_outline,
+                ),
+                const SizedBox(height: 16),
+
+                CustomInputField(
+                  controller: _fullNameController,
+                  hintText: 'Full Name',
+                  icon: Icons.person,
+                ),
+                const SizedBox(height: 20), // field → dropdown
+
+                // Row dropdown
+                Row(
+                  children: [
+                    Expanded(
+                      child: buildDropdown(
+                        value: _selectedGrade,
+                        hint: "Grade",
+                        items: grades,
+                        onChanged: (v) => setState(() => _selectedGrade = v),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 100),
-
-                  // Email
-                  CustomInputField(
-                    controller: _emailController,
-                    hintText: 'Email',
-                    icon: Icons.email,
-                  ),
-                  const SizedBox(height: 15),
-
-                  // Password
-                  CustomInputField(
-                    controller: _passwordController,
-                    hintText: 'Password',
-                    obscureText: true,
-                    icon: Icons.lock,
-                  ),
-                  const SizedBox(height: 15),
-
-                  // Confirm Password
-                  CustomInputField(
-                    controller: _confirmPasswordController,
-                    hintText: 'Confirm Password',
-                    obscureText: true,
-                    icon: Icons.lock_outline,
-                  ),
-                  const SizedBox(height: 15),
-
-                  // Full Name
-                  CustomInputField(
-                    controller: _fullNameController,
-                    hintText: 'Full Name',
-                    icon: Icons.person,
-                  ),
-                  const SizedBox(height: 15),
-
-                  // Row dropdown
-                  Row(
-                    children: [
-                      Expanded(
-                        child: buildDropdown(
-                          value: _selectedGrade,
-                          hint: "Grade",
-                          items: grades,
-                          onChanged: (v) => setState(() => _selectedGrade = v),
-                        ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: buildDropdown(
+                        value: _selectedMajor,
+                        hint: "Major",
+                        items: majors,
+                        onChanged: (v) => setState(() => _selectedMajor = v),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: buildDropdown(
-                          value: _selectedMajor,
-                          hint: "Major",
-                          items: majors,
-                          onChanged: (v) => setState(() => _selectedMajor = v),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: buildDropdown(
-                          value: _selectedClass,
-                          hint: "Class",
-                          items: classes,
-                          onChanged: (v) => setState(() => _selectedClass = v),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-
-                  buildDropdown(
-                    value: _selectedJurusan,
-                    hint: "Jurusan",
-                    items: jurusans,
-                    onChanged: (v) => setState(() => _selectedJurusan = v),
-                  ),
-                  const SizedBox(height: 30),
-
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.9),
-                      foregroundColor: Colors.blueGrey[900],
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 100, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      elevation: 6,
                     ),
-                    onPressed: signUp,
-                    child: const Text(
-                      'Sign Up',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: buildDropdown(
+                        value: _selectedClass,
+                        hint: "Class",
+                        items: classes,
+                        onChanged: (v) => setState(() => _selectedClass = v),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 40),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-                  const Text(
-                    "Already have an account?",
+                buildDropdown(
+                  value: _selectedJurusan,
+                  hint: "Jurusan",
+                  items: jurusans,
+                  onChanged: (v) => setState(() => _selectedJurusan = v),
+                ),
+                const SizedBox(height: 28), // dropdown → tombol
+
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey[800],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 100, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 6,
+                  ),
+                  onPressed: signUp,
+                  child: const Text(
+                    'Sign Up',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                  ),
+                ),
+                const SizedBox(height: 20), // tombol → teks bawah
+
+                const Text(
+                  "Already have an account?",
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                    );
+                  },
+                  child: const Text(
+                    "Sign in here!",
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.white70,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.yellow,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const LoginPage()),
-                      );
-                    },
-                    child: const Text(
-                      "Sign in here!",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.yellow,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 30),
+              ],
             ),
           ),
         ),
@@ -275,7 +264,9 @@ class _RegisterPageState extends State<RegisterPage>
   }) {
     return DropdownButtonFormField<String>(
       value: value,
-      hint: Text(hint),
+      hint: Text(hint, style: const TextStyle(color: Colors.white70)),
+      dropdownColor: const Color(0xFF203A43),
+      style: const TextStyle(color: Colors.white),
       items: items.map((String v) {
         return DropdownMenuItem<String>(
           value: v,
@@ -284,13 +275,13 @@ class _RegisterPageState extends State<RegisterPage>
       }).toList(),
       onChanged: onChanged,
       decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.school, color: Colors.black54),
+        prefixIcon: const Icon(Icons.school, color: Colors.white70),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.7), // semi transparan
+        fillColor: Colors.black.withOpacity(0.2),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
         ),
       ),
@@ -317,21 +308,19 @@ class CustomInputField extends StatelessWidget {
     return TextField(
       controller: controller,
       obscureText: obscureText,
-      style: const TextStyle(color: Colors.black),
+      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        prefixIcon: icon != null
-            ? Icon(icon, color: Colors.black54)
-            : null, // ikon kecil di kiri
+        prefixIcon: icon != null ? Icon(icon, color: Colors.white70) : null,
         hintText: hintText,
+        hintStyle: const TextStyle(color: Colors.white70),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.7), // semi transparan
+        fillColor: Colors.black.withOpacity(0.2),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
         ),
-        hintStyle: const TextStyle(color: Colors.black45),
       ),
     );
   }

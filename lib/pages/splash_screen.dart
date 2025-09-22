@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
-import 'pages/login_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,73 +9,86 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _textController;
-  late Animation<double> _fadeAnimation;
+  late AnimationController _controller;
+  late Animation<double> _logoOpacity;
+  late Animation<double> _logoScale;
+  late Animation<double> _progress;
 
   @override
   void initState() {
     super.initState();
 
-    // Animasi fade-in teks
-    _textController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 2));
-    _fadeAnimation =
-        CurvedAnimation(parent: _textController, curve: Curves.easeIn);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
 
-    // Mulai animasi teks sedikit setelah splash muncul
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      _textController.forward();
-    });
+    _logoOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0, 0.4)),
+    );
 
-    // Setelah 3 detik, pindah ke LoginPage
-    Future.delayed(const Duration(seconds: 3), () {
-      Navigator.of(context).pushReplacement(PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const LoginPage(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 800),
-      ));
+    _logoScale = Tween<double>(begin: 0.6, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+
+    _progress = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.2, 1.0)),
+    );
+
+    _controller.forward();
+
+    // Pindah ke login setelah selesai
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
     });
   }
 
   @override
   void dispose() {
-    _textController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final logoSize = MediaQuery.of(context).size.width * 0.4;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F2027),
+      backgroundColor: Colors.black,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Animasi Logo Lottie
-            Lottie.asset(
-              'assets/sounds/zon4.json',
-              width: 250,
-              height: 250,
-              fit: BoxFit.contain,
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _logoOpacity.value,
+                  child: Transform.scale(
+                    scale: _logoScale.value,
+                    child: child,
+                  ),
+                );
+              },
+              child: Image.asset('assets/logo.png',
+                  width: logoSize, height: logoSize),
             ),
-
-            const SizedBox(height: 20),
-
-            // Fade-in Teks
-            FadeTransition(
-              opacity: _fadeAnimation,
-              child: const Text(
-                "ZONA4 PARKING",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 2,
-                ),
-              ),
+            const SizedBox(height: 24),
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 50),
+                  child: LinearProgressIndicator(
+                    value: _progress.value,
+                    minHeight: 8,
+                    backgroundColor: Colors.white24,
+                    valueColor: const AlwaysStoppedAnimation(Colors.cyan),
+                  ),
+                );
+              },
             ),
           ],
         ),

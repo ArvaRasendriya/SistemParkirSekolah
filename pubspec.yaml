@@ -65,7 +65,7 @@ dev_dependencies:
 flutter: 
   assets:
     - assets/sounds/beep.mp3
-    - assets/sounds/zon4.json
+    - assets/logo.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

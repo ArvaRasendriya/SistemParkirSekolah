@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
 import 'package:tefa_parkir/pages/register_page.dart';
 import 'package:tefa_parkir/pages/profile_page.dart';
+import 'package:tefa_parkir/pages/admin_dashboard_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,20 +14,14 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage>
     with SingleTickerProviderStateMixin {
-  // Service
   final authService = AuthService();
-
-  // Controller
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
-  // Password visibility (default true → aman dari null error)
   bool _obscurePassword = true;
 
-  // Animation
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
@@ -34,9 +30,8 @@ class _LoginPageState extends State<LoginPage>
         AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
 
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-            .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _scaleAnimation =
+        Tween<double>(begin: 0.8, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
     _controller.forward();
   }
@@ -49,35 +44,99 @@ class _LoginPageState extends State<LoginPage>
     super.dispose();
   }
 
-  // Login Function
+  // === LOGIN DENGAN CEK ROLE (robust terhadap user.id null) ===
   void login() async {
-    final email = _emailController.text;
-    final password = _passwordController.text;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email dan password harus diisi")),
+      );
+      return;
+    }
 
     try {
+      // 1) Panggil AuthService (biarkan service kamu meng-handle signIn)
+      //    jangan bergantung pada return value; ambil user dari supabase client.
       await authService.signInWithEmailPassword(email, password);
-      if (mounted) {
+
+      // 2) Ambil user dari supabase auth (sumber kebenaran)
+      final supabase = Supabase.instance.client;
+      final User? currentUser =
+          supabase.auth.currentUser ?? supabase.auth.currentSession?.user;
+
+      if (currentUser == null) {
+        // Artinya sign-in mungkin gagal atau AuthService tidak meng-set session
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                "Login sepertinya berhasil tapi user tidak ditemukan. Cek implementasi AuthService."),
+          ),
+        );
+        return;
+      }
+
+      final uid = currentUser.id;
+
+      // 3) Ambil role (dan optional status) dari tabel profiles
+      final profile = await supabase
+          .from('profiles')
+          .select('role, status')
+          .eq('id', uid)
+          .maybeSingle();
+
+      if (profile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Profile tidak ditemukan di tabel profiles")),
+        );
+        return;
+      }
+
+      final role = (profile['role'] as String?)?.toLowerCase();
+      final status = (profile['status'] as String?)?.toLowerCase();
+
+      // (Optional) contoh: blokir kalau status = 'pending' atau 'inactive'
+      if (status != null && (status == 'pending' || status == 'inactive')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Akun Anda belum aktif (status: $status)")),
+        );
+        return;
+      }
+
+      // 4) Navigate sesuai role
+      if (!mounted) return;
+      if (role == 'admin') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+        );
+      } else if (role == 'satgas') {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const ProfilePage()),
         );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Role tidak dikenali: $role")),
+        );
       }
     } catch (e) {
+      // Tangani error network / auth / dll
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
+          SnackBar(content: Text("Error saat login: $e")),
         );
       }
     }
   }
 
-  // Common InputDecoration
   InputDecoration _transparentDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
       filled: true,
       fillColor: Colors.white.withOpacity(0.10),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(25),
         borderSide: BorderSide.none,
@@ -94,7 +153,7 @@ class _LoginPageState extends State<LoginPage>
         curve: Curves.easeInOut,
         width: double.infinity,
         height: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 30),
+        padding: const EdgeInsets.symmetric(horizontal: 28),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -108,125 +167,107 @@ class _LoginPageState extends State<LoginPage>
         ),
         child: FadeTransition(
           opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 80),
-                    AnimatedOpacity(
-                      duration: const Duration(milliseconds: 700),
-                      opacity: 1,
-                      child: Text(
-                        'Zona\$',
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 50),
+
+                  // Animasi logo
+                  ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Image.asset(
+                      'assets/logo.png',
+                      width: 240,
+                      height: 240,
+                    ),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  CustomInputField(
+                    controller: _emailController,
+                    hintText: 'Email',
+                  ),
+                  const SizedBox(height: 14),
+
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: _transparentDecoration('Password').copyWith(
+                      suffixIcon: IconButton(
+                        splashRadius: 20,
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: login,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        backgroundColor: const Color(0xFF2C5364),
+                        foregroundColor: Colors.white,
+                        elevation: 6,
+                        shadowColor: Colors.black45,
+                      ),
+                      child: const Text(
+                        'Login',
                         style: TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withOpacity(0.45),
-                              blurRadius: 8,
-                              offset: const Offset(2, 2),
-                            )
-                          ],
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 50),
+                  ),
 
-                    // Email field
-                    CustomInputField(
-                      controller: _emailController,
-                      hintText: 'Email',
+                  const SizedBox(height: 22),
+
+                  const Text(
+                    "Don't have an account?",
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.white70,
                     ),
-                    const SizedBox(height: 18),
-
-                    // Password field with eye toggle
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: _transparentDecoration('Password').copyWith(
-                        suffixIcon: IconButton(
-                          splashRadius: 20,
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 34),
-
-                    // Login button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: login,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          backgroundColor: const Color(0xFF2C5364),
-                          foregroundColor: Colors.white,
-                          elevation: 8,
-                          shadowColor: Colors.black45,
-                        ),
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    const Text(
-                      "Don't have an account?",
+                  ),
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const RegisterPage()),
+                      );
+                    },
+                    child: const Text(
+                      "Sign up here!",
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white70,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const RegisterPage()),
-                        );
-                      },
-                      child: const Text(
-                        "Sign up here!",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.amber,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
           ),
@@ -245,7 +286,7 @@ class CustomInputField extends StatelessWidget {
     super.key,
     required this.controller,
     required this.hintText,
-    this.obscureText = false, // default = false → aman dari null
+    this.obscureText = false,
   });
 
   @override
@@ -258,7 +299,8 @@ class CustomInputField extends StatelessWidget {
         hintText: hintText,
         filled: true,
         fillColor: Colors.white.withOpacity(0.10),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(25),
           borderSide: BorderSide.none,
