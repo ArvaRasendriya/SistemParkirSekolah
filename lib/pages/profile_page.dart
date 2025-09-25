@@ -8,6 +8,7 @@ import 'riwayat_page.dart';
 import 'qr_scan_page.dart';
 import 'daftar_page.dart';
 import 'login_page.dart';
+import 'admin_dashboard_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -23,6 +24,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? profileData;
   List<Map<String, dynamic>> todayHistory = [];
   RealtimeChannel? channel;
+  String? userRole;
 
   late Timer timer;
   String currentTime = DateFormat.Hms().format(DateTime.now()); // hh:mm:ss
@@ -31,6 +33,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     fetchProfile();
+    fetchRole();
     fetchTodayHistory();
     setupRealtimeSubscription();
 
@@ -77,6 +80,11 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (e) {
       debugPrint("Error fetching profile: $e");
     }
+  }
+
+  Future<void> fetchRole() async {
+    userRole = await authService.getUserRole();
+    setState(() {});
   }
 
   Future<void> fetchTodayHistory() async {
@@ -192,6 +200,17 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                       icon: const Icon(Icons.refresh, color: Colors.white),
                     ),
+                    if (userRole == 'admin')
+                      IconButton(
+                        icon: const Icon(Icons.swap_horiz, color: Colors.white),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+                          );
+                        },
+                        tooltip: 'Switch to Admin Side',
+                      ),
                     IconButton(
                       onPressed: logout,
                       icon: const Icon(Icons.logout, color: Colors.white),

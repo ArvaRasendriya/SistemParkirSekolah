@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'admin_approval_page.dart';
 import 'satgas_list_page.dart';
 import 'admin_sim_page.dart'; // ⬅️ ganti dari profile_page.dart
+import 'profile_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -35,6 +36,22 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        title: const Text(
+          'Admin Dashboard',
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
+            },
+            tooltip: 'Switch to Satgas Side',
+          ),
+        ],
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
