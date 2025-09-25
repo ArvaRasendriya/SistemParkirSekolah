@@ -1,21 +1,19 @@
-<<<<<<<<< Temporary merge branch 1
-=========
 import 'dart:convert';
->>>>>>>>> Temporary merge branch 2
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:camera/camera.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tefa_parkir/pages/sim_scanner.dart';
 import 'package:uuid/uuid.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'daftar_berhasil_page.dart';
 import 'daftar_gagal_page.dart';
 import 'profile_page.dart';
+import 'sim_scanner.dart';
 
 class DaftarPage extends StatefulWidget {
   const DaftarPage({super.key});
@@ -33,17 +31,21 @@ class _DaftarPageState extends State<DaftarPage>
   final jurusanC = TextEditingController();
   final emailC = TextEditingController();
 
-  // Dropdown values for kelas
   String? _selectedGrade;
   String? _selectedMajor;
   String? _selectedClass;
   String? _selectedJurusan;
 
-  // Dropdown options
   static const List<String> grades = ['X', 'XI', 'XII'];
   static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ'];
   static const List<String> classes = ['1', '2', '3', '4', '5', '6'];
-  static const List<String> jurusans = ['Rekayasa Perangkat Lunak', 'Desain Komunikasi Visual', 'Teknik Otomotif Industri', 'Teknik Audio Video', 'Teknik Komputer Jaringan'];
+  static const List<String> jurusans = [
+    'Rekayasa Perangkat Lunak',
+    'Desain Komunikasi Visual',
+    'Teknik Otomotif Industri',
+    'Teknik Audio Video',
+    'Teknik Komputer Jaringan'
+  ];
 
   Uint8List? _simBytes;
   bool _isLoading = false;
@@ -68,67 +70,63 @@ class _DaftarPageState extends State<DaftarPage>
   @override
   void dispose() {
     _animController.dispose();
+    namaC.dispose();
+    kelasC.dispose();
+    jurusanC.dispose();
+    emailC.dispose();
     super.dispose();
   }
 
-  Future<void> _pickSimImage() async {
-    try {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(
-        source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.rear,
-        imageQuality: 85,
-      );
+Future<void> _pickSimImage() async {
+  try {
+    final result = await Navigator.push<File>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SimScannerPage(),
+      ),
+    );
 
-      if (picked != null) {
-        final bytes = await picked.readAsBytes();
-        setState(() {
-          _simBytes = bytes;
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal ambil foto SIM: $e")),
-      );
-=========
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
+    if (result != null) {
+      final bytes = await result.readAsBytes();
+
       setState(() {
-        _simImageBytes = bytes;
+        _simBytes = bytes;
       });
->>>>>>>>> Temporary merge branch 2
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Gagal membuka kamera: $e")),
+    );
   }
+}
 
-  /// 🔑 Proses daftar user (punya kamu tetap sama)
+
+
   Future<void> _daftarUser() async {
     try {
       if (_simBytes == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Foto SIM dulu sebelum daftar")),
+          const SnackBar(content: Text("Pilih foto SIM dulu")),
         );
         return;
       }
 
-      // Set kelas from dropdowns
-      if (_selectedGrade != null && _selectedMajor != null && _selectedClass != null) {
-        kelasC.text = '$_selectedGrade $_selectedMajor $_selectedClass';
-      } else {
+      if (_selectedGrade == null || _selectedMajor == null || _selectedClass == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Pilih kelas lengkap")),
         );
         return;
       }
 
-      // Set jurusan from dropdown
-      if (_selectedJurusan != null) {
-        jurusanC.text = _selectedJurusan!;
-      } else {
+      if (_selectedJurusan == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Pilih jurusan")),
         );
         return;
       }
+      
+      kelasC.text = '$_selectedGrade $_selectedMajor $_selectedClass';
+      jurusanC.text = _selectedJurusan!;
 
       setState(() => _isLoading = true);
 
@@ -152,14 +150,27 @@ class _DaftarPageState extends State<DaftarPage>
         "sim_url": simUrl,
       });
 
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      const qrSize = 300.0;
+      const padding = 10.0;
+      const totalSize = qrSize + 2 * padding;
+      final paint = Paint()..color = Colors.white;
+      canvas.drawRect(Rect.fromLTWH(0, 0, totalSize, totalSize), paint);
+      canvas.save();
+      canvas.translate(padding, padding);
       final qrPainter = QrPainter(
         data: id,
         version: QrVersions.auto,
         gapless: true,
       );
-
-      final uiImage = await qrPainter.toImage(300);
-      final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
+      qrPainter.paint(canvas, Size(qrSize, qrSize));
+      canvas.restore();
+      final picture = recorder.endRecording();
+      final uiImage =
+          await picture.toImage(totalSize.toInt(), totalSize.toInt());
+      final byteData =
+          await uiImage.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List qrBytes = byteData!.buffer.asUint8List();
 
       final qrFileName = "${id}_qr.png";
@@ -233,92 +244,185 @@ class _DaftarPageState extends State<DaftarPage>
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
+            colors: [
+              Color(0xFF0F2027),
+              Color(0xFF203A43),
+              Color(0xFF2C5364),
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Daftar Akun Siswa",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+        child: Column(
+          children: [
+            const SizedBox(height: 60),
+            Expanded(
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(28),
+                      topRight: Radius.circular(28),
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.15),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  _buildTextField(namaC, "Nama", Icons.person),
-                  const SizedBox(height: 12),
-                  _buildTextField(kelasC, "Kelas", Icons.class_),
-                  const SizedBox(height: 12),
-                  _buildTextField(jurusanC, "Jurusan", Icons.school),
-                  const SizedBox(height: 12),
-                  _buildTextField(emailC, "Email", Icons.email,
-                      keyboardType: TextInputType.emailAddress),
-                  const SizedBox(height: 12),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 16),
+                        Text(
+                          "Daftar Akun Siswa",
+                          style: GoogleFonts.poppins(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "Silakan isi data diri dengan benar",
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 28),
 
-                        // Tombol upload SIM
+                        _buildTextField(namaC, "Nama", Icons.person),
+                        const SizedBox(height: 16),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildDropdown(
+                                  _selectedGrade, grades, 'Grade', (String? newValue) {
+                                setState(() {
+                                  _selectedGrade = newValue;
+                                });
+                              }),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _buildDropdown(
+                                  _selectedMajor, majors, 'Major', (String? newValue) {
+                                setState(() {
+                                  _selectedMajor = newValue;
+                                });
+                              }),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _buildDropdown(
+                                  _selectedClass, classes, 'Class', (String? newValue) {
+                                setState(() {
+                                  _selectedClass = newValue;
+                                });
+                              }),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDropdown(
+                            _selectedJurusan, jurusans, 'Jurusan', (String? newValue) {
+                          setState(() {
+                            _selectedJurusan = newValue;
+                          });
+                        }),
+
+                        const SizedBox(height: 16),
+                        _buildTextField(emailC, "Email", Icons.email,
+                            keyboardType: TextInputType.emailAddress),
+                        const SizedBox(height: 20),
+
                         GestureDetector(
                           onTap: _pickSimImage,
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(color: Colors.grey.shade400),
+                              color: Colors.white.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.25),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.credit_card, color: Colors.grey),
-                                const SizedBox(width: 10),
-                                Text(
-                                  _simImageBytes == null
-                                      ? "Upload Kartu SIM"
-                                      : "SIM dipilih",
-                                  style: const TextStyle(color: Colors.black54),
+                                Icon(Icons.camera_alt_rounded,
+                                    color: _simBytes == null
+                                        ? Colors.white70
+                                        : Colors.greenAccent),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _simBytes == null
+                                        ? "Pilih Foto SIM"
+                                        : "SIM berhasil dipilih",
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
+                                if (_simBytes != null)
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.memory(
+                                      _simBytes!,
+                                      width: 60,
+                                      height: 40,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
                         ),
+                        const SizedBox(height: 32),
 
-                  const SizedBox(height: 20),
-
-                  // Tombol submit
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _daftarUser,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 32,
-                      ),
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _daftarUser,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF203A43),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 14, horizontal: 40),
+                            elevation: 5,
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  "Selesai",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ],
                     ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text("Selesai"),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -346,6 +450,38 @@ class _DaftarPageState extends State<DaftarPage>
           borderSide: const BorderSide(color: Colors.white, width: 1.5),
         ),
       ),
+    );
+  }
+
+  Widget _buildDropdown<T>(T? value, List<T> items, String hint,
+      void Function(T?) onChanged) {
+    return DropdownButtonFormField<T>(
+      value: value,
+      hint: Text(hint, style: GoogleFonts.poppins(color: Colors.white70)),
+      items: items.map<DropdownMenuItem<T>>((T item) {
+        return DropdownMenuItem<T>(
+          value: item,
+          child: Text(item.toString(),
+              style: GoogleFonts.poppins(color: Colors.black)),
+        );
+      }).toList(),
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: Colors.white, width: 1.5),
+        ),
+      ),
+      dropdownColor: const Color(0xFF2C5364),
+      style: GoogleFonts.poppins(color: Colors.white),
     );
   }
 }

@@ -55,8 +55,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
   DateTime startOfDay(DateTime t) => DateTime(t.year, t.month, t.day);
 
-  String formatTime(DateTime t) =>
-      DateFormat('dd MMM yyyy HH:mm').format(t);
+  String formatTime(DateTime t) => DateFormat('dd MMM yyyy HH:mm').format(t);
 
   Map<String, List<Map<String, dynamic>>> groupRows() {
     final Map<String, List<Map<String, dynamic>>> groups = {
@@ -116,11 +115,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         titleTextStyle: const TextStyle(
-<<<<<<<<< Temporary merge branch 1
-            color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold) 
-=========
             color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
->>>>>>>>> Temporary merge branch 2
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -130,81 +125,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
             end: Alignment.bottomCenter,
           ),
         ),
-<<<<<<<<< Temporary merge branch 1
-        child: RefreshIndicator(
-          onRefresh: fetchRiwayat,
-          child: _loading
-              ? const Center(child: CircularProgressIndicator(color: Colors.white))
-              : _rows.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 150),
-                        Center(
-                          child: Text(
-                            'Belum ada riwayat parkir',
-                            style: TextStyle(color: Colors.white70, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    )
-                  : ListView(
-                      children: [
-                        for (final key in displayOrder)
-                          if ((grouped[key]?.isNotEmpty ?? false))
-                            Theme(
-                              data: Theme.of(context).copyWith(
-                                dividerColor: Colors.transparent,
-                                unselectedWidgetColor: Colors.white70,
-                              ),
-                              child: ExpansionTile(
-                                initiallyExpanded: key == 'Today',
-                                title: Text(
-                                  key,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                children: grouped[key]!.map((r) {
-                                  final siswa =
-                                      (r['siswa'] ?? {}) as Map<String, dynamic>;
-                                  final nama = siswa['nama'] ?? '—';
-                                  final kelas = siswa['kelas'] ?? '—';
-                                  final createdAt =
-                                      DateTime.parse(r['created_at']).toLocal();
-
-                                  return Card(
-                                    color: Colors.white.withOpacity(0.1),
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: ListTile(
-                                      leading: const Icon(Icons.person,
-                                          color: Colors.white70),
-                                      title: Text(
-                                        nama,
-                                        style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600),
-                                      ),
-                                      subtitle: Text(
-                                        "Kelas: $kelas",
-                                        style: const TextStyle(color: Colors.white70),
-                                      ),
-                                      trailing: Text(
-                                        formatTime(createdAt),
-                                        style: const TextStyle(
-                                            color: Colors.white70, fontSize: 12),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                      ],
-                    ),
-=========
         child: SafeArea(
           child: RefreshIndicator(
             onRefresh: fetchRiwayat,
@@ -352,7 +272,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
                     ],
                   ),
           ),
->>>>>>>>> Temporary merge branch 2
         ),
       ),
     );

@@ -5,7 +5,7 @@ import 'pages/daftar_page.dart';
 import 'pages/login_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/admin_dashboard_page.dart';
-
+  
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const AuthGate(), // sementara tes daftar
+      home: const AuthGate(), 
       routes: {
         '/login': (context) => const LoginPage(),
         '/profile': (context) => const ProfilePage(),
