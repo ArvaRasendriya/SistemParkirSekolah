@@ -100,6 +100,11 @@ class _DashboardContentState extends State<DashboardContent> {
   int sudahAbsen = 0;
   int belumAbsen = 0;
 
+  int changeAkunSatgas = 0;
+  int changeAkunSiswa = 0;
+  int changeSudahAbsen = 0;
+  int changeBelumAbsen = 0;
+
   bool loading = true;
 
   @override
@@ -110,20 +115,35 @@ class _DashboardContentState extends State<DashboardContent> {
 
   Future<void> _loadStats() async {
     try {
+      final now = DateTime.now().toUtc();
+      final todayStart = DateTime(now.year, now.month, now.day).toIso8601String();
+      final yesterday = now.subtract(const Duration(days: 1));
+      final yesterdayDate = yesterday.toIso8601String().substring(0, 10); // YYYY-MM-DD
+
       // 1. Ambil jumlah akun satgas
       final satgasRes = await supabase.from('profiles').select().eq('role', 'satgas');
       akunSatgas = satgasRes.length;
+      final prevSatgasRes = await supabase.from('profiles').select().eq('role', 'satgas').lt('created_at', todayStart);
+      final prevAkunSatgas = prevSatgasRes.length;
+      changeAkunSatgas = akunSatgas - prevAkunSatgas;
 
       // 2. Ambil jumlah akun siswa
       final siswaRes = await supabase.from('siswa').select();
       akunSiswa = siswaRes.length;
+      final prevSiswaRes = await supabase.from('siswa').select().lt('created_at', todayStart);
+      final prevAkunSiswa = prevSiswaRes.length;
+      changeAkunSiswa = akunSiswa - prevAkunSiswa;
 
       // 3. Ambil jumlah siswa yg sudah absen (tabel parkir)
       final parkirRes = await supabase.from('parkir').select();
       sudahAbsen = parkirRes.length;
+      final prevParkirRes = await supabase.from('parkir').select().lt('tanggal', yesterdayDate);
+      final prevSudahAbsen = prevParkirRes.length;
+      changeSudahAbsen = sudahAbsen - prevSudahAbsen;
 
       // 4. Hitung siswa yg belum absen
       belumAbsen = akunSiswa - sudahAbsen;
+      changeBelumAbsen = changeAkunSiswa - changeSudahAbsen;
 
       setState(() {
         loading = false;
@@ -181,28 +201,28 @@ class _DashboardContentState extends State<DashboardContent> {
                         StatCard(
                           title: "Akun Satgas",
                           value: "$akunSatgas",
-                          change: "+0",
+                          change: changeAkunSatgas >= 0 ? "+$changeAkunSatgas" : "$changeAkunSatgas",
                           icon: Icons.shield,
                           color: Colors.blue,
                         ),
                         StatCard(
                           title: "Akun Siswa",
                           value: "$akunSiswa",
-                          change: "+0",
+                          change: changeAkunSiswa >= 0 ? "+$changeAkunSiswa" : "$changeAkunSiswa",
                           icon: Icons.school,
                           color: Colors.green,
                         ),
                         StatCard(
                           title: "Sudah Absen",
                           value: "$sudahAbsen",
-                          change: "+0",
+                          change: changeSudahAbsen >= 0 ? "+$changeSudahAbsen" : "$changeSudahAbsen",
                           icon: Icons.check_circle,
                           color: Colors.teal,
                         ),
                         StatCard(
                           title: "Belum Absen",
                           value: "$belumAbsen",
-                          change: "-0",
+                          change: changeBelumAbsen >= 0 ? "+$changeBelumAbsen" : "$changeBelumAbsen",
                           icon: Icons.cancel,
                           color: Colors.red,
                         ),

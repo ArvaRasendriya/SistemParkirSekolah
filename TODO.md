@@ -1,0 +1,7 @@
+- [x] Modify lib/pages/admin_dashboard_page.dart: Add import for profile_page.dart, add title and switch button in appBar.
+- [x] Modify lib/pages/profile_page.dart: Add import for admin_dashboard_page.dart, add role fetching in state, add conditional switch button in SliverAppBar actions.
+- [ ] Test navigation and ensure button visibility based on role.
+- [x] Update admin_dashboard_page.dart to filter Akun Satgas count from profiles table with role 'satgas'.
+- [x] Implement dynamic change values for StatCard widgets in admin_dashboard_page.dart.
+- [ ] Test admin dashboard to verify Akun Satgas count shows only satgas accounts and change values are dynamic.
+- [ ] Ensure satgas_list_page continues to work as expected (already filters correctly).
