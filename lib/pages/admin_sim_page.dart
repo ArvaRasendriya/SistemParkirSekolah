@@ -52,7 +52,8 @@ class _AdminSimPageState extends State<AdminSimPage> {
       appBar: AppBar(
         title: const Text(
           'Data SIM',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
