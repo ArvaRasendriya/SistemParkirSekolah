@@ -14,8 +14,10 @@ class _QrScanPageState extends State<QrScanPage>
     with TickerProviderStateMixin {
   bool isProcessing = false;
   bool torchOn = false;
+  bool showCircle = false;
   final supabase = Supabase.instance.client;
   final MobileScannerController cameraController = MobileScannerController();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   late AnimationController _lineController;
   late Animation<double> _lineAnimation;
@@ -53,7 +55,16 @@ class _QrScanPageState extends State<QrScanPage>
     _lineController.dispose();
     _textController.dispose();
     cameraController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
+  }
+
+  Future<void> _playBeep() async {
+    if (kIsWeb) {
+      await _audioPlayer.play(UrlSource("assets/sounds/beep.mp3"));
+    } else {
+      await _audioPlayer.play(AssetSource("sounds/beep.mp3"));
+    }
   }
 
   Future<void> _fetchUserAndNavigate(String userId) async {
@@ -92,17 +103,48 @@ class _QrScanPageState extends State<QrScanPage>
     }
   }
 
+  // ✅ Revisi logScan: cek jarak 15 jam
   Future<bool> logScan({
     required String siswaId,
     required SupabaseClient supabase,
   }) async {
     try {
+      // Cek scan terakhir
+      final lastScan = await supabase
+          .from('parkir')
+          .select('created_at')
+          .eq('siswa_id', siswaId)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (lastScan != null) {
+        final lastTime = DateTime.parse(lastScan['created_at']).toLocal();
+        final diff = DateTime.now().difference(lastTime);
+
+        if (diff.inHours < 15) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  "⏳ Kamu sudah scan, coba lagi ${15 - diff.inHours} jam lagi",
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return false;
+        }
+      }
+
+      // Simpan data scan baru
       final scannedBy =
           supabase.auth.currentUser?.email ?? supabase.auth.currentUser?.id;
       await supabase.from('parkir').insert({
         'siswa_id': siswaId,
         'scanned_by': scannedBy,
       });
+
       return true;
     } catch (e) {
       debugPrint('Failed to log scan: $e');
@@ -126,9 +168,9 @@ class _QrScanPageState extends State<QrScanPage>
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0F2027), 
-              Color(0xFF203A43), 
-              Color(0xFF2C5364), 
+              Color(0xFF0F2027),
+              Color(0xFF203A43),
+              Color(0xFF2C5364),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -136,12 +178,16 @@ class _QrScanPageState extends State<QrScanPage>
         ),
         child: Stack(
           children: [
-            // Kamera scanner
-            MobileScanner(
-              controller: cameraController,
-              onDetect: _onDetect,
+            // Kamera scanner full screen
+            Positioned.fill(
+              child: MobileScanner(
+                controller: cameraController,
+                onDetect: _onDetect,
+                fit: BoxFit.cover, // ✅ biar ga kepotong
+              ),
             ),
 
+            // Tombol flashlight
             Positioned(
               top: 40,
               right: 20,
@@ -163,9 +209,13 @@ class _QrScanPageState extends State<QrScanPage>
                 ),
               ),
             ),
+
+            // Overlay kotak scan + teks
             Column(
               children: [
                 const Spacer(),
+
+                // Teks ZON4
                 SizedBox(
                   width: 250,
                   child: AnimatedBuilder(
@@ -195,15 +245,15 @@ class _QrScanPageState extends State<QrScanPage>
                 ),
                 const SizedBox(height: 16),
 
-                // Kotak QR
-                SizedBox(
-                  height: 300,
-                  child: Stack(
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 250,
-                          height: 250,
+                // Kotak QR (selalu center, tidak kepotong)
+                Center(
+                  child: SizedBox(
+                    height: 300,
+                    width: 300,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
                           decoration: BoxDecoration(
                             border: Border.all(
                                 color: Colors.cyanAccent.withOpacity(0.9),
@@ -218,29 +268,47 @@ class _QrScanPageState extends State<QrScanPage>
                             ],
                           ),
                         ),
-                      ),
-                      AnimatedBuilder(
-                        animation: _lineAnimation,
-                        builder: (context, child) {
-                          return Positioned(
-                            top: 40 + (180 * _lineAnimation.value),
-                            left: MediaQuery.of(context).size.width / 2 - 125,
-                            child: Container(
-                              width: 250,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Colors.cyanAccent, Colors.white],
+
+                        // garis scan
+                        AnimatedBuilder(
+                          animation: _lineAnimation,
+                          builder: (context, child) {
+                            return Positioned(
+                              top: 300 * _lineAnimation.value,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Colors.cyanAccent, Colors.white],
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
-                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            );
+                          },
+                        ),
+
+                        // lingkaran animasi ketika berhasil scan
+                        if (showCircle)
+                          AnimatedScale(
+                            scale: showCircle ? 1.5 : 0,
+                            duration: const Duration(milliseconds: 500),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.cyanAccent,
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ],
+                          ),
+                      ],
+                    ),
                   ),
                 ),
+
                 const Spacer(),
 
                 // Tombol kembali
@@ -258,7 +326,7 @@ class _QrScanPageState extends State<QrScanPage>
                       elevation: 6,
                     ),
                     onPressed: () {
-                      Navigator.pop(context); // kembali ke halaman sebelumnya
+                      Navigator.pop(context);
                     },
                     child: const Text(
                       "KEMBALI",

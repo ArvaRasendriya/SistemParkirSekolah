@@ -9,26 +9,46 @@ class RegisterPage extends StatefulWidget {
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends State<RegisterPage>
+    with SingleTickerProviderStateMixin {
   final authservice = AuthService();
 
-  // Controllers
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
 
-  // Dropdown values
   String? _selectedGrade;
   String? _selectedMajor;
   String? _selectedClass;
   String? _selectedJurusan;
 
-  // Dropdown options
   static const List<String> grades = ['X', 'XI', 'XII'];
   static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ'];
   static const List<String> classes = ['1', '2', '3', '4', '5', '6'];
-  static const List<String> jurusans = ['Rekayasa Perangkat Lunak', 'Desain Komunikasi Visual', 'Teknik Otomotif Industri', 'Teknik Audio Video', 'Teknik Komputer Jaringan'];
+  static const List<String> jurusans = [
+    'Rekayasa Perangkat Lunak',
+    'Desain Komunikasi Visual',
+    'Teknik Otomotif Industri',
+    'Teknik Audio Video',
+    'Teknik Komputer Jaringan'
+  ];
+
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+    _controller.forward();
+  }
 
   void signUp() async {
     final email = _emailController.text.trim();
@@ -43,12 +63,14 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      final response = await authservice.signUpWithEmailPassword(email, password);
+      final response =
+          await authservice.signUpWithEmailPassword(email, password);
       final user = response.user;
       if (user != null) {
-        // Create profile with pending status after successful sign up
         final fullName = _fullNameController.text.trim();
-        final kelas = _selectedGrade != null && _selectedMajor != null && _selectedClass != null
+        final kelas = _selectedGrade != null &&
+                _selectedMajor != null &&
+                _selectedClass != null
             ? '$_selectedGrade $_selectedMajor $_selectedClass'
             : '';
         final jurusan = _selectedJurusan ?? '';
@@ -60,7 +82,8 @@ class _RegisterPageState extends State<RegisterPage> {
           return;
         }
 
-        await authservice.createProfile(user.id, email, full_name: fullName, kelas: kelas, jurusan: jurusan);
+        await authservice.createProfile(user.id, email,
+            full_name: fullName, kelas: kelas, jurusan: jurusan);
       }
       Navigator.pop(context);
     } catch (e) {
@@ -78,210 +101,188 @@ class _RegisterPageState extends State<RegisterPage> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 30),
+        padding: const EdgeInsets.symmetric(horizontal: 28),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF0D8BFF), Color(0xFF007BFF)],
+            colors: [
+              Color(0xFF0F2027),
+              Color(0xFF203A43),
+              Color(0xFF2C5364),
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 80),
-              const Text(
-                'ParkirApp',
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 60),
+
+                // Logo animasi
+                ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 200,
+                    height: 200,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 200),
 
-              CustomInputField(
-                controller: _emailController,
-                hintText: 'Email',
-              ),
-              const SizedBox(height: 15),
+                const SizedBox(height: 32), // logo → form
 
-              CustomInputField(
-                controller: _passwordController,
-                hintText: 'Password',
-                obscureText: true,
-              ),
-              const SizedBox(height: 15),
+                CustomInputField(
+                  controller: _emailController,
+                  hintText: 'Email',
+                  icon: Icons.email,
+                ),
+                const SizedBox(height: 16),
 
-              CustomInputField(
-                controller: _confirmPasswordController,
-                hintText: 'Confirm Password',
-                obscureText: true,
-              ),
-              const SizedBox(height: 15),
+                CustomInputField(
+                  controller: _passwordController,
+                  hintText: 'Password',
+                  obscureText: true,
+                  icon: Icons.lock,
+                ),
+                const SizedBox(height: 16),
 
-              CustomInputField(
-                controller: _fullNameController,
-                hintText: 'Full Name',
-              ),
-              const SizedBox(height: 15),
+                CustomInputField(
+                  controller: _confirmPasswordController,
+                  hintText: 'Confirm Password',
+                  obscureText: true,
+                  icon: Icons.lock_outline,
+                ),
+                const SizedBox(height: 16),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedGrade,
-                      hint: const Text('Grade'),
-                      items: grades.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedGrade = newValue;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          borderSide: BorderSide.none,
-                        ),
+                CustomInputField(
+                  controller: _fullNameController,
+                  hintText: 'Full Name',
+                  icon: Icons.person,
+                ),
+                const SizedBox(height: 20), // field → dropdown
+
+                // Row dropdown
+                Row(
+                  children: [
+                    Expanded(
+                      child: buildDropdown(
+                        value: _selectedGrade,
+                        hint: "Grade",
+                        items: grades,
+                        onChanged: (v) => setState(() => _selectedGrade = v),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedMajor,
-                      hint: const Text('Major'),
-                      items: majors.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedMajor = newValue;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          borderSide: BorderSide.none,
-                        ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: buildDropdown(
+                        value: _selectedMajor,
+                        hint: "Major",
+                        items: majors,
+                        onChanged: (v) => setState(() => _selectedMajor = v),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedClass,
-                      hint: const Text('Class'),
-                      items: classes.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedClass = newValue;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          borderSide: BorderSide.none,
-                        ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: buildDropdown(
+                        value: _selectedClass,
+                        hint: "Class",
+                        items: classes,
+                        onChanged: (v) => setState(() => _selectedClass = v),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-
-              DropdownButtonFormField<String>(
-                value: _selectedJurusan,
-                hint: const Text('Jurusan'),
-                items: jurusans.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedJurusan = newValue;
-                  });
-                },
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide.none,
-                  ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 30),
+                const SizedBox(height: 16),
 
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                buildDropdown(
+                  value: _selectedJurusan,
+                  hint: "Jurusan",
+                  items: jurusans,
+                  onChanged: (v) => setState(() => _selectedJurusan = v),
+                ),
+                const SizedBox(height: 28), // dropdown → tombol
+
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey[800],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 100, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 6,
+                  ),
+                  onPressed: signUp,
+                  child: const Text(
+                    'Sign Up',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                   ),
                 ),
-                onPressed: signUp,
-                child: const Text(
-                  'Sign Up',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 40),
+                const SizedBox(height: 20), // tombol → teks bawah
 
-              const Text(
-                "Already have an account?",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                  );
-                },
-                child: const Text(
-                  "Sign in here!",
+                const Text(
+                  "Already have an account?",
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.yellow,
-                    letterSpacing: -1,
+                    fontSize: 15,
+                    color: Colors.white70,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                    );
+                  },
+                  child: const Text(
+                    "Sign in here!",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.yellow,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildDropdown({
+    required String? value,
+    required String hint,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      hint: Text(hint, style: const TextStyle(color: Colors.white70)),
+      dropdownColor: const Color(0xFF203A43),
+      style: const TextStyle(color: Colors.white),
+      items: items.map((String v) {
+        return DropdownMenuItem<String>(
+          value: v,
+          child: Text(v),
+        );
+      }).toList(),
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        prefixIcon: const Icon(Icons.school, color: Colors.white70),
+        filled: true,
+        fillColor: Colors.black.withOpacity(0.2),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide.none,
         ),
       ),
     );
@@ -292,12 +293,14 @@ class CustomInputField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final bool obscureText;
+  final IconData? icon;
 
   const CustomInputField({
     super.key,
     required this.controller,
     required this.hintText,
     this.obscureText = false,
+    this.icon,
   });
 
   @override
@@ -305,17 +308,19 @@ class CustomInputField extends StatelessWidget {
     return TextField(
       controller: controller,
       obscureText: obscureText,
-      style: const TextStyle(color: Colors.black),
+      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
+        prefixIcon: icon != null ? Icon(icon, color: Colors.white70) : null,
         hintText: hintText,
+        hintStyle: const TextStyle(color: Colors.white70),
         filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        fillColor: Colors.black.withOpacity(0.2),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
         ),
-        hintStyle: const TextStyle(color: Colors.grey),
       ),
     );
   }

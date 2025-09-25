@@ -10,6 +10,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'daftar_berhasil_page.dart';
 import 'daftar_gagal_page.dart';
 import 'profile_page.dart';
@@ -39,6 +40,13 @@ class _DaftarPageState extends State<DaftarPage>
   static const List<String> grades = ['X', 'XI', 'XII'];
   static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ'];
   static const List<String> classes = ['1', '2', '3', '4', '5', '6'];
+  static const List<String> jurusans = [
+    'Rekayasa Perangkat Lunak',
+    'Desain Komunikasi Visual',
+    'Teknik Otomotif Industri',
+    'Teknik Audio Video',
+    'Teknik Komputer Jaringan'
+  ];
   static const List<String> jurusans = [
     'Rekayasa Perangkat Lunak',
     'Desain Komunikasi Visual',
@@ -120,7 +128,7 @@ Future<void> _pickSimImage() async {
 
       if (_selectedJurusan == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Pilih jurusan")),
+          const SnackBar(content: Text("Pilih jurusan dulu")),
         );
         return;
       }
@@ -132,6 +140,7 @@ Future<void> _pickSimImage() async {
 
       final id = const Uuid().v4();
 
+      // Upload SIM
       final simFileName = "${DateTime.now().millisecondsSinceEpoch}.jpg";
       final simPath = "sim/$simFileName";
       await supabase.storage.from("siswa").uploadBinary(
@@ -141,6 +150,7 @@ Future<void> _pickSimImage() async {
       );
       final simUrl = supabase.storage.from("siswa").getPublicUrl(simPath);
 
+      // Insert siswa
       await supabase.from("siswa").insert({
         "id": id,
         "nama": namaC.text,
@@ -186,6 +196,7 @@ Future<void> _pickSimImage() async {
         "qr_url": qrUrl,
       }).eq("id", id);
 
+      // Kirim email
       final response = await supabase.functions.invoke(
         "sendEmailQr",
         body: {
@@ -244,6 +255,11 @@ Future<void> _pickSimImage() async {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
+            colors: [
+              Color(0xFF0F2027),
+              Color(0xFF203A43),
+              Color(0xFF2C5364),
+            ],
             colors: [
               Color(0xFF0F2027),
               Color(0xFF203A43),
@@ -428,8 +444,8 @@ Future<void> _pickSimImage() async {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint,
-      IconData icon,
+  Widget _buildTextField(
+      TextEditingController controller, String hint, IconData icon,
       {TextInputType keyboardType = TextInputType.text}) {
     return TextField(
       controller: controller,

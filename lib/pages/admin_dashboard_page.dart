@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'admin_approval_page.dart';
 import 'satgas_list_page.dart';
-import 'profile_page.dart';
+import 'admin_sim_page.dart'; // ⬅️ ganti dari profile_page.dart
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -14,10 +14,11 @@ class AdminDashboardPage extends StatefulWidget {
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   int _selectedIndex = 0;
 
+  // Halaman yang ditampilkan sesuai tab
   final List<Widget> _pages = [
     const DashboardContent(),
     SatgasListPage(),
-    ProfilePage(),
+    const AdminSimPage(), // ⬅️ diganti dari ProfilePage()
   ];
 
   void _onItemTapped(int index) {
@@ -54,8 +55,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             label: "Satgas",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
+            icon: Icon(Icons.credit_card), // ⬅️ tab kanan jadi SIM
+            label: "SIM",
           ),
         ],
         currentIndex: _selectedIndex,
@@ -92,7 +93,7 @@ class _DashboardContentState extends State<DashboardContent> {
 
   Future<void> _loadStats() async {
     try {
-      // 1. Ambil jumlah akun satgas dari tabel profiles
+      // 1. Ambil jumlah akun satgas
       final satgasRes = await supabase.from('profiles').select();
       akunSatgas = satgasRes.length;
 

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tefa_parkir/auth/auth.gate.dart';
+import 'package:tefa_parkir/auth/auth_gate.dart';
 import 'pages/daftar_page.dart';
 import 'pages/login_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/admin_dashboard_page.dart';
-  
+
+// Import splash screen
+import 'package:tefa_parkir/pages/splash_screen.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -25,11 +28,14 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: const AuthGate(), 
+      // Pertama kali masuk ke SplashScreen
+      home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginPage(),
         '/profile': (context) => const ProfilePage(),
         '/admin': (context) => const AdminDashboardPage(),
         '/daftar': (context) => const DaftarPage(),
+        '/auth': (context) => const AuthGate(),
       },
     );
   }
