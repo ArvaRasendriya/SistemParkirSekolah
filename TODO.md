@@ -1,3 +1,0 @@
-- [x] Modify lib/pages/admin_dashboard_page.dart: Add import for profile_page.dart, add title and switch button in appBar.
-- [x] Modify lib/pages/profile_page.dart: Add import for admin_dashboard_page.dart, add role fetching in state, add conditional switch button in SliverAppBar actions.
-- [ ] Test navigation and ensure button visibility based on role.

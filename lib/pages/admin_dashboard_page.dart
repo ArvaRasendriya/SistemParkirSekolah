@@ -111,7 +111,7 @@ class _DashboardContentState extends State<DashboardContent> {
   Future<void> _loadStats() async {
     try {
       // 1. Ambil jumlah akun satgas
-      final satgasRes = await supabase.from('profiles').select();
+      final satgasRes = await supabase.from('profiles').select().eq('role', 'satgas');
       akunSatgas = satgasRes.length;
 
       // 2. Ambil jumlah akun siswa
