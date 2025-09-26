@@ -16,7 +16,7 @@ void main() async {
     url: "https://rfpsfzbmhhxksisxciwx.supabase.co",
     anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmcHNmemJtaGh4a3Npc3hjaXd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxMzM2MzMsImV4cCI6MjA3MDcwOTYzM30.OdBMWNBjgls2iw08JPqId9osfDTVE0W00H6zGHvOe_U",
   );
-  
+
   runApp(const MyApp());
 }
 
@@ -27,13 +27,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const SplashScreen(),
+      // Pertama kali masuk ke SplashScreen
+      home: const SafeArea(child: SplashScreen()),
       routes: {
-        '/login': (context) => const LoginPage(),
-        '/profile': (context) => const ProfilePage(),
-        '/admin': (context) => const AdminDashboardPage(),
-        '/daftar': (context) => const DaftarPage(),
-        '/auth': (context) => const AuthGate(),
+        '/login': (context) => const SafeArea(child: LoginPage()),
+        '/profile': (context) => const SafeArea(child: ProfilePage()),
+        '/admin': (context) => const SafeArea(child: AdminDashboardPage()),
+        '/daftar': (context) => const SafeArea(child: DaftarPage()),
+        '/auth': (context) => const SafeArea(child: AuthGate()),
       },
     );
   }
