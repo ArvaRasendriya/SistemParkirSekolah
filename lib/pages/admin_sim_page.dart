@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminSimPage extends StatefulWidget {
@@ -37,55 +40,105 @@ class _AdminSimPageState extends State<AdminSimPage> {
     }
   }
 
-  Future<void> approveSiswa(Map<String, dynamic> data) async {
-    try {
-      await supabase.from("siswa").insert({
-        "id": data["id"],
-        "nama": data["nama"],
-        "kelas": data["kelas"],
-        "jurusan": data["jurusan"],
-        "email": data["email"],
-        "sim_url": data["sim_url"],
-        "status": "approved",
-        "created_at": DateTime.now().toIso8601String(),
-      });
-
-      await supabase.from("pending_siswa").delete().eq("id", data["id"]);
-
-      _fetchSimData();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Siswa ${data["nama"]} berhasil di-approve ✅')),
-      );
-    } catch (e) {
-      debugPrint("Error approve: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal approve: $e")),
-      );
-    }
-  }
-
-Future<void> rejectSiswa(Map<String, dynamic> data) async {
+Future<void> approveSiswa(Map<String, dynamic> data) async {
   try {
-    final simUrl = data["sim_url"];
-    if (simUrl != null && simUrl.isNotEmpty) {
-      final simPath = simUrl.split("/").skipWhile((part) => part != "sim").join("/");
-      await supabase.storage.from("siswa").remove([simPath]);
+    final id = data["id"];
+
+    // 1. Generate QR Code
+    final qrValidationResult = QrValidator.validate(
+      data: id,
+      version: QrVersions.auto,
+      errorCorrectionLevel: QrErrorCorrectLevel.Q,
+    );
+    if (qrValidationResult.status != QrValidationStatus.valid) {
+      throw Exception("QR Code tidak valid");
     }
 
-    await supabase.from("pending_siswa").delete().eq("id", data["id"]);
+    final painter = QrPainter.withQr(
+      qr: qrValidationResult.qrCode!,
+      color: const Color(0xFF000000),
+      emptyColor: const Color(0xFFFFFFFF),
+      gapless: true,
+    );
 
+    final uiImage = await painter.toImage(300);
+    final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
+    final qrBytes = byteData!.buffer.asUint8List();
+
+    // 2. Upload QR Code ke storage Supabase
+    final qrFileName = "${DateTime.now().millisecondsSinceEpoch}.png";
+    final qrPath = "qr/$qrFileName";
+    await supabase.storage.from("siswa").uploadBinary(
+          qrPath,
+          qrBytes,
+          fileOptions: const FileOptions(contentType: "image/png"),
+        );
+    final qrUrl = supabase.storage.from("siswa").getPublicUrl(qrPath);
+
+    // 3. Insert data ke tabel siswa
+    await supabase.from("siswa").insert({
+      "id": id,
+      "nama": data["nama"],
+      "kelas": data["kelas"],
+      "jurusan": data["jurusan"],
+      "email": data["email"],
+      "sim_url": data["sim_url"],
+      "qr_url": qrUrl,
+      "status": "approved",
+      "created_at": DateTime.now().toIso8601String(),
+    });
+
+    // 4. Hapus dari pending_siswa
+    await supabase.from("pending_siswa").delete().eq("id", id);
+
+    // 5. Kirim email (background, tidak blocking UI)
+    Future.microtask(() async {
+      try {
+        final response = await supabase.functions.invoke(
+          "sendEmailQr",
+          body: {
+            "email": data["email"],
+            "nama": data["nama"],
+            "kelas": data["kelas"],
+            "jurusan": data["jurusan"],
+            "qr_url": qrUrl, // ✅ pakai qrUrl hasil upload
+          },
+        );
+        debugPrint("📧 Email sent: ${response.data}");
+      } catch (e) {
+        debugPrint("❌ Gagal kirim email: $e");
+      }
+    });
+
+    // Refresh UI
     _fetchSimData();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('SIM ${data["nama"]} ditolak ❌ dan file dihapus')),
+      SnackBar(content: Text('Siswa ${data["nama"]} berhasil di-approve ✅')),
     );
   } catch (e) {
-    debugPrint("Error reject siswa: $e");
+    debugPrint("Error approve: $e");
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Gagal menghapus data SIM")),
+      SnackBar(content: Text("Gagal approve: $e")),
     );
   }
 }
 
+
+
+  Future<void> rejectSiswa(String id) async {
+    try {
+      await supabase.from("pending_siswa").delete().eq("id", id);
+      _fetchSimData();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('SIM $id ditolak ❌')),
+      );
+    } catch (e) {
+      debugPrint("Error reject: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal reject: $e")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -204,9 +257,7 @@ Future<void> rejectSiswa(Map<String, dynamic> data) async {
                                 Text(
                                   'Status: ${sim["status"] ?? "pending"}',
                                   style: TextStyle(
-                                    color: sim["status"] == "approved"
-                                        ? Colors.green
-                                        : Colors.orange,
+                                    color: Colors.orange,
                                   ),
                                 ),
                                 const SizedBox(height: 14),

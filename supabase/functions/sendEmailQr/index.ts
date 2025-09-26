@@ -46,35 +46,47 @@ serve(async (req) => {
       from: GMAIL_USER,
       to: email,
       subject: "QR Code Siswa",
-      content: `
-Halo ${nama},
-
-Data pendaftaran kamu berhasil disimpan:
-- Kelas: ${kelas}
-- Jurusan: ${jurusan}
-
-Berikut QR Code kamu:
-${qr_url}
-
-Untuk mengunduh QR Code, silakan lihat lampiran email ini.
-      `,
       html: `
-<html>
-<body>
-<p>Halo ${nama},</p>
+ <html>
+  <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px; color: #333;">
+    <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+      <h2 style="color: #2C5364; text-align: center;">✅ Pendaftaran Berhasil</h2>
+      <p>Halo <strong>${nama}</strong>,</p>
+      <p>Selamat! Data pendaftaran kamu sudah <b>berhasil disetujui</b>. Berikut detail informasi kamu:</p>
 
-<p>Data pendaftaran kamu berhasil disimpan:</p>
-<ul>
-<li>Kelas: ${kelas}</li>
-<li>Jurusan: ${jurusan}</li>
-</ul>
+      <table style="width:100%; border-collapse: collapse; margin: 20px 0;">
+        <tr>
+          <td style="padding: 8px; border: 1px solid #ddd;"><b>Nama</b></td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${nama}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border: 1px solid #ddd;"><b>Kelas</b></td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${kelas}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border: 1px solid #ddd;"><b>Jurusan</b></td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${jurusan}</td>
+        </tr>
+      </table>
 
-<p>Berikut QR Code kamu:</p>
-<img src="cid:qr_image" alt="QR Code" style="max-width: 300px;">
+      <p style="margin-top:20px;">Berikut QR Code kamu (juga terlampir dalam email ini):</p>
+      <div style="text-align:center; margin:20px 0;">
+        <img src="cid:qr_image" alt="QR Code" style="max-width: 250px; border:1px solid #ddd; padding:10px; border-radius: 8px;">
+      </div>
 
-<p>Untuk mengunduh QR Code, silakan lihat lampiran email ini.</p>
-</body>
-</html>
+      <p style="font-size:14px; color:#555;">
+        Simpan QR Code ini baik-baik. QR Code akan digunakan sebagai identitas dan validasi data kamu.
+      </p>
+
+      <hr style="margin: 30px 0;">
+
+      <p style="font-size:12px; color:#888; text-align:center;">
+        Email ini dikirim otomatis, mohon tidak membalas.  
+        Jika ada pertanyaan, silakan hubungi admin melalui kontak resmi sekolah.
+      </p>
+    </div>
+  </body>
+  </html>
       `,
       attachments: [
         {
