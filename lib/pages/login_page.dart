@@ -57,11 +57,7 @@ class _LoginPageState extends State<LoginPage>
     }
 
     try {
-      // 1) Panggil AuthService (biarkan service kamu meng-handle signIn)
-      //    jangan bergantung pada return value; ambil user dari supabase client.
       await authService.signInWithEmailPassword(email, password);
-
-      // 2) Ambil user dari supabase auth (sumber kebenaran)
       final supabase = Supabase.instance.client;
       final User? currentUser =
           supabase.auth.currentUser ?? supabase.auth.currentSession?.user;

@@ -1,15 +1,10 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'daftar_berhasil_page.dart';
 import 'daftar_gagal_page.dart';
@@ -78,30 +73,28 @@ class _DaftarPageState extends State<DaftarPage>
     super.dispose();
   }
 
-Future<void> _pickSimImage() async {
-  try {
-    final result = await Navigator.push<File>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const SimScannerPage(),
-      ),
-    );
+  Future<void> _pickSimImage() async {
+    try {
+      final result = await Navigator.push<File>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SimScannerPage(),
+        ),
+      );
 
-    if (result != null) {
-      final bytes = await result.readAsBytes();
+      if (result != null) {
+        final bytes = await result.readAsBytes();
 
-      setState(() {
-        _simBytes = bytes;
-      });
+        setState(() {
+          _simBytes = bytes;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal membuka kamera: $e")),
+      );
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Gagal membuka kamera: $e")),
-    );
   }
-}
-
-
 
   Future<void> _daftarUser() async {
     try {
@@ -125,7 +118,7 @@ Future<void> _pickSimImage() async {
         );
         return;
       }
-      
+
       kelasC.text = '$_selectedGrade $_selectedMajor $_selectedClass';
       jurusanC.text = _selectedJurusan!;
 
@@ -133,7 +126,7 @@ Future<void> _pickSimImage() async {
 
       final id = const Uuid().v4();
 
-      // Upload SIM
+      // 🚀 Pastikan pakai BUCKET STORAGE yang benar (contoh: "siswa")
       final simFileName = "${DateTime.now().millisecondsSinceEpoch}.jpg";
       final simPath = "sim/$simFileName";
       await supabase.storage.from("siswa").uploadBinary(
@@ -143,81 +136,28 @@ Future<void> _pickSimImage() async {
       );
       final simUrl = supabase.storage.from("siswa").getPublicUrl(simPath);
 
-      // Insert siswa
-      await supabase.from("siswa").insert({
+      // 🚀 Insert ke tabel pending_siswa
+      final response = await supabase.from("pending_siswa").insert({
         "id": id,
         "nama": namaC.text,
         "kelas": kelasC.text,
         "jurusan": jurusanC.text,
         "email": emailC.text,
         "sim_url": simUrl,
-      });
+        "created_at": DateTime.now().toIso8601String(),
+      }).select();
 
-      final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder);
-      const qrSize = 300.0;
-      const padding = 10.0;
-      const totalSize = qrSize + 2 * padding;
-      final paint = Paint()..color = Colors.white;
-      canvas.drawRect(Rect.fromLTWH(0, 0, totalSize, totalSize), paint);
-      canvas.save();
-      canvas.translate(padding, padding);
-      final qrPainter = QrPainter(
-        data: id,
-        version: QrVersions.auto,
-        gapless: true,
-      );
-      qrPainter.paint(canvas, Size(qrSize, qrSize));
-      canvas.restore();
-      final picture = recorder.endRecording();
-      final uiImage =
-          await picture.toImage(totalSize.toInt(), totalSize.toInt());
-      final byteData =
-          await uiImage.toByteData(format: ui.ImageByteFormat.png);
-      final Uint8List qrBytes = byteData!.buffer.asUint8List();
+      debugPrint("Insert response: $response");
 
-      final qrFileName = "${id}_qr.png";
-      final qrPath = "qr_codes/$qrFileName";
-      await supabase.storage.from("siswa").uploadBinary(
-        qrPath,
-        qrBytes,
-        fileOptions: const FileOptions(contentType: "image/png"),
-      );
-      final qrUrl = supabase.storage.from("siswa").getPublicUrl(qrPath);
-
-      await supabase.from("siswa").update({
-        "qr_url": qrUrl,
-      }).eq("id", id);
-
-      // Kirim email
-      final response = await supabase.functions.invoke(
-        "sendEmailQr",
-        body: {
-          "email": emailC.text,
-          "nama": namaC.text,
-          "kelas": kelasC.text,
-          "jurusan": jurusanC.text,
-          "qr_url": qrUrl,
-        },
-      );
-
-      if (response.data != null && response.data['success'] == true) {
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const DaftarBerhasilPage()),
-          );
-        }
-      } else {
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const DaftarGagalPage()),
-          );
-        }
+      // 🚀 Kalau sukses → ke berhasil page
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DaftarBerhasilPage()),
+        );
       }
     } catch (e) {
-      debugPrint("Error daftar: $e");
+      debugPrint("❌ Error daftar: $e");
       if (mounted) {
         Navigator.pushReplacement(
           context,
