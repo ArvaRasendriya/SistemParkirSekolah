@@ -124,6 +124,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
         iconTheme: const IconThemeData(color: Colors.white),
         titleTextStyle: const TextStyle(
             color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: fetchRiwayat,
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(

@@ -175,33 +175,36 @@ class _DashboardContentState extends State<DashboardContent> {
           end: Alignment.bottomCenter,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 10),
-            const Text(
-              'Selamat Datang ke Admin Dashboard',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+      child: SingleChildScrollView(
+        physics: ClampingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 5),
+              const Text(
+                'Selamat Datang ke Admin Dashboard',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 30),
+              const SizedBox(height: 20),
 
-            // Card Statistik
-            Expanded(
-              child: loading
+              // Card Statistik
+              loading
                   ? const Center(
                       child: CircularProgressIndicator(color: Colors.white),
                     )
                   : GridView.count(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
                       children: [
                         StatCard(
                           title: "Akun Satgas",
@@ -233,8 +236,8 @@ class _DashboardContentState extends State<DashboardContent> {
                         ),
                       ],
                     ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -261,38 +264,38 @@ class StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       color: const Color(0xFF1B2A38),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 3,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircleAvatar(
               backgroundColor: color.withOpacity(0.2),
-              child: Icon(icon, color: color, size: 28),
-              radius: 24,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 16, color: Colors.white),
+              child: Icon(icon, color: color, size: 24),
+              radius: 20,
             ),
             const SizedBox(height: 8),
             Text(
+              title,
+              style: const TextStyle(fontSize: 14, color: Colors.white),
+            ),
+            const SizedBox(height: 6),
+            Text(
               value,
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             if (change.isNotEmpty)
               Text(
                 change,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12,
                   color: change.contains("+") ? Colors.green : Colors.red,
                 ),
               ),

@@ -28,13 +28,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       // Pertama kali masuk ke SplashScreen
-      home: const SplashScreen(),
+      home: const SafeArea(child: SplashScreen()),
       routes: {
-        '/login': (context) => const LoginPage(),
-        '/profile': (context) => const ProfilePage(),
-        '/admin': (context) => const AdminDashboardPage(),
-        '/daftar': (context) => const DaftarPage(),
-        '/auth': (context) => const AuthGate(),
+        '/login': (context) => const SafeArea(child: LoginPage()),
+        '/profile': (context) => const SafeArea(child: ProfilePage()),
+        '/admin': (context) => const SafeArea(child: AdminDashboardPage()),
+        '/daftar': (context) => const SafeArea(child: DaftarPage()),
+        '/auth': (context) => const SafeArea(child: AuthGate()),
       },
     );
   }

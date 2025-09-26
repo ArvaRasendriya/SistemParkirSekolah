@@ -75,73 +75,76 @@ class _SatgasListPageState extends State<SatgasListPage> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : satgasAccounts.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No satgas accounts found',
-                      style: TextStyle(fontSize: 16, color: Colors.white70),
-                    ),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.3), // box hitam transparan
-                        borderRadius: BorderRadius.circular(12),
+        child: RefreshIndicator(
+          onRefresh: fetchSatgasAccounts,
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+              : satgasAccounts.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No satgas accounts found',
+                        style: TextStyle(fontSize: 16, color: Colors.white70),
                       ),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: satgasAccounts.length,
-                        itemBuilder: (context, index) {
-                          final account = satgasAccounts[index];
-                          final email = account['email'] ?? 'No email';
-                          final status = account['status'] ?? 'Unknown';
-                          final createdAt = account['created_at'];
-                          final formattedDate = createdAt != null
-                              ? DateTime.parse(createdAt).toLocal().toString().substring(0, 16)
-                              : 'Unknown date';
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3), // box hitam transparan
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(12),
+                          itemCount: satgasAccounts.length,
+                          itemBuilder: (context, index) {
+                            final account = satgasAccounts[index];
+                            final email = account['email'] ?? 'No email';
+                            final status = account['status'] ?? 'Unknown';
+                            final createdAt = account['created_at'];
+                            final formattedDate = createdAt != null
+                                ? DateTime.parse(createdAt).toLocal().toString().substring(0, 16)
+                                : 'Unknown date';
 
-                          return Card(
-                            color: Colors.white.withOpacity(0.08),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              leading: const Icon(Icons.person,
-                                  color: Colors.grey, size: 32),
-                              title: Text(
-                                email,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                            return Card(
+                              color: Colors.white.withOpacity(0.08),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: ListTile(
+                                leading: const Icon(Icons.person,
+                                    color: Colors.grey, size: 32),
+                                title: Text(
+                                  email,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Status: $status',
+                                      style: const TextStyle(
+                                          color: Colors.white70, fontSize: 13),
+                                    ),
+                                    Text(
+                                      'Registered: $formattedDate',
+                                      style: const TextStyle(
+                                          color: Colors.white70, fontSize: 13),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Status: $status',
-                                    style: const TextStyle(
-                                        color: Colors.white70, fontSize: 13),
-                                  ),
-                                  Text(
-                                    'Registered: $formattedDate',
-                                    style: const TextStyle(
-                                        color: Colors.white70, fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
+        ),
       ),
     );
   }

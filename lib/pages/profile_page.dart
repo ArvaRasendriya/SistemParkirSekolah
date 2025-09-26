@@ -111,6 +111,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       extendBody: true,
       body: Container(
+        height: MediaQuery.of(context).size.height,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -125,7 +126,9 @@ class _ProfilePageState extends State<ProfilePage> {
         child: SafeArea(
           child: RefreshIndicator(
             onRefresh: _refresh,
-            child: Column(
+            child: SingleChildScrollView(
+              physics: ClampingScrollPhysics(),
+              child: Column(
               children: [
                 // Custom AppBar
                 Padding(
@@ -150,6 +153,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           }
                           return const SizedBox.shrink();
                         },
+                      ),
+                      IconButton(
+                        onPressed: _refresh,
+                        icon: const Icon(Icons.refresh, color: Colors.white),
                       ),
                       IconButton(
                         onPressed: logout,
@@ -300,91 +307,91 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
 
                 // Riwayat Absensi
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Riwayat Absensi Hari Ini",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15),
-                        ),
-                        const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Riwayat Absensi Hari Ini",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15),
+                      ),
+                      const SizedBox(height: 12),
 
-                        todayHistory.isEmpty
-                            ? const Text("Belum ada absensi hari ini",
-                                style: TextStyle(color: Colors.white60))
-                            : Expanded(
-                                child: ListView.builder(
-                                  itemCount: todayHistory.length,
-                                  itemBuilder: (context, index) {
-                                    final item = todayHistory[index];
-                                    final siswa = item['siswa'];
-                                    final nama = siswa['nama'];
-                                    final waktu = item['waktu'];
-                                    final jam = waktu.toString().substring(0, 5);
+                      todayHistory.isEmpty
+                          ? const Text("Belum ada absensi hari ini",
+                              style: TextStyle(color: Colors.white60))
+                          : SizedBox(
+                              height: 200,
+                              child: ListView.builder(
+                                itemCount: todayHistory.length,
+                                itemBuilder: (context, index) {
+                                  final item = todayHistory[index];
+                                  final siswa = item['siswa'];
+                                  final nama = siswa['nama'];
+                                  final waktu = item['waktu'];
+                                  final jam = waktu.toString().substring(0, 5);
 
-                                    return Container(
-                                      margin:
-                                          const EdgeInsets.symmetric(vertical: 6),
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 10, horizontal: 12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const CircleAvatar(
-                                            radius: 18,
-                                            backgroundColor: Colors.white,
-                                            child: Icon(Icons.person,
-                                                color: Colors.grey, size: 18),
+                                  return Container(
+                                    margin:
+                                        const EdgeInsets.symmetric(vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 10, horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const CircleAvatar(
+                                          radius: 18,
+                                          backgroundColor: Colors.white,
+                                          child: Icon(Icons.person,
+                                              color: Colors.grey, size: 18),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(nama,
+                                                  style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w500)),
+                                              Text(jam,
+                                                  style: const TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize: 12)),
+                                            ],
                                           ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(nama,
-                                                    style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 14,
-                                                        fontWeight:
-                                                            FontWeight.w500)),
-                                                Text(jam,
-                                                    style: const TextStyle(
-                                                        color: Colors.white70,
-                                                        fontSize: 12)),
-                                              ],
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
+                                        )
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                      ],
-                    ),
+                            ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
         ),
+      ),
       ),
 
       // Bottom Navigation

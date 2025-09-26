@@ -97,89 +97,97 @@ class _AdminApprovalPageState extends State<AdminApprovalPage> {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : pendingProfiles.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No pending approvals',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: pendingProfiles.length,
-                    itemBuilder: (context, index) {
-                      final profile = pendingProfiles[index];
-                      final email = profile['email'] ?? 'No email';
-                      final role = profile['role'] ?? 'Unknown';
-                      final createdAt = profile['created_at'];
-                      final formattedDate = createdAt != null
-                          ? DateTime.parse(createdAt).toLocal().toString().substring(0, 16)
-                          : 'Unknown date';
-
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.person, color: Colors.blue),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      email,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Role: $role',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                              Text(
-                                'Applied: $formattedDate',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  TextButton.icon(
-                                    onPressed: () => rejectProfile(profile['id']),
-                                    icon: const Icon(Icons.close, color: Colors.red),
-                                    label: const Text('Reject', style: TextStyle(color: Colors.red)),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  ElevatedButton.icon(
-                                    onPressed: () => approveProfile(profile['id']),
-                                    icon: const Icon(Icons.check),
-                                    label: const Text('Approve'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+        child: RefreshIndicator(
+          onRefresh: fetchPendingProfiles,
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : pendingProfiles.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 200),
+                        Center(
+                          child: Text(
+                            'No pending approvals',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ],
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: pendingProfiles.length,
+                      itemBuilder: (context, index) {
+                        final profile = pendingProfiles[index];
+                        final email = profile['email'] ?? 'No email';
+                        final role = profile['role'] ?? 'Unknown';
+                        final createdAt = profile['created_at'];
+                        final formattedDate = createdAt != null
+                            ? DateTime.parse(createdAt).toLocal().toString().substring(0, 16)
+                            : 'Unknown date';
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.person, color: Colors.blue),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        email,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Role: $role',
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                                Text(
+                                  'Applied: $formattedDate',
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    TextButton.icon(
+                                      onPressed: () => rejectProfile(profile['id']),
+                                      icon: const Icon(Icons.close, color: Colors.red),
+                                      label: const Text('Reject', style: TextStyle(color: Colors.red)),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton.icon(
+                                      onPressed: () => approveProfile(profile['id']),
+                                      icon: const Icon(Icons.check),
+                                      label: const Text('Approve'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+        ),
       ),
     );
   }
