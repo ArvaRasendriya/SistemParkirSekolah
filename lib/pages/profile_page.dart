@@ -75,9 +75,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
       final response = await supabase
           .from('parkir')
-          .select('id, waktu, siswa(nama, kelas)')
+          .select('id, created_at, siswa(nama, kelas)')
           .eq('tanggal', today)
-          .order('waktu', ascending: false);
+          .order('created_at', ascending: false);
 
       setState(() {
         todayHistory = (response as List).cast<Map<String, dynamic>>();
@@ -198,12 +198,16 @@ class _ProfilePageState extends State<ProfilePage> {
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
                                         profileData!['kelas'] ?? '-',
                                         style: const TextStyle(
                                             color: Colors.white70, fontSize: 14),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 2),
                                       FutureBuilder<String?>(
@@ -226,22 +230,28 @@ class _ProfilePageState extends State<ProfilePage> {
                                           }
                                           return Text(roleText,
                                               style: const TextStyle(
-                                                  color: Colors.white70, fontSize: 13));
+                                                  color: Colors.white70, fontSize: 13),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis);
                                         },
                                       ),
                                       const SizedBox(height: 8),
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           const Text("Jadwal Piket",
                                               style: TextStyle(
                                                   color: Colors.white54, fontSize: 12)),
-                                          Text(
-                                            profileData!['jadwal_piket'] ?? '-',
-                                            style: const TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 12),
+                                          Expanded(
+                                            child: Text(
+                                              profileData!['jadwal_piket'] ?? '-',
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 12),
+                                              textAlign: TextAlign.end,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -269,6 +279,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                           return Text(
                                             statusText,
                                             style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           );
                                         },
                                       ),
@@ -332,8 +344,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                     final item = todayHistory[index];
                                     final siswa = item['siswa'];
                                     final nama = siswa['nama'];
-                                    final waktu = item['waktu'];
-                                    final jam = waktu.toString().substring(0, 5);
+                                    final createdAtStr = item['created_at'];
+                                    final jam = createdAtStr != null
+                                        ? (() {
+                                            final createdAt = DateTime.parse(createdAtStr);
+                                            final localTime = createdAt.toLocal();
+                                            return '${localTime.hour.toString().padLeft(2,'0')}:${localTime.minute.toString().padLeft(2,'0')}';
+                                          })()
+                                        : '--:--';
 
                                     return Container(
                                       margin:

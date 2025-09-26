@@ -142,7 +142,7 @@ class _RegisterPageState extends State<RegisterPage>
 
                 CustomInputField(
                   controller: _passwordController,
-                  hintText: 'Password',
+                  hintText: 'Kata Sandi',
                   obscureText: true,
                   icon: Icons.lock,
                 ),
@@ -150,7 +150,7 @@ class _RegisterPageState extends State<RegisterPage>
 
                 CustomInputField(
                   controller: _confirmPasswordController,
-                  hintText: 'Confirm Password',
+                  hintText: 'Konfirmasi Kata Sandi',
                   obscureText: true,
                   icon: Icons.lock_outline,
                 ),
@@ -158,7 +158,7 @@ class _RegisterPageState extends State<RegisterPage>
 
                 CustomInputField(
                   controller: _fullNameController,
-                  hintText: 'Full Name',
+                  hintText: 'Nama Lengkap',
                   icon: Icons.person,
                 ),
                 const SizedBox(height: 20), // field → dropdown
@@ -169,27 +169,30 @@ class _RegisterPageState extends State<RegisterPage>
                     Expanded(
                       child: buildDropdown(
                         value: _selectedGrade,
-                        hint: "Grade",
+                        hint: "Kelas",
                         items: grades,
                         onChanged: (v) => setState(() => _selectedGrade = v),
+                        hasIcon: false,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: buildDropdown(
                         value: _selectedMajor,
-                        hint: "Major",
+                        hint: "Jurusan",
                         items: majors,
                         onChanged: (v) => setState(() => _selectedMajor = v),
+                        hasIcon: false,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: buildDropdown(
                         value: _selectedClass,
-                        hint: "Class",
+                        hint: "Rombel",
                         items: classes,
                         onChanged: (v) => setState(() => _selectedClass = v),
+                        hasIcon: false,
                       ),
                     ),
                   ],
@@ -201,6 +204,7 @@ class _RegisterPageState extends State<RegisterPage>
                   hint: "Jurusan",
                   items: jurusans,
                   onChanged: (v) => setState(() => _selectedJurusan = v),
+                  hasIcon: false,
                 ),
                 const SizedBox(height: 28), // dropdown → tombol
 
@@ -217,14 +221,14 @@ class _RegisterPageState extends State<RegisterPage>
                   ),
                   onPressed: signUp,
                   child: const Text(
-                    'Sign Up',
+                    'Daftar',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                   ),
                 ),
                 const SizedBox(height: 20), // tombol → teks bawah
 
                 const Text(
-                  "Already have an account?",
+                  "Sudah punya akun?",
                   style: TextStyle(
                     fontSize: 15,
                     color: Colors.white70,
@@ -239,7 +243,7 @@ class _RegisterPageState extends State<RegisterPage>
                     );
                   },
                   child: const Text(
-                    "Sign in here!",
+                    "Masuk disini!",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -261,21 +265,26 @@ class _RegisterPageState extends State<RegisterPage>
     required String hint,
     required List<String> items,
     required ValueChanged<String?> onChanged,
+    bool hasIcon = true,
   }) {
     return DropdownButtonFormField<String>(
       value: value,
-      hint: Text(hint, style: const TextStyle(color: Colors.white70)),
+      isExpanded: true,
+      hint: Container(
+        alignment: Alignment.center,
+        child: Text(hint, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+      ),
       dropdownColor: const Color(0xFF203A43),
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: Colors.white, fontSize: 14),
       items: items.map((String v) {
         return DropdownMenuItem<String>(
           value: v,
-          child: Text(v),
+          child: Text(v, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14)),
         );
       }).toList(),
       onChanged: onChanged,
       decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.school, color: Colors.white70),
+        prefixIcon: hasIcon ? const Icon(Icons.school, color: Colors.white70) : null,
         filled: true,
         fillColor: Colors.black.withOpacity(0.2),
         contentPadding:

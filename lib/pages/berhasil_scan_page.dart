@@ -154,7 +154,9 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
           Text(label,
               style:
                   const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-          Text(value, style: const TextStyle(fontSize: 14)),
+          Expanded(
+            child: Text(value, style: const TextStyle(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end),
+          ),
         ],
       ),
     );

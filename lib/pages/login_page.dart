@@ -195,7 +195,7 @@ class _LoginPageState extends State<LoginPage>
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     style: const TextStyle(color: Colors.white),
-                    decoration: _transparentDecoration('Password').copyWith(
+                    decoration: _transparentDecoration('Kata Sandi').copyWith(
                       suffixIcon: IconButton(
                         splashRadius: 20,
                         icon: Icon(
@@ -227,7 +227,7 @@ class _LoginPageState extends State<LoginPage>
                         shadowColor: Colors.black45,
                       ),
                       child: const Text(
-                        'Login',
+                        'Masuk',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
@@ -239,7 +239,7 @@ class _LoginPageState extends State<LoginPage>
                   const SizedBox(height: 22),
 
                   const Text(
-                    "Don't have an account?",
+                    "Tidak punya akun?",
                     style: TextStyle(
                       fontSize: 15,
                       color: Colors.white70,
@@ -254,7 +254,7 @@ class _LoginPageState extends State<LoginPage>
                       );
                     },
                     child: const Text(
-                      "Sign up here!",
+                      "Daftar disini!",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

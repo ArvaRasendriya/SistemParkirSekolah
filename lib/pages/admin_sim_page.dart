@@ -245,20 +245,28 @@ Future<void> approveSiswa(Map<String, dynamic> data) async {
                                 Text(
                                   'Email: ${sim["email"] ?? "-"}',
                                   style: TextStyle(color: Colors.grey[700]),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
                                   'Kelas: ${sim["kelas"] ?? "-"}',
                                   style: TextStyle(color: Colors.grey[700]),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
                                   'Jurusan: ${sim["jurusan"] ?? "-"}',
                                   style: TextStyle(color: Colors.grey[700]),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
                                   'Status: ${sim["status"] ?? "pending"}',
                                   style: TextStyle(
                                     color: Colors.orange,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 14),
                                 Row(

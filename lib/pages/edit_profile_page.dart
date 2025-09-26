@@ -154,7 +154,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         children: [
                           Expanded(
                             child: _buildDropdown(
-                                _selectedGrade, grades, 'Grade', (String? newValue) {
+                                _selectedGrade, grades, 'Kelas', (String? newValue) {
                               setState(() {
                                 _selectedGrade = newValue;
                               });
@@ -163,7 +163,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: _buildDropdown(
-                                _selectedMajor, majors, 'Major', (String? newValue) {
+                                _selectedMajor, majors, 'Jurusan', (String? newValue) {
                               setState(() {
                                 _selectedMajor = newValue;
                               });
@@ -172,7 +172,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: _buildDropdown(
-                                _selectedClass, classes, 'Class', (String? newValue) {
+                                _selectedClass, classes, 'Rombel', (String? newValue) {
                               setState(() {
                                 _selectedClass = newValue;
                               });

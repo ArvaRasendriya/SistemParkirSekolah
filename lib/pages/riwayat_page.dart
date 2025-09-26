@@ -263,11 +263,15 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.w600,
                                                 ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                               subtitle: Text(
                                                 "Kelas: $kelas",
                                                 style: const TextStyle(
                                                     color: Colors.white70),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                               trailing: Text(
                                                 formatTime(createdAt),
@@ -275,6 +279,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                                   color: Colors.white70,
                                                   fontSize: 12,
                                                 ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           );
@@ -366,6 +372,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                                             fontWeight:
                                                                 FontWeight.w600,
                                                           ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
                                                         ),
                                                         subtitle: Text(
                                                           "Kelas: $kelas",
@@ -373,6 +381,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                                               const TextStyle(
                                                                   color: Colors
                                                                       .white70),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
                                                         ),
                                                         trailing: Text(
                                                           formatTime(createdAt),
@@ -382,6 +392,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                                                 Colors.white70,
                                                             fontSize: 12,
                                                           ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
                                                         ),
                                                       ),
                                                     );

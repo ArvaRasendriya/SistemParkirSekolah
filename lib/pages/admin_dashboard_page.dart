@@ -270,29 +270,29 @@ class StatCard extends StatelessWidget {
           children: [
             CircleAvatar(
               backgroundColor: color.withOpacity(0.2),
-              child: Icon(icon, color: color, size: 28),
-              radius: 24,
+              child: Icon(icon, color: color, size: 20),
+              radius: 18,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Text(
               title,
-              style: const TextStyle(fontSize: 16, color: Colors.white),
+              style: const TextStyle(fontSize: 12, color: Colors.white),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               value,
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             if (change.isNotEmpty)
               Text(
                 change,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 10,
                   color: change.contains("+") ? Colors.green : Colors.red,
                 ),
               ),
