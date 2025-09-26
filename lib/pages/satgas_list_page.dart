@@ -45,7 +45,7 @@ class _SatgasListPageState extends State<SatgasListPage> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text(
-          'Satgas Accounts',
+          'Akun Satgas',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.transparent,

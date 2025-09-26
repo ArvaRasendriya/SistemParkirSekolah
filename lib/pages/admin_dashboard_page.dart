@@ -49,7 +49,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 MaterialPageRoute(builder: (context) => const ProfilePage()),
               );
             },
-            tooltip: 'Switch to Satgas Side',
+            tooltip: 'Pindah ke Sisi Satgas',
           ),
         ],
       ),
@@ -116,9 +116,13 @@ class _DashboardContentState extends State<DashboardContent> {
   Future<void> _loadStats() async {
     try {
       final now = DateTime.now().toUtc();
-      final todayStart = DateTime(now.year, now.month, now.day).toIso8601String();
-      final yesterday = now.subtract(const Duration(days: 1));
-      final yesterdayDate = yesterday.toIso8601String().substring(0, 10); // YYYY-MM-DD
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+      final tomorrow = today.add(const Duration(days: 1));
+      final todayDate = today.toIso8601String().substring(0, 10); // YYYY-MM-DD
+      final yesterdayDate = yesterday.toIso8601String().substring(0, 10);
+      final tomorrowDate = tomorrow.toIso8601String().substring(0, 10);
+      final todayStart = today.toIso8601String();
 
       // 1. Ambil jumlah akun satgas
       final satgasRes = await supabase.from('profiles').select().eq('role', 'satgas');
@@ -134,11 +138,12 @@ class _DashboardContentState extends State<DashboardContent> {
       final prevAkunSiswa = prevSiswaRes.length;
       changeAkunSiswa = akunSiswa - prevAkunSiswa;
 
-      // 3. Ambil jumlah siswa yg sudah absen (tabel parkir)
-      final parkirRes = await supabase.from('parkir').select();
-      sudahAbsen = parkirRes.length;
-      final prevParkirRes = await supabase.from('parkir').select().lt('tanggal', yesterdayDate);
-      final prevSudahAbsen = prevParkirRes.length;
+      // 3. Ambil jumlah siswa yg sudah absen hari ini (jumlah record di tabel parkir hari ini)
+      final parkirTodayRes = await supabase.from('parkir').select().gte('tanggal', todayDate).lt('tanggal', tomorrowDate);
+      sudahAbsen = parkirTodayRes.length;
+
+      final parkirYesterdayRes = await supabase.from('parkir').select().gte('tanggal', yesterdayDate).lt('tanggal', todayDate);
+      final prevSudahAbsen = parkirYesterdayRes.length;
       changeSudahAbsen = sudahAbsen - prevSudahAbsen;
 
       // 4. Hitung siswa yg belum absen
@@ -177,7 +182,7 @@ class _DashboardContentState extends State<DashboardContent> {
           children: [
             const SizedBox(height: 10),
             const Text(
-              'Welcome to Admin Dashboard',
+              'Selamat Datang ke Admin Dashboard',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -206,23 +211,23 @@ class _DashboardContentState extends State<DashboardContent> {
                           color: Colors.blue,
                         ),
                         StatCard(
-                          title: "Akun Siswa",
+                          title: "Siswa Terdaftar",
                           value: "$akunSiswa",
                           change: changeAkunSiswa >= 0 ? "+$changeAkunSiswa" : "$changeAkunSiswa",
                           icon: Icons.school,
                           color: Colors.green,
                         ),
                         StatCard(
-                          title: "Sudah Absen",
+                          title: "Sudah Absen Hari Ini",
                           value: "$sudahAbsen",
-                          change: changeSudahAbsen >= 0 ? "+$changeSudahAbsen" : "$changeSudahAbsen",
+                          change: "",
                           icon: Icons.check_circle,
                           color: Colors.teal,
                         ),
                         StatCard(
-                          title: "Belum Absen",
+                          title: "Belum Absen Hari Ini",
                           value: "$belumAbsen",
-                          change: changeBelumAbsen >= 0 ? "+$changeBelumAbsen" : "$changeBelumAbsen",
+                          change: "",
                           icon: Icons.cancel,
                           color: Colors.red,
                         ),
@@ -283,13 +288,14 @@ class StatCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              change,
-              style: TextStyle(
-                fontSize: 14,
-                color: change.contains("+") ? Colors.green : Colors.red,
+            if (change.isNotEmpty)
+              Text(
+                change,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: change.contains("+") ? Colors.green : Colors.red,
+                ),
               ),
-            ),
           ],
         ),
       ),
