@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
+import 'admin_approval_page.dart';
 
 class SatgasListPage extends StatefulWidget {
   const SatgasListPage({super.key});
@@ -44,12 +45,22 @@ class _SatgasListPageState extends State<SatgasListPage> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text(
-          'Satgas Accounts',
+          'Akun Satgas',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.check_circle, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AdminApprovalPage()),
+              );
+            },
+            tooltip: 'Pending Approvals',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: fetchSatgasAccounts,

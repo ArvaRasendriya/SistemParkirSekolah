@@ -47,13 +47,6 @@ class _DaftarPageState extends State<DaftarPage>
     'Teknik Audio Video',
     'Teknik Komputer Jaringan'
   ];
-  static const List<String> jurusans = [
-    'Rekayasa Perangkat Lunak',
-    'Desain Komunikasi Visual',
-    'Teknik Otomotif Industri',
-    'Teknik Audio Video',
-    'Teknik Komputer Jaringan'
-  ];
 
   Uint8List? _simBytes;
   bool _isLoading = false;
@@ -255,11 +248,6 @@ Future<void> _pickSimImage() async {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
-            ],
             colors: [
               Color(0xFF0F2027),
               Color(0xFF203A43),

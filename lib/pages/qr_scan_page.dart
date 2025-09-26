@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart'; // ✅ untuk kIsWeb
+import 'dart:async';
 import 'qr_result_page.dart';
 
 class QrScanPage extends StatefulWidget {

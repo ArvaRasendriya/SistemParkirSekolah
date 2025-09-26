@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'admin_approval_page.dart';
 import 'satgas_list_page.dart';
 import 'admin_sim_page.dart'; // ⬅️ ganti dari profile_page.dart
+import 'profile_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -35,6 +36,22 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        title: const Text(
+          'Admin Dashboard',
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
+            },
+            tooltip: 'Pindah ke Sisi Satgas',
+          ),
+        ],
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
@@ -83,6 +100,11 @@ class _DashboardContentState extends State<DashboardContent> {
   int sudahAbsen = 0;
   int belumAbsen = 0;
 
+  int changeAkunSatgas = 0;
+  int changeAkunSiswa = 0;
+  int changeSudahAbsen = 0;
+  int changeBelumAbsen = 0;
+
   bool loading = true;
 
   @override
@@ -93,20 +115,40 @@ class _DashboardContentState extends State<DashboardContent> {
 
   Future<void> _loadStats() async {
     try {
+      final now = DateTime.now().toUtc();
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+      final tomorrow = today.add(const Duration(days: 1));
+      final todayDate = today.toIso8601String().substring(0, 10); // YYYY-MM-DD
+      final yesterdayDate = yesterday.toIso8601String().substring(0, 10);
+      final tomorrowDate = tomorrow.toIso8601String().substring(0, 10);
+      final todayStart = today.toIso8601String();
+
       // 1. Ambil jumlah akun satgas
-      final satgasRes = await supabase.from('profiles').select();
+      final satgasRes = await supabase.from('profiles').select().eq('role', 'satgas');
       akunSatgas = satgasRes.length;
+      final prevSatgasRes = await supabase.from('profiles').select().eq('role', 'satgas').lt('created_at', todayStart);
+      final prevAkunSatgas = prevSatgasRes.length;
+      changeAkunSatgas = akunSatgas - prevAkunSatgas;
 
       // 2. Ambil jumlah akun siswa
       final siswaRes = await supabase.from('siswa').select();
       akunSiswa = siswaRes.length;
+      final prevSiswaRes = await supabase.from('siswa').select().lt('created_at', todayStart);
+      final prevAkunSiswa = prevSiswaRes.length;
+      changeAkunSiswa = akunSiswa - prevAkunSiswa;
 
-      // 3. Ambil jumlah siswa yg sudah absen (tabel parkir)
-      final parkirRes = await supabase.from('parkir').select();
-      sudahAbsen = parkirRes.length;
+      // 3. Ambil jumlah siswa yg sudah absen hari ini (jumlah record di tabel parkir hari ini)
+      final parkirTodayRes = await supabase.from('parkir').select().gte('tanggal', todayDate).lt('tanggal', tomorrowDate);
+      sudahAbsen = parkirTodayRes.length;
+
+      final parkirYesterdayRes = await supabase.from('parkir').select().gte('tanggal', yesterdayDate).lt('tanggal', todayDate);
+      final prevSudahAbsen = parkirYesterdayRes.length;
+      changeSudahAbsen = sudahAbsen - prevSudahAbsen;
 
       // 4. Hitung siswa yg belum absen
       belumAbsen = akunSiswa - sudahAbsen;
+      changeBelumAbsen = changeAkunSiswa - changeSudahAbsen;
 
       setState(() {
         loading = false;
@@ -140,7 +182,7 @@ class _DashboardContentState extends State<DashboardContent> {
           children: [
             const SizedBox(height: 10),
             const Text(
-              'Welcome to Admin Dashboard',
+              'Selamat Datang ke Admin Dashboard',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -164,28 +206,28 @@ class _DashboardContentState extends State<DashboardContent> {
                         StatCard(
                           title: "Akun Satgas",
                           value: "$akunSatgas",
-                          change: "+0",
+                          change: changeAkunSatgas >= 0 ? "+$changeAkunSatgas" : "$changeAkunSatgas",
                           icon: Icons.shield,
                           color: Colors.blue,
                         ),
                         StatCard(
-                          title: "Akun Siswa",
+                          title: "Siswa Terdaftar",
                           value: "$akunSiswa",
-                          change: "+0",
+                          change: changeAkunSiswa >= 0 ? "+$changeAkunSiswa" : "$changeAkunSiswa",
                           icon: Icons.school,
                           color: Colors.green,
                         ),
                         StatCard(
-                          title: "Sudah Absen",
+                          title: "Sudah Absen Hari Ini",
                           value: "$sudahAbsen",
-                          change: "+0",
+                          change: "",
                           icon: Icons.check_circle,
                           color: Colors.teal,
                         ),
                         StatCard(
-                          title: "Belum Absen",
+                          title: "Belum Absen Hari Ini",
                           value: "$belumAbsen",
-                          change: "-0",
+                          change: "",
                           icon: Icons.cancel,
                           color: Colors.red,
                         ),
@@ -246,13 +288,14 @@ class StatCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              change,
-              style: TextStyle(
-                fontSize: 14,
-                color: change.contains("+") ? Colors.green : Colors.red,
+            if (change.isNotEmpty)
+              Text(
+                change,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: change.contains("+") ? Colors.green : Colors.red,
+                ),
               ),
-            ),
           ],
         ),
       ),
