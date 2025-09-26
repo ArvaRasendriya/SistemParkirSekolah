@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'admin_approval_page.dart';
 import 'satgas_list_page.dart';
-import 'admin_sim_page.dart'; // ⬅️ ganti dari profile_page.dart
-import 'profile_page.dart';
+import 'admin_sim_page.dart';
+import 'login_page.dart'; // pastikan ada file login_page.dart
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -28,6 +28,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     });
   }
 
+  Future<void> _logout() async {
+    await Supabase.instance.client.auth.signOut();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,20 +46,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'Admin Dashboard',
-          style: TextStyle(color: Colors.white),
-        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.swap_horiz, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilePage()),
-              );
-            },
-            tooltip: 'Pindah ke Sisi Satgas',
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: _logout,
           ),
         ],
       ),
@@ -80,6 +80,113 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.white70,
         onTap: _onItemTapped,
+      ),
+    );
+  }
+}
+
+/// ====== DETAIL PAGES YANG DIPERTAHANKAN ======
+
+class SatgasAccountsPage extends StatelessWidget {
+  const SatgasAccountsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final supabase = Supabase.instance.client;
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F2027),
+      appBar: AppBar(
+        title: const Text("Akun Satgas"),
+        backgroundColor: const Color(0xFF1B2A38),
+      ),
+      body: FutureBuilder<List<dynamic>>(
+        future: supabase.from('profiles').select('email'),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+                child: CircularProgressIndicator(color: Colors.white));
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text("Error: ${snapshot.error}",
+                  style: const TextStyle(color: Colors.red)),
+            );
+          }
+          final data = snapshot.data ?? [];
+          if (data.isEmpty) {
+            return const Center(
+              child: Text("Tidak ada data",
+                  style: TextStyle(color: Colors.white)),
+            );
+          }
+          return ListView.builder(
+            itemCount: data.length,
+            itemBuilder: (_, i) {
+              return ListTile(
+                title: Text(
+                  data[i]['email'],
+                  style: const TextStyle(color: Colors.white),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class SiswaAccountsPage extends StatelessWidget {
+  const SiswaAccountsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final supabase = Supabase.instance.client;
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F2027),
+      appBar: AppBar(
+        title: const Text("Akun Siswa"),
+        backgroundColor: const Color(0xFF1B2A38),
+      ),
+      body: FutureBuilder<List<dynamic>>(
+        future: supabase.from('siswa').select('nama, qr_url'),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+                child: CircularProgressIndicator(color: Colors.white));
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text("Error: ${snapshot.error}",
+                  style: const TextStyle(color: Colors.red)),
+            );
+          }
+          final data = snapshot.data ?? [];
+          if (data.isEmpty) {
+            return const Center(
+              child: Text("Tidak ada data",
+                  style: TextStyle(color: Colors.white)),
+            );
+          }
+          return ListView.builder(
+            itemCount: data.length,
+            itemBuilder: (_, i) {
+              return Card(
+                color: const Color(0xFF1B2A38),
+                child: ListTile(
+                  leading: data[i]['qr_url'] != null &&
+                          data[i]['qr_url'].toString().isNotEmpty
+                      ? Image.network(data[i]['qr_url'], width: 50)
+                      : const Icon(Icons.qr_code, color: Colors.white),
+                  title: Text(
+                    data[i]['nama'],
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -162,86 +269,102 @@ class _DashboardContentState extends State<DashboardContent> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF0F2027),
-            Color(0xFF203A43),
-            Color(0xFF2C5364),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+Widget build(BuildContext context) {
+  return Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          Color(0xFF0F2027),
+          Color(0xFF203A43),
+          Color(0xFF2C5364),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
       ),
-      child: SingleChildScrollView(
-        physics: ClampingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 5),
-              const Text(
-                'Selamat Datang ke Admin Dashboard',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-
-              // Card Statistik
-              loading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    )
-                  : GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      children: [
-                        StatCard(
-                          title: "Akun Satgas",
-                          value: "$akunSatgas",
-                          change: changeAkunSatgas >= 0 ? "+$changeAkunSatgas" : "$changeAkunSatgas",
-                          icon: Icons.shield,
-                          color: Colors.blue,
-                        ),
-                        StatCard(
-                          title: "Siswa Terdaftar",
-                          value: "$akunSiswa",
-                          change: changeAkunSiswa >= 0 ? "+$changeAkunSiswa" : "$changeAkunSiswa",
-                          icon: Icons.school,
-                          color: Colors.green,
-                        ),
-                        StatCard(
-                          title: "Sudah Absen Hari Ini",
-                          value: "$sudahAbsen",
-                          change: "",
-                          icon: Icons.check_circle,
-                          color: Colors.teal,
-                        ),
-                        StatCard(
-                          title: "Belum Absen Hari Ini",
-                          value: "$belumAbsen",
-                          change: "",
-                          icon: Icons.cancel,
-                          color: Colors.red,
-                        ),
-                      ],
-                    ),
-            ],
+    ),
+    child: Column(
+      children: [
+        const SizedBox(height: 10),
+        const Text(
+          'Selamat Datang ke Admin Dashboard',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
+          textAlign: TextAlign.center,
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 20),
+
+        // 🔽 Expanded supaya area tengah fleksibel
+        Expanded(
+          child: loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                )
+              : Center( // ini yang bikin konten persis di tengah layar
+                  child: GridView.count(
+                    shrinkWrap: true, // penting biar tidak memenuhi layar
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    padding: const EdgeInsets.all(12),
+                    children: [
+                      StatCard(
+                        title: "Akun Satgas",
+                        value: "$akunSatgas",
+                        change: changeAkunSatgas >= 0
+                            ? "+$changeAkunSatgas"
+                            : "$changeAkunSatgas",
+                        icon: Icons.shield,
+                        color: Colors.blue,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const SatgasAccountsPage()),
+                          );
+                        },
+                      ),
+                      StatCard(
+                        title: "Siswa Terdaftar",
+                        value: "$akunSiswa",
+                        change: changeAkunSiswa >= 0
+                            ? "+$changeAkunSiswa"
+                            : "$changeAkunSiswa",
+                        icon: Icons.school,
+                        color: Colors.green,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const SiswaAccountsPage()),
+                          );
+                        },
+                      ),
+                      StatCard(
+                        title: "Sudah Absen Hari Ini",
+                        value: "$sudahAbsen",
+                        change: "",
+                        icon: Icons.check_circle,
+                        color: Colors.teal,
+                      ),
+                      StatCard(
+                        title: "Belum Absen Hari Ini",
+                        value: "$belumAbsen",
+                        change: "",
+                        icon: Icons.cancel,
+                        color: Colors.red,
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+      ],
+    ),
+  );
+}
+
 }
 
 class StatCard extends StatelessWidget {
@@ -250,6 +373,7 @@ class StatCard extends StatelessWidget {
   final String change;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const StatCard({
     super.key,
@@ -258,48 +382,53 @@ class StatCard extends StatelessWidget {
     required this.change,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: const Color(0xFF1B2A38),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              backgroundColor: color.withOpacity(0.2),
-              child: Icon(icon, color: color, size: 24),
-              radius: 20,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 14, color: Colors.white),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: color,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Card(
+        color: const Color(0xFF1B2A38),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 3,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withOpacity(0.2),
+                child: Icon(icon, color: color, size: 24),
+                radius: 20,
               ),
-            ),
-            const SizedBox(height: 2),
-            if (change.isNotEmpty)
+              const SizedBox(height: 8),
               Text(
-                change,
+                title,
+                style: const TextStyle(fontSize: 14, color: Colors.white),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                value,
                 style: TextStyle(
-                  fontSize: 12,
-                  color: change.contains("+") ? Colors.green : Colors.red,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: color,
                 ),
               ),
-          ],
+              const SizedBox(height: 2),
+              if (change.isNotEmpty)
+                Text(
+                  change,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: change.contains("+") ? Colors.green : Colors.red,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
