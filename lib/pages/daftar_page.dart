@@ -414,7 +414,7 @@ class _DaftarPageState extends State<DaftarPage>
         filled: true,
         fillColor: Colors.white.withOpacity(0.12),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
           borderSide: BorderSide.none,
@@ -426,6 +426,7 @@ class _DaftarPageState extends State<DaftarPage>
       ),
       dropdownColor: const Color(0xFF2C5364),
       style: GoogleFonts.poppins(color: Colors.white),
+      isDense: true,
     );
   }
 }

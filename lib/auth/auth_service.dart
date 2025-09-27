@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
   final SupabaseClient _supabase = Supabase.instance.client;
+  static bool isPendingSignOut = false;
 
   // Sign in with email and password
   Future<AuthResponse> signInWithEmailPassword(
@@ -22,9 +23,7 @@ class AuthService {
 
         final status = profileResponse['status'] as String?;
         if (status == 'pending') {
-          // Sign out user immediately
-          await _supabase.auth.signOut();
-          throw Exception('You are not approved yet, contact admin balbalbalbalba');
+          throw Exception('You are not approved yet, please contact an admin to approve your account first.');
         }
       }
 

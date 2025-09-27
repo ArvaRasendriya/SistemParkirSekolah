@@ -118,11 +118,31 @@ class _LoginPageState extends State<LoginPage>
         );
       }
     } catch (e) {
-      // Tangani error network / auth / dll
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error saat login: $e")),
-        );
+        if (e.toString().contains('not approved')) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Approval Required'),
+                content: const Text('You are not approved by an admin yet.'),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      authService.signOut();
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error saat login: $e")),
+          );
+        }
       }
     }
   }

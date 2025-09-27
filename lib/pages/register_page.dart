@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
 import 'package:tefa_parkir/pages/login_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -57,7 +58,7 @@ class _RegisterPageState extends State<RegisterPage>
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password don't match")),
+        const SnackBar(content: Text("Password tidak cocok")),
       );
       return;
     }
@@ -85,11 +86,53 @@ class _RegisterPageState extends State<RegisterPage>
         await authservice.createProfile(user.id, email,
             full_name: fullName, kelas: kelas, jurusan: jurusan);
       }
-      Navigator.pop(context);
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Sukses'),
+            content: const Text('Registerasi berhasil! Mohon cek email mu untuk verifikasi ya!'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+        );
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
+        String errorMessage;
+        if (e is AuthException) {
+          errorMessage = e.message;
+          if (errorMessage.contains('already registered') || errorMessage.contains('User already registered')) {
+            errorMessage = 'Email telah terdaftar, tolong coba email lain.';
+          } else if (errorMessage.contains('Invalid email')) {
+            errorMessage = 'Format email invalid.';
+          } else if (errorMessage.contains('Password should be at least')) {
+            errorMessage = 'Password harus setidaknya 6 karakter atau lebih.';
+          }
+          // add more customizations if needed
+        } else {
+          errorMessage = 'An error occurred: $e';
+        }
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text(errorMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
       }
     }
