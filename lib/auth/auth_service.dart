@@ -154,4 +154,17 @@ class AuthService {
       return [];
     }
   }
+
+  // Delete satgas account from profiles and auth via edge function
+  Future<void> deleteSatgasAccount(String userId) async {
+    try {
+      final response = await _supabase.functions.invoke('deleteUser', body: {'userId': userId});
+      if (response.status != 200) {
+        throw Exception('Failed to delete account: ${response.data}');
+      }
+    } catch (e) {
+      debugPrint('Error deleting satgas account: $e');
+      rethrow;
+    }
+  }
 }
