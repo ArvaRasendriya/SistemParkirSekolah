@@ -246,7 +246,7 @@ class _DaftarPageState extends State<DaftarPage>
                           children: [
                             Expanded(
                               child: _buildDropdown(
-                                  _selectedGrade, grades, 'Grade', (String? newValue) {
+                                  _selectedGrade, grades, 'Kelas', (String? newValue) {
                                 setState(() {
                                   _selectedGrade = newValue;
                                 });
@@ -255,7 +255,7 @@ class _DaftarPageState extends State<DaftarPage>
                             const SizedBox(width: 10),
                             Expanded(
                               child: _buildDropdown(
-                                  _selectedMajor, majors, 'Major', (String? newValue) {
+                                  _selectedMajor, majors, 'Jurusan', (String? newValue) {
                                 setState(() {
                                   _selectedMajor = newValue;
                                 });
@@ -264,7 +264,7 @@ class _DaftarPageState extends State<DaftarPage>
                             const SizedBox(width: 10),
                             Expanded(
                               child: _buildDropdown(
-                                  _selectedClass, classes, 'Class', (String? newValue) {
+                                  _selectedClass, classes, 'Rombel', (String? newValue) {
                                 setState(() {
                                   _selectedClass = newValue;
                                 });
@@ -401,12 +401,12 @@ class _DaftarPageState extends State<DaftarPage>
       void Function(T?) onChanged) {
     return DropdownButtonFormField<T>(
       value: value,
-      hint: Text(hint, style: GoogleFonts.poppins(color: Colors.white70)),
+      hint: Text(hint, style: GoogleFonts.poppins(color: Colors.white)),
       items: items.map<DropdownMenuItem<T>>((T item) {
         return DropdownMenuItem<T>(
           value: item,
           child: Text(item.toString(),
-              style: GoogleFonts.poppins(color: Colors.black)),
+              style: GoogleFonts.poppins(color: Colors.white)),
         );
       }).toList(),
       onChanged: onChanged,

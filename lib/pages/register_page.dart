@@ -272,14 +272,14 @@ class _RegisterPageState extends State<RegisterPage>
       isExpanded: true,
       hint: Container(
         alignment: Alignment.center,
-        child: Text(hint, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+        child: Text(hint, style: const TextStyle(color: Colors.white, fontSize: 14)),
       ),
       dropdownColor: const Color(0xFF203A43),
       style: const TextStyle(color: Colors.white, fontSize: 14),
       items: items.map((String v) {
         return DropdownMenuItem<String>(
           value: v,
-          child: Text(v, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14)),
+          child: Text(v, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 14)),
         );
       }).toList(),
       onChanged: onChanged,

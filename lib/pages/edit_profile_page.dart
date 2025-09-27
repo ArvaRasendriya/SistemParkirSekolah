@@ -244,12 +244,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       void Function(T?) onChanged) {
     return DropdownButtonFormField<T>(
       value: value,
-      hint: Text(hint, style: GoogleFonts.poppins(color: Colors.white70)),
+      hint: Text(hint, style: GoogleFonts.poppins(color: Colors.white)),
       items: items.map<DropdownMenuItem<T>>((T item) {
         return DropdownMenuItem<T>(
           value: item,
           child: Text(item.toString(),
-              style: GoogleFonts.poppins(color: Colors.black)),
+              style: GoogleFonts.poppins(color: Colors.white)),
         );
       }).toList(),
       onChanged: onChanged,

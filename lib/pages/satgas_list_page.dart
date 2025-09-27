@@ -43,8 +43,8 @@ class _SatgasListPageState extends State<SatgasListPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: Text('Are you sure you want to delete the account for $email? This action cannot be undone.'),
+        title: const Text('Hapus Akun'),
+        content: Text('Apakah kamu yakin ingin menghapus akun untuk $email? Perbuatan ini tidak bisa dibatalkan.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -63,15 +63,15 @@ class _SatgasListPageState extends State<SatgasListPage> {
         await authService.deleteSatgasAccount(userId);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account deleted successfully')),
+            const SnackBar(content: Text('Akun berhasil dihapus')),
           );
         }
         fetchSatgasAccounts(); // Refresh the list
       } catch (e) {
-        debugPrint('Error deleting account: $e');
+        debugPrint('Error menghapus akun: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error deleting account: $e')),
+            SnackBar(content: Text('Error menghapus akun: $e')),
           );
         }
       }
@@ -119,7 +119,7 @@ class _SatgasListPageState extends State<SatgasListPage> {
             : satgasAccounts.isEmpty
                 ? const Center(
                     child: Text(
-                      'No satgas accounts found',
+                      'Tidak ada akun satgas ditemukan.',
                       style: TextStyle(fontSize: 16, color: Colors.white70),
                     ),
                   )
