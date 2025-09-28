@@ -10,35 +10,120 @@ class PreviewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Preview")),
-      body: Center(
-        child: Image.file(croppedFile),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text("Preview"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      bottomNavigationBar: Padding(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF0F2027), // hitam kebiruan
+              Color(0xFF203443), // biru gelapan
+              Color(0xFF2C5364), // biru gradasi
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Hero(
+            tag: "previewImage",
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.file(
+                croppedFile,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF203443),
+              Color(0xFF2C5364),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CropPage(imageFile: croppedFile),
+            AnimatedScale(
+              scale: 1,
+              duration: const Duration(milliseconds: 200),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                );
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text("Ulangi"),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  elevation: 6,
+                  shadowColor: Colors.black54,
+                ),
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    PageRouteBuilder(
+                      transitionDuration: const Duration(milliseconds: 400),
+                      pageBuilder: (_, __, ___) =>
+                          CropPage(imageFile: croppedFile),
+                      transitionsBuilder:
+                          (_, animation, secondaryAnimation, child) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: ScaleTransition(
+                            scale: animation,
+                            child: child,
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                label: const Text(
+                  "Ulangi",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
             ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              onPressed: () {
-                Navigator.pop(context, croppedFile);
-              },
-              icon: const Icon(Icons.check),
-              label: const Text("Gunakan"),
+            AnimatedScale(
+              scale: 1,
+              duration: const Duration(milliseconds: 200),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.greenAccent.shade700,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  elevation: 6,
+                  shadowColor: Colors.black54,
+                ),
+                onPressed: () {
+                  Navigator.pop(context, croppedFile);
+                },
+                icon: const Icon(Icons.check, color: Colors.white),
+                label: const Text(
+                  "Gunakan",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
             ),
           ],
         ),

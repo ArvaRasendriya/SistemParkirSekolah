@@ -23,7 +23,8 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
   Future<void> fetchData() async {
     final response = await supabase
         .from('parkir')
-        .select('id, waktu, tanggal, status, siswa (id, nama, kelas, jurusan, sim_url)')
+        .select(
+            'id, waktu, tanggal, status, siswa (id, nama, kelas, jurusan, sim_url)')
         .eq('id', widget.parkirId)
         .single();
 
@@ -55,14 +56,21 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
         ],
       ),
       body: data == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : Center(
               child: Container(
                 margin: const EdgeInsets.all(20),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue[100],
+                  color: Colors.blue[300], // ganti biar nyatu tema
                   borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(2, 4),
+                    ),
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -71,7 +79,7 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.blue[100],
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -86,7 +94,7 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
-                              data!['siswa']['sim_url'], // sim_url dari supabase
+                              data!['siswa']['sim_url'],
                               width: 100,
                               height: 100,
                               fit: BoxFit.cover,
@@ -100,7 +108,9 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
                           const Text(
                             "KARTU E SIM",
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87),
                           ),
                         ],
                       ),
@@ -124,13 +134,14 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
 
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
+                        backgroundColor: Colors.blue[600],
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 40, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
+                        elevation: 3,
                       ),
                       onPressed: () => Navigator.pop(context),
                       child: const Text(
@@ -152,10 +163,18 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
-              style:
-                  const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87)),
           Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end),
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+            ),
           ),
         ],
       ),

@@ -63,7 +63,6 @@ class _LoginPageState extends State<LoginPage>
           supabase.auth.currentUser ?? supabase.auth.currentSession?.user;
 
       if (currentUser == null) {
-        // Artinya sign-in mungkin gagal atau AuthService tidak meng-set session
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -75,7 +74,6 @@ class _LoginPageState extends State<LoginPage>
 
       final uid = currentUser.id;
 
-      // 3) Ambil role (dan optional status) dari tabel profiles
       final profile = await supabase
           .from('profiles')
           .select('role, status')
@@ -92,7 +90,6 @@ class _LoginPageState extends State<LoginPage>
       final role = (profile['role'] as String?)?.toLowerCase();
       final status = (profile['status'] as String?)?.toLowerCase();
 
-      // (Optional) contoh: blokir kalau status = 'pending' atau 'inactive'
       if (status != null && (status == 'pending' || status == 'inactive')) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Akun Anda belum aktif (status: $status)")),
@@ -100,7 +97,6 @@ class _LoginPageState extends State<LoginPage>
         return;
       }
 
-      // 4) Navigate sesuai role
       if (!mounted) return;
       if (role == 'admin') {
         Navigator.pushReplacement(
@@ -232,27 +228,67 @@ class _LoginPageState extends State<LoginPage>
                   ),
                   const SizedBox(height: 24),
 
+                  // === TOMBOL MASUK DENGAN ANIMASI TRANSISI WARNA ===
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: login,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        backgroundColor: const Color(0xFF2C5364),
-                        foregroundColor: Colors.white,
-                        elevation: 6,
-                        shadowColor: Colors.black45,
-                      ),
-                      child: const Text(
-                        'Masuk',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
-                      ),
+                    height: 50,
+                    child: StatefulBuilder(
+                      builder: (context, setStateBtn) {
+                        bool isPressed = false;
+
+                        return GestureDetector(
+                          onTap: login,
+                          onTapDown: (_) => setStateBtn(() => isPressed = true),
+                          onTapUp: (_) => setStateBtn(() => isPressed = false),
+                          onTapCancel: () => setStateBtn(() => isPressed = false),
+                          child: TweenAnimationBuilder<Color?>(
+                            tween: ColorTween(
+                              begin: const Color(0xFF0F2027),
+                              end: isPressed ? const Color(0xFF2C5364) : const Color(0xFF0F2027),
+                            ),
+                            duration: const Duration(milliseconds: 350),
+                            builder: (context, color1, _) {
+                              return TweenAnimationBuilder<Color?>(
+                                tween: ColorTween(
+                                  begin: const Color(0xFF2C5364),
+                                  end: isPressed ? const Color(0xFF0F2027) : const Color(0xFF2C5364),
+                                ),
+                                duration: const Duration(milliseconds: 350),
+                                builder: (context, color2, __) {
+                                  return AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    curve: Curves.easeInOut,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(30),
+                                      gradient: LinearGradient(
+                                        colors: [color1 ?? Colors.black, color2 ?? Colors.black],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.3),
+                                          blurRadius: isPressed ? 2 : 6,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: const Text(
+                                      "Masuk",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ),
 
