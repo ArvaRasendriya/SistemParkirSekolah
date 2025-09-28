@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'admin_approval_page.dart';
 import 'satgas_list_page.dart';
-import 'admin_sim_page.dart'; // ⬅️ ganti dari profile_page.dart
+import 'admin_sim_page.dart'; // ⬅ ganti dari profile_page.dart
 import 'profile_page.dart';
+import 'riwayat_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -19,7 +20,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   final List<Widget> _pages = [
     const DashboardContent(),
     SatgasListPage(),
-    const AdminSimPage(), // ⬅️ diganti dari ProfilePage()
+    const AdminSimPage(), // ⬅ diganti dari ProfilePage()
   ];
 
   void _onItemTapped(int index) {
@@ -72,7 +73,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             label: "Satgas",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.credit_card), // ⬅️ tab kanan jadi SIM
+            icon: Icon(Icons.credit_card), // ⬅ tab kanan jadi SIM
             label: "SIM",
           ),
         ],
@@ -209,6 +210,10 @@ class _DashboardContentState extends State<DashboardContent> {
                           change: changeAkunSatgas >= 0 ? "+$changeAkunSatgas" : "$changeAkunSatgas",
                           icon: Icons.shield,
                           color: Colors.blue,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => SatgasListPage()),
+                          ),
                         ),
                         StatCard(
                           title: "Siswa Terdaftar",
@@ -216,6 +221,10 @@ class _DashboardContentState extends State<DashboardContent> {
                           change: changeAkunSiswa >= 0 ? "+$changeAkunSiswa" : "$changeAkunSiswa",
                           icon: Icons.school,
                           color: Colors.green,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const AdminApprovalPage()),
+                          ),
                         ),
                         StatCard(
                           title: "Sudah Absen Hari Ini",
@@ -223,6 +232,10 @@ class _DashboardContentState extends State<DashboardContent> {
                           change: "",
                           icon: Icons.check_circle,
                           color: Colors.teal,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const RiwayatPage()),
+                          ),
                         ),
                         StatCard(
                           title: "Belum Absen Hari Ini",
@@ -230,6 +243,10 @@ class _DashboardContentState extends State<DashboardContent> {
                           change: "",
                           icon: Icons.cancel,
                           color: Colors.red,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const RiwayatPage()),
+                          ),
                         ),
                       ],
                     ),
@@ -247,6 +264,7 @@ class StatCard extends StatelessWidget {
   final String change;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const StatCard({
     super.key,
@@ -255,48 +273,52 @@ class StatCard extends StatelessWidget {
     required this.change,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: const Color(0xFF1B2A38),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              backgroundColor: color.withOpacity(0.2),
-              child: Icon(icon, color: color, size: 20),
-              radius: 18,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 12, color: Colors.white),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
+    return InkWell(
+      onTap: onTap,
+      child: Card(
+        color: const Color(0xFF1B2A38),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 3,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withOpacity(0.2),
+                child: Icon(icon, color: color, size: 20),
+                radius: 18,
               ),
-            ),
-            const SizedBox(height: 2),
-            if (change.isNotEmpty)
+              const SizedBox(height: 6),
               Text(
-                change,
+                title,
+                style: const TextStyle(fontSize: 12, color: Colors.white),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
                 style: TextStyle(
-                  fontSize: 10,
-                  color: change.contains("+") ? Colors.green : Colors.red,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
                 ),
               ),
-          ],
+              const SizedBox(height: 2),
+              if (change.isNotEmpty)
+                Text(
+                  change,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: change.contains("+") ? Colors.green : Colors.red,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
