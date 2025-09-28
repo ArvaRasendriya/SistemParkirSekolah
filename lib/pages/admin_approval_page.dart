@@ -41,7 +41,7 @@ class _AdminApprovalPageState extends State<AdminApprovalPage> {
   Future<void> approveProfile(String profileId) async {
     try {
       await authService.updateProfileStatus(profileId, 'approved');
-      await fetchPendingProfiles(); // Refresh the list
+      await fetchPendingProfiles();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile approved successfully')),
@@ -60,7 +60,7 @@ class _AdminApprovalPageState extends State<AdminApprovalPage> {
   Future<void> rejectProfile(String profileId) async {
     try {
       await authService.updateProfileStatus(profileId, 'rejected');
-      await fetchPendingProfiles(); // Refresh the list
+      await fetchPendingProfiles();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile rejected')),
@@ -80,106 +80,171 @@ class _AdminApprovalPageState extends State<AdminApprovalPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pending Approvals'),
-        backgroundColor: Colors.blue[900],
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+        ),
+        title: const Text(
+          'Pending Approvals',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF0F2027),
+                Color(0xFF203A43),
+                Color(0xFF2C5364),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: fetchPendingProfiles,
           ),
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue[50]!, Colors.blue[100]!],
+            colors: [
+              Color(0xFF0F2027),
+              Color(0xFF203A43),
+              Color(0xFF2C5364),
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : pendingProfiles.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No pending approvals',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: pendingProfiles.length,
-                    itemBuilder: (context, index) {
-                      final profile = pendingProfiles[index];
-                      final email = profile['email'] ?? 'No email';
-                      final role = profile['role'] ?? 'Unknown';
-                      final createdAt = profile['created_at'];
-                      final formattedDate = createdAt != null
-                          ? DateTime.parse(createdAt).toLocal().toString().substring(0, 16)
-                          : 'Unknown date';
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 600),
+          child: isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                )
+              : pendingProfiles.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No pending approvals',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    )
+                  : Container(
+                      margin: const EdgeInsets.all(16), // 🔹 Jarak ke tepi
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2), // 🔹 Background belakang card
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ListView.builder(
+                        key: ValueKey(pendingProfiles.length),
+                        itemCount: pendingProfiles.length,
+                        itemBuilder: (context, index) {
+                          final profile = pendingProfiles[index];
+                          final email = profile['email'] ?? 'No email';
+                          final role = profile['role'] ?? 'Unknown';
+                          final createdAt = profile['created_at'];
+                          final formattedDate = createdAt != null
+                              ? DateTime.parse(createdAt)
+                                  .toLocal()
+                                  .toString()
+                                  .substring(0, 16)
+                              : 'Unknown date';
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                          return Card(
+                            color: const Color(0xFF1E2A32),
+                            elevation: 4,
+                            shadowColor: Colors.black54,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.person, color: Colors.blue),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      email,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.person,
+                                          color: Colors.white70),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          email,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Role: $role',
+                                    style: const TextStyle(
+                                        color: Colors.white70),
+                                  ),
+                                  Text(
+                                    'Applied: $formattedDate',
+                                    style: const TextStyle(
+                                        color: Colors.white70),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      ElevatedButton(
+                                        onPressed: () =>
+                                            rejectProfile(profile['id']),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        child: const Text('Reject'),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      ElevatedButton(
+                                        onPressed: () =>
+                                            approveProfile(profile['id']),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        child: const Text('Approve'),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Role: $role',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                              Text(
-                                'Applied: $formattedDate',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  TextButton.icon(
-                                    onPressed: () => rejectProfile(profile['id']),
-                                    icon: const Icon(Icons.close, color: Colors.red),
-                                    label: const Text('Reject', style: TextStyle(color: Colors.red)),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  ElevatedButton.icon(
-                                    onPressed: () => approveProfile(profile['id']),
-                                    icon: const Icon(Icons.check),
-                                    label: const Text('Approve'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+        ),
       ),
     );
   }
