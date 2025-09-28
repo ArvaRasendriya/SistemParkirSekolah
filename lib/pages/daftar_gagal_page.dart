@@ -18,8 +18,11 @@ class DaftarGagalPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cancel,
-                  size: 100, color: Colors.red),
+              const Icon(
+                Icons.cancel,
+                size: 100,
+                color: Colors.red,
+              ),
               const SizedBox(height: 20),
               const Text(
                 "Identitas Tidak Valid",

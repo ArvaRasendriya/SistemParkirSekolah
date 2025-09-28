@@ -3,7 +3,9 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart'; // ✅ untuk kIsWeb
+import 'package:tefa_parkir/pages/gagal_scan_page.dart';
 import 'dart:async';
+import 'package:uuid/uuid.dart'; // ✅ untuk validasi UUID
 import 'qr_result_page.dart';
 
 class QrScanPage extends StatefulWidget {
@@ -72,6 +74,20 @@ class _QrScanPageState extends State<QrScanPage>
 
   Future<void> _fetchUserAndNavigate(String userId) async {
     try {
+      // ✅ Validasi apakah QR benar UUID
+      final isUuid = _isValidUuid(userId);
+      if (!isUuid) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => GagalScanPage(parkirId: userId),
+          ),
+        );
+        return;
+      }
+
+      // ✅ Kalau UUID valid → cek di database
       final response =
           await supabase.from('siswa').select().eq('id', userId).maybeSingle();
 
@@ -93,16 +109,34 @@ class _QrScanPageState extends State<QrScanPage>
           ),
         );
       } else {
+        // ✅ kalau UUID valid tapi data tidak ada → gagal scan
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("❌ Data tidak ditemukan")),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => GagalScanPage(parkirId: userId),
+          ),
         );
       }
     } catch (e) {
+      // ✅ kalau ada error apapun → gagal scan
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("⚠️ Error: $e")),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => GagalScanPage(parkirId: userId),
+        ),
       );
+    }
+  }
+
+  // helper validasi UUID
+  bool _isValidUuid(String value) {
+    try {
+      final uuid = Uuid.parse(value);
+      return uuid.isNotEmpty;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -194,7 +228,7 @@ class _QrScanPageState extends State<QrScanPage>
               child: MobileScanner(
                 controller: cameraController,
                 onDetect: _onDetect,
-                fit: BoxFit.cover, // ✅ biar ga kepotong
+                fit: BoxFit.cover,
               ),
             ),
 
@@ -256,7 +290,7 @@ class _QrScanPageState extends State<QrScanPage>
                 ),
                 const SizedBox(height: 16),
 
-                // Kotak QR (selalu center, tidak kepotong)
+                // Kotak QR
                 Center(
                   child: SizedBox(
                     height: 300,
