@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart'; // ✅ untuk kIsWeb
+import 'package:vibration/vibration.dart'; // ✅ vibration
 import 'dart:async';
 import 'qr_result_page.dart';
 
@@ -67,6 +68,12 @@ class _QrScanPageState extends State<QrScanPage>
       await _audioPlayer.play(UrlSource("assets/sounds/beep.mp3"));
     } else {
       await _audioPlayer.play(AssetSource("sounds/beep.mp3"));
+    }
+  }
+
+  Future<void> _vibrate() async {
+    if (await Vibration.hasVibrator() ?? false) {
+      Vibration.vibrate(duration: 300); // ✅ getar 300ms
     }
   }
 
@@ -159,7 +166,22 @@ class _QrScanPageState extends State<QrScanPage>
     if (isProcessing) return;
     final code = capture.barcodes.first.rawValue;
     if (code != null) {
-      setState(() => isProcessing = true);
+      setState(() {
+        isProcessing = true;
+        showCircle = true; // ✅ munculkan lingkaran
+      });
+
+      // ✅ mainkan suara beep & vibrate
+      await _playBeep();
+      await _vibrate();
+
+      // sembunyikan lingkaran setelah 500ms
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          setState(() => showCircle = false);
+        }
+      });
+
       await _fetchUserAndNavigate(code);
     }
   }
