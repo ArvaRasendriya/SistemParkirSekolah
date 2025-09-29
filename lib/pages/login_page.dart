@@ -228,7 +228,7 @@ class _LoginPageState extends State<LoginPage>
                   ),
                   const SizedBox(height: 24),
 
-                  // === TOMBOL MASUK DENGAN ANIMASI TRANSISI WARNA ===
+                  // === TOMBOL MASUK DENGAN ANIMASI TRANSISI WARNA GRADASI ===
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -241,51 +241,45 @@ class _LoginPageState extends State<LoginPage>
                           onTapDown: (_) => setStateBtn(() => isPressed = true),
                           onTapUp: (_) => setStateBtn(() => isPressed = false),
                           onTapCancel: () => setStateBtn(() => isPressed = false),
-                          child: TweenAnimationBuilder<Color?>(
-                            tween: ColorTween(
-                              begin: const Color(0xFF0F2027),
-                              end: isPressed ? const Color(0xFF2C5364) : const Color(0xFF0F2027),
-                            ),
-                            duration: const Duration(milliseconds: 350),
-                            builder: (context, color1, _) {
-                              return TweenAnimationBuilder<Color?>(
-                                tween: ColorTween(
-                                  begin: const Color(0xFF2C5364),
-                                  end: isPressed ? const Color(0xFF0F2027) : const Color(0xFF2C5364),
-                                ),
-                                duration: const Duration(milliseconds: 350),
-                                builder: (context, color2, __) {
-                                  return AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    curve: Curves.easeInOut,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(30),
-                                      gradient: LinearGradient(
-                                        colors: [color1 ?? Colors.black, color2 ?? Colors.black],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.3),
-                                          blurRadius: isPressed ? 2 : 6,
-                                          offset: const Offset(0, 3),
-                                        ),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeInOutCubic,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(30),
+                              gradient: LinearGradient(
+                                colors: isPressed
+                                    ? [
+                                        Color(0xFF2C5364),
+                                        Color(0xFF203443),
+                                        Color(0xFF0F2027),
+                                      ]
+                                    : [
+                                        Color(0xFF0F2027),
+                                        Color(0xFF203443),
+                                        Color(0xFF2C5364),
                                       ],
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      "Masuk",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: isPressed ? 3 : 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 300),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: isPressed ? 15 : 16,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: isPressed ? 1.2 : 1.0,
+                              ),
+                              child: const Text("Masuk"),
+                            ),
                           ),
                         );
                       },

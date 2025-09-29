@@ -40,7 +40,9 @@ class _RegisterPageState extends State<RegisterPage>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
-  bool _isPressed = false; // untuk animasi tombol
+  bool _isPressed = false; 
+  bool _obscurePassword = true; 
+  bool _obscureConfirmPassword = true; 
 
   @override
   void initState() {
@@ -189,16 +191,42 @@ class _RegisterPageState extends State<RegisterPage>
                 CustomInputField(
                   controller: _passwordController,
                   hintText: 'Kata Sandi',
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   icon: Icons.lock,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.white70,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 16),
 
                 CustomInputField(
                   controller: _confirmPasswordController,
                   hintText: 'Konfirmasi Kata Sandi',
-                  obscureText: true,
+                  obscureText: _obscureConfirmPassword,
                   icon: Icons.lock_outline,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.white70,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -379,6 +407,7 @@ class CustomInputField extends StatelessWidget {
   final String hintText;
   final bool obscureText;
   final IconData? icon;
+  final Widget? suffixIcon;
 
   const CustomInputField({
     super.key,
@@ -386,6 +415,7 @@ class CustomInputField extends StatelessWidget {
     required this.hintText,
     this.obscureText = false,
     this.icon,
+    this.suffixIcon,
   });
 
   @override
@@ -396,6 +426,7 @@ class CustomInputField extends StatelessWidget {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         prefixIcon: icon != null ? Icon(icon, color: Colors.white70) : null,
+        suffixIcon: suffixIcon,
         hintText: hintText,
         hintStyle: const TextStyle(color: Colors.white70),
         filled: true,

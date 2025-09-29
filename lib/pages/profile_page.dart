@@ -425,7 +425,7 @@ class _ProfilePageState extends State<ProfilePage> {
               topLeft: Radius.circular(24), topRight: Radius.circular(24)),
           child: BottomNavigationBar(
             backgroundColor: Colors.transparent,
-            selectedItemColor: Colors.tealAccent,
+            selectedItemColor: Colors.grey,
             unselectedItemColor: Colors.grey[500],
             currentIndex: 0,
             onTap: (index) {
@@ -446,16 +446,26 @@ class _ProfilePageState extends State<ProfilePage> {
                 );
               }
             },
-            items: const [
-              BottomNavigationBarItem(
+            items: [
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.history),
                 label: 'Riwayat',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.qr_code_scanner),
+                icon: Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: const BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.qr_code_scanner,
+                    color: Colors.white,
+                  ),
+                ),
                 label: 'SCAN',
               ),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.add),
                 label: 'Tambah',
               ),
