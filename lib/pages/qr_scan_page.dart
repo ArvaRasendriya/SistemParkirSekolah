@@ -1,12 +1,66 @@
+
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart'; // ✅ untuk kIsWeb
 import 'package:vibration/vibration.dart'; // ✅ vibration
+import 'package:uuid/uuid.dart'; // ✅ cek UUID valid
 import 'dart:async';
 import 'qr_result_page.dart';
+import 'gagal_scan_page.dart';
 
+// ✅ UI untuk QR gagal
+class DaftarGagalPage extends StatelessWidget {
+  const DaftarGagalPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.blue.shade400,
+      body: Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cancel, size: 100, color: Colors.red),
+              const SizedBox(height: 20),
+              const Text(
+                "Identitas Tidak Valid",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text("Kembali"),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ✅ Halaman QR Scan
 class QrScanPage extends StatefulWidget {
   const QrScanPage({super.key});
 
@@ -73,26 +127,49 @@ class _QrScanPageState extends State<QrScanPage>
 
   Future<void> _vibrate() async {
     if (await Vibration.hasVibrator() ?? false) {
-      Vibration.vibrate(duration: 300); // ✅ getar 300ms
+      Vibration.vibrate(duration: 300);
     }
   }
 
+  // ✅ fungsi cek apakah input valid UUID
+  bool isValidUuid(String input) {
+  try {
+    Uuid.parse(input);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
   Future<void> _fetchUserAndNavigate(String userId) async {
     try {
+      debugPrint("📌 Scanned code: $userId");
+
+      // ✅ cek dulu UUID valid
+      if (!isValidUuid(userId)) {
+        if (!mounted) return;
+        setState(() => isProcessing = false);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DaftarGagalPage()),
+        );
+        return;
+      }
+
+      // kalau valid UUID → baru query Supabase
       final response =
           await supabase.from('siswa').select().eq('id', userId).maybeSingle();
 
       if (response != null) {
         final success = await logScan(siswaId: userId, supabase: supabase);
-        if (!success) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("⚠️ Gagal mencatat riwayat parkir")),
-            );
-          }
+        if (!success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("⚠️ Gagal mencatat riwayat parkir")),
+          );
         }
 
         if (!mounted) return;
+        setState(() => isProcessing = false);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -101,25 +178,26 @@ class _QrScanPageState extends State<QrScanPage>
         );
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("❌ Data tidak ditemukan")),
+        setState(() => isProcessing = false);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DaftarGagalPage()),
         );
       }
     } catch (e) {
       if (!mounted) return;
+      setState(() => isProcessing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("⚠️ Error: $e")),
       );
     }
   }
 
-  // ✅ Revisi logScan: cek jarak 15 jam
   Future<bool> logScan({
     required String siswaId,
     required SupabaseClient supabase,
   }) async {
     try {
-      // Cek scan terakhir
       final lastScan = await supabase
           .from('parkir')
           .select('created_at')
@@ -147,7 +225,6 @@ class _QrScanPageState extends State<QrScanPage>
         }
       }
 
-      // Simpan data scan baru
       final scannedBy =
           supabase.auth.currentUser?.email ?? supabase.auth.currentUser?.id;
       await supabase.from('parkir').insert({
@@ -168,14 +245,12 @@ class _QrScanPageState extends State<QrScanPage>
     if (code != null) {
       setState(() {
         isProcessing = true;
-        showCircle = true; // ✅ munculkan lingkaran
+        showCircle = true;
       });
 
-      // ✅ mainkan suara beep & vibrate
       await _playBeep();
       await _vibrate();
 
-      // sembunyikan lingkaran setelah 500ms
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
           setState(() => showCircle = false);
@@ -203,16 +278,13 @@ class _QrScanPageState extends State<QrScanPage>
         ),
         child: Stack(
           children: [
-            // Kamera scanner full screen
             Positioned.fill(
               child: MobileScanner(
                 controller: cameraController,
                 onDetect: _onDetect,
-                fit: BoxFit.cover, // ✅ biar ga kepotong
+                fit: BoxFit.cover,
               ),
             ),
-
-            // Tombol flashlight
             Positioned(
               top: 40,
               right: 20,
@@ -234,13 +306,9 @@ class _QrScanPageState extends State<QrScanPage>
                 ),
               ),
             ),
-
-            // Overlay kotak scan + teks
             Column(
               children: [
                 const Spacer(),
-
-                // Teks ZON4
                 SizedBox(
                   width: 250,
                   child: AnimatedBuilder(
@@ -269,8 +337,6 @@ class _QrScanPageState extends State<QrScanPage>
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Kotak QR (selalu center, tidak kepotong)
                 Center(
                   child: SizedBox(
                     height: 300,
@@ -293,8 +359,6 @@ class _QrScanPageState extends State<QrScanPage>
                             ],
                           ),
                         ),
-
-                        // garis scan
                         AnimatedBuilder(
                           animation: _lineAnimation,
                           builder: (context, child) {
@@ -314,8 +378,6 @@ class _QrScanPageState extends State<QrScanPage>
                             );
                           },
                         ),
-
-                        // lingkaran animasi ketika berhasil scan
                         if (showCircle)
                           AnimatedScale(
                             scale: showCircle ? 1.5 : 0,
@@ -333,10 +395,7 @@ class _QrScanPageState extends State<QrScanPage>
                     ),
                   ),
                 ),
-
                 const Spacer(),
-
-                // Tombol kembali
                 Padding(
                   padding: const EdgeInsets.only(bottom: 32),
                   child: ElevatedButton(
@@ -371,3 +430,4 @@ class _QrScanPageState extends State<QrScanPage>
     );
   }
 }
+
