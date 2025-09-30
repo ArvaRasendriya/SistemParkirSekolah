@@ -63,7 +63,6 @@ class _LoginPageState extends State<LoginPage>
           supabase.auth.currentUser ?? supabase.auth.currentSession?.user;
 
       if (currentUser == null) {
-        // Artinya sign-in mungkin gagal atau AuthService tidak meng-set session
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -75,7 +74,6 @@ class _LoginPageState extends State<LoginPage>
 
       final uid = currentUser.id;
 
-      // 3) Ambil role (dan optional status) dari tabel profiles
       final profile = await supabase
           .from('profiles')
           .select('role, status')
@@ -99,7 +97,6 @@ class _LoginPageState extends State<LoginPage>
         return;
       }
 
-      // 4) Navigate sesuai role
       if (!mounted) return;
       if (role == 'admin') {
         Navigator.pushReplacement(
@@ -117,11 +114,31 @@ class _LoginPageState extends State<LoginPage>
         );
       }
     } catch (e) {
-      // Tangani error network / auth / dll
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error saat login: $e")),
-        );
+        if (e.toString().contains('not approved')) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Approval Required'),
+                content: const Text('You are not approved by an admin yet.'),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      authService.signOut();
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error saat login: $e")),
+          );
+        }
       }
     }
   }
@@ -194,7 +211,7 @@ class _LoginPageState extends State<LoginPage>
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     style: const TextStyle(color: Colors.white),
-                    decoration: _transparentDecoration('Password').copyWith(
+                    decoration: _transparentDecoration('Kata Sandi').copyWith(
                       suffixIcon: IconButton(
                         splashRadius: 20,
                         icon: Icon(
@@ -211,34 +228,68 @@ class _LoginPageState extends State<LoginPage>
                   ),
                   const SizedBox(height: 24),
 
+                  // === TOMBOL MASUK DENGAN ANIMASI TRANSISI WARNA GRADASI ===
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: login,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        backgroundColor: const Color(0xFF2C5364),
-                        foregroundColor: Colors.white,
-                        elevation: 6,
-                        shadowColor: Colors.black45,
-                      ),
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
-                      ),
+                    height: 50,
+                    child: StatefulBuilder(
+                      builder: (context, setStateBtn) {
+                        bool isPressed = false;
+
+                        return GestureDetector(
+                          onTap: login,
+                          onTapDown: (_) => setStateBtn(() => isPressed = true),
+                          onTapUp: (_) => setStateBtn(() => isPressed = false),
+                          onTapCancel: () => setStateBtn(() => isPressed = false),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeInOutCubic,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(30),
+                              gradient: LinearGradient(
+                                colors: isPressed
+                                    ? [
+                                        Color(0xFF2C5364),
+                                        Color(0xFF203443),
+                                        Color(0xFF0F2027),
+                                      ]
+                                    : [
+                                        Color(0xFF0F2027),
+                                        Color(0xFF203443),
+                                        Color(0xFF2C5364),
+                                      ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: isPressed ? 3 : 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 300),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: isPressed ? 15 : 16,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: isPressed ? 1.2 : 1.0,
+                              ),
+                              child: const Text("Masuk"),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
 
                   const SizedBox(height: 22),
 
                   const Text(
-                    "Don't have an account?",
+                    "Tidak punya akun?",
                     style: TextStyle(
                       fontSize: 15,
                       color: Colors.white70,
@@ -253,7 +304,7 @@ class _LoginPageState extends State<LoginPage>
                       );
                     },
                     child: const Text(
-                      "Sign up here!",
+                      "Daftar disini!",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
 import 'package:tefa_parkir/pages/login_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -39,6 +40,10 @@ class _RegisterPageState extends State<RegisterPage>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
+  bool _isPressed = false; 
+  bool _obscurePassword = true; 
+  bool _obscureConfirmPassword = true; 
+
   @override
   void initState() {
     super.initState();
@@ -57,7 +62,7 @@ class _RegisterPageState extends State<RegisterPage>
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password don't match")),
+        const SnackBar(content: Text("Password tidak cocok")),
       );
       return;
     }
@@ -85,11 +90,54 @@ class _RegisterPageState extends State<RegisterPage>
         await authservice.createProfile(user.id, email,
             full_name: fullName, kelas: kelas, jurusan: jurusan);
       }
-      Navigator.pop(context);
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Sukses'),
+            content: const Text(
+                'Registerasi berhasil! Mohon cek email mu untuk verifikasi ya!'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+        );
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
+        String errorMessage;
+        if (e is AuthException) {
+          errorMessage = e.message;
+          if (errorMessage.contains('already registered') ||
+              errorMessage.contains('User already registered')) {
+            errorMessage = 'Email telah terdaftar, tolong coba email lain.';
+          } else if (errorMessage.contains('Invalid email')) {
+            errorMessage = 'Format email invalid.';
+          } else if (errorMessage.contains('Password should be at least')) {
+            errorMessage = 'Password harus setidaknya 6 karakter atau lebih.';
+          }
+        } else {
+          errorMessage = 'An error occurred: $e';
+        }
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text(errorMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
       }
     }
@@ -131,7 +179,7 @@ class _RegisterPageState extends State<RegisterPage>
                   ),
                 ),
 
-                const SizedBox(height: 32), // logo → form
+                const SizedBox(height: 32),
 
                 CustomInputField(
                   controller: _emailController,
@@ -142,26 +190,52 @@ class _RegisterPageState extends State<RegisterPage>
 
                 CustomInputField(
                   controller: _passwordController,
-                  hintText: 'Password',
-                  obscureText: true,
+                  hintText: 'Kata Sandi',
+                  obscureText: _obscurePassword,
                   icon: Icons.lock,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.white70,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 16),
 
                 CustomInputField(
                   controller: _confirmPasswordController,
-                  hintText: 'Confirm Password',
-                  obscureText: true,
+                  hintText: 'Konfirmasi Kata Sandi',
+                  obscureText: _obscureConfirmPassword,
                   icon: Icons.lock_outline,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.white70,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 16),
 
                 CustomInputField(
                   controller: _fullNameController,
-                  hintText: 'Full Name',
+                  hintText: 'Nama Lengkap',
                   icon: Icons.person,
                 ),
-                const SizedBox(height: 20), // field → dropdown
+                const SizedBox(height: 20),
 
                 // Row dropdown
                 Row(
@@ -169,27 +243,30 @@ class _RegisterPageState extends State<RegisterPage>
                     Expanded(
                       child: buildDropdown(
                         value: _selectedGrade,
-                        hint: "Grade",
+                        hint: "Kelas",
                         items: grades,
                         onChanged: (v) => setState(() => _selectedGrade = v),
+                        hasIcon: false,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: buildDropdown(
                         value: _selectedMajor,
-                        hint: "Major",
+                        hint: "Jurusan",
                         items: majors,
                         onChanged: (v) => setState(() => _selectedMajor = v),
+                        hasIcon: false,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: buildDropdown(
                         value: _selectedClass,
-                        hint: "Class",
+                        hint: "Rombel",
                         items: classes,
                         onChanged: (v) => setState(() => _selectedClass = v),
+                        hasIcon: false,
                       ),
                     ),
                   ],
@@ -201,30 +278,57 @@ class _RegisterPageState extends State<RegisterPage>
                   hint: "Jurusan",
                   items: jurusans,
                   onChanged: (v) => setState(() => _selectedJurusan = v),
+                  hasIcon: false,
                 ),
-                const SizedBox(height: 28), // dropdown → tombol
+                const SizedBox(height: 28),
 
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey[800],
-                    foregroundColor: Colors.white,
+                // Tombol Daftar dengan animasi warna
+                GestureDetector(
+                  onTapDown: (_) => setState(() => _isPressed = true),
+                  onTapUp: (_) {
+                    setState(() => _isPressed = false);
+                    signUp();
+                  },
+                  onTapCancel: () => setState(() => _isPressed = false),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 100, vertical: 14),
-                    shape: RoundedRectangleBorder(
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
+                      gradient: LinearGradient(
+                        colors: _isPressed
+                            ? [const Color(0xFF2C5364), const Color(0xFF203A43)]
+                            : [const Color(0xFF203A43), const Color(0xFF2C5364)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    elevation: 6,
-                  ),
-                  onPressed: signUp,
-                  child: const Text(
-                    'Sign Up',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                    child: const Center(
+                      child: Text(
+                        'Daftar',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20), // tombol → teks bawah
+
+                const SizedBox(height: 20),
 
                 const Text(
-                  "Already have an account?",
+                  "Sudah punya akun?",
                   style: TextStyle(
                     fontSize: 15,
                     color: Colors.white70,
@@ -239,7 +343,7 @@ class _RegisterPageState extends State<RegisterPage>
                     );
                   },
                   child: const Text(
-                    "Sign in here!",
+                    "Masuk disini!",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -261,21 +365,30 @@ class _RegisterPageState extends State<RegisterPage>
     required String hint,
     required List<String> items,
     required ValueChanged<String?> onChanged,
+    bool hasIcon = true,
   }) {
     return DropdownButtonFormField<String>(
       value: value,
-      hint: Text(hint, style: const TextStyle(color: Colors.white70)),
+      isExpanded: true,
+      hint: Container(
+        alignment: Alignment.center,
+        child: Text(hint,
+            style: const TextStyle(color: Colors.white, fontSize: 14)),
+      ),
       dropdownColor: const Color(0xFF203A43),
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: Colors.white, fontSize: 14),
       items: items.map((String v) {
         return DropdownMenuItem<String>(
           value: v,
-          child: Text(v),
+          child: Text(v,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 14)),
         );
       }).toList(),
       onChanged: onChanged,
       decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.school, color: Colors.white70),
+        prefixIcon: hasIcon ? const Icon(Icons.school, color: Colors.white70) : null,
         filled: true,
         fillColor: Colors.black.withOpacity(0.2),
         contentPadding:
@@ -294,6 +407,7 @@ class CustomInputField extends StatelessWidget {
   final String hintText;
   final bool obscureText;
   final IconData? icon;
+  final Widget? suffixIcon;
 
   const CustomInputField({
     super.key,
@@ -301,6 +415,7 @@ class CustomInputField extends StatelessWidget {
     required this.hintText,
     this.obscureText = false,
     this.icon,
+    this.suffixIcon,
   });
 
   @override
@@ -311,6 +426,7 @@ class CustomInputField extends StatelessWidget {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         prefixIcon: icon != null ? Icon(icon, color: Colors.white70) : null,
+        suffixIcon: suffixIcon,
         hintText: hintText,
         hintStyle: const TextStyle(color: Colors.white70),
         filled: true,

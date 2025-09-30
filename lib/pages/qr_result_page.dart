@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class ScanResultPage extends StatelessWidget {
+class ScanResultPage extends StatefulWidget {
   final Map<String, dynamic> userData;
   const ScanResultPage({super.key, required this.userData});
 
+  @override
+  State<ScanResultPage> createState() => _ScanResultPageState();
+}
+
+class _ScanResultPageState extends State<ScanResultPage> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final formattedTime = DateFormat("HH:mm").format(now);
     final formattedDate = DateFormat("dd-MM-yyyy").format(now);
+
+    // 🔑 mapping status jadi Approved/Rejected
+    final isApproved = widget.userData["status"] == "Masuk";
+    final statusText = isApproved ? "Approved" : "Rejected";
+    final statusColor = isApproved ? Colors.green : Colors.red;
+    final statusIcon = isApproved ? Icons.check_circle : Icons.cancel;
 
     return Scaffold(
       body: Container(
@@ -29,12 +40,16 @@ class ScanResultPage extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.black.withOpacity(0.4), // 🔄 lebih tipis transparan
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.4), // 🔄 border putih samar
+                width: 1,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 12,
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 16,
                   offset: const Offset(0, 6),
                 )
               ],
@@ -57,13 +72,13 @@ class ScanResultPage extends StatelessWidget {
                           color: Colors.grey[200],
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: userData["sim_url"] != null
+                        child: widget.userData["sim_url"] != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
                                 child: AspectRatio(
                                   aspectRatio: 4 / 3,
                                   child: Image.network(
-                                    userData["sim_url"],
+                                    widget.userData["sim_url"],
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -81,7 +96,7 @@ class ScanResultPage extends StatelessWidget {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(30),
                             onTap: () {
-                              if (userData["sim_url"] != null) {
+                              if (widget.userData["sim_url"] != null) {
                                 showDialog(
                                   context: context,
                                   builder: (context) => Dialog(
@@ -92,7 +107,7 @@ class ScanResultPage extends StatelessWidget {
                                       minScale: 0.8,
                                       maxScale: 4,
                                       child: Image.network(
-                                        userData["sim_url"],
+                                        widget.userData["sim_url"],
                                         fit: BoxFit.contain,
                                       ),
                                     ),
@@ -116,26 +131,36 @@ class ScanResultPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Status
+                // ✅ Status sudah dimapping
                 Row(
-                  children: const [
-                    Text(
+                  children: [
+                    const Text(
                       "Status:",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white, // 🔄 teks putih
                       ),
                     ),
-                    SizedBox(width: 8),
-                    Icon(Icons.check_circle, color: Colors.green, size: 20),
+                    const SizedBox(width: 8),
+                    Icon(statusIcon, color: statusColor, size: 20),
+                    const SizedBox(width: 4),
+                    Text(
+                      statusText,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: statusColor, // biarkan sesuai status
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
 
                 // Info siswa
-                _infoRow("Nama", userData["nama"] ?? "-"),
-                _infoRow("Kelas", userData["kelas"] ?? "-"),
-                _infoRow("Jurusan", userData["jurusan"] ?? "-"),
+                _infoRow("Nama", widget.userData["nama"] ?? "-"),
+                _infoRow("Kelas", widget.userData["kelas"] ?? "-"),
+                _infoRow("Jurusan", widget.userData["jurusan"] ?? "-"),
                 const SizedBox(height: 8),
 
                 // Waktu & Tanggal
@@ -177,7 +202,6 @@ class ScanResultPage extends StatelessWidget {
     );
   }
 
-  // Helper widget row info
   static Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -188,13 +212,17 @@ class ScanResultPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
+              color: Colors.white, // 🔄 teks putih
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.white, // 🔄 teks putih
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
