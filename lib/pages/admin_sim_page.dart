@@ -123,8 +123,6 @@ Future<void> approveSiswa(Map<String, dynamic> data) async {
   }
 }
 
-
-
   Future<void> rejectSiswa(String id) async {
     try {
       await supabase.from("pending_siswa").delete().eq("id", id);

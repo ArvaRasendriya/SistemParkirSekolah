@@ -38,7 +38,7 @@ class _DaftarPageState extends State<DaftarPage>
   static const List<String> jurusans = [
     'Rekayasa Perangkat Lunak',
     'Desain Komunikasi Visual',
-    'Teknik Otomotif Industri',
+    'Teknik Otomasi Industri',
     'Teknik Audio Video',
     'Teknik Komputer Jaringan'
   ];

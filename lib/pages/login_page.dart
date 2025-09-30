@@ -92,7 +92,6 @@ class _LoginPageState extends State<LoginPage>
       final role = (profile['role'] as String?)?.toLowerCase();
       final status = (profile['status'] as String?)?.toLowerCase();
 
-      // (Optional) contoh: blokir kalau status = 'pending' atau 'inactive'
       if (status != null && (status == 'pending' || status == 'inactive')) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Akun Anda belum aktif (status: $status)")),
