@@ -145,19 +145,6 @@ class _AdminSimPageState extends State<AdminSimPage> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF0F2027),
-                Color(0xFF203A43),
-                Color(0xFF2C5364),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
@@ -186,53 +173,41 @@ class _AdminSimPageState extends State<AdminSimPage> {
                       style: TextStyle(fontSize: 18, color: Colors.white70),
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: simData.length,
-                    itemBuilder: (context, index) {
-                      final sim = simData[index];
-                      return TweenAnimationBuilder(
-                        duration: Duration(milliseconds: 600 + (index * 200)),
-                        curve: Curves.easeOut,
-                        tween: Tween<double>(begin: 0, end: 1),
-                        builder: (context, value, child) {
-                          return Opacity(
-                            opacity: value,
-                            child: Transform.translate(
-                              offset: Offset(0, (1 - value) * 40),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3), // 🔹 bayangan belakang
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Card(
-                            color: const Color(0xFF1E2A32), // 🔹 warna konsisten elegan
-                            margin: const EdgeInsets.all(6),
-                            elevation: 6,
-                            shadowColor: Colors.black54,
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 1, 16, 16), // ✅ ditambahkan seperti SatgasListPage
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: simData.length,
+                        itemBuilder: (context, index) {
+                          final sim = simData[index];
+                          return Card(
+                            color: const Color(0xFF1E2A32),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            elevation: 4,
+                            shadowColor: Colors.black45,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(12),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
                                     children: [
                                       const Icon(Icons.credit_card,
-                                          color: Colors.white70),
-                                      const SizedBox(width: 8),
+                                          color: Colors.white70, size: 20),
+                                      const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
                                           sim["nama"] ?? "-",
                                           style: const TextStyle(
-                                            fontSize: 18,
+                                            fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                             color: Colors.white,
                                           ),
@@ -240,61 +215,78 @@ class _AdminSimPageState extends State<AdminSimPage> {
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: 6),
                                   Text(
                                     'Email: ${sim["email"] ?? "-"}',
-                                    style: const TextStyle(color: Colors.white70),
+                                    style: const TextStyle(
+                                        color: Colors.white70, fontSize: 13),
                                   ),
                                   Text(
                                     'Kelas: ${sim["kelas"] ?? "-"}',
-                                    style: const TextStyle(color: Colors.white70),
+                                    style: const TextStyle(
+                                        color: Colors.white70, fontSize: 13),
                                   ),
                                   Text(
                                     'Jurusan: ${sim["jurusan"] ?? "-"}',
-                                    style: const TextStyle(color: Colors.white70),
+                                    style: const TextStyle(
+                                        color: Colors.white70, fontSize: 13),
                                   ),
                                   Text(
                                     'Status: ${sim["status"] ?? "pending"}',
                                     style: const TextStyle(
                                       color: Colors.orange,
                                       fontWeight: FontWeight.w500,
+                                      fontSize: 13,
                                     ),
                                   ),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: 10),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       OutlinedButton.icon(
                                         style: OutlinedButton.styleFrom(
-                                          side: const BorderSide(color: Colors.red, width: 1.5),
+                                          side: const BorderSide(
+                                              color: Colors.red, width: 1.2),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
-                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 8),
                                         ),
-                                        onPressed: () => rejectSiswa(sim["id"]),
-                                        icon: const Icon(Icons.close, color: Colors.red),
+                                        onPressed: () =>
+                                            rejectSiswa(sim["id"]),
+                                        icon: const Icon(Icons.close,
+                                            color: Colors.red, size: 18),
                                         label: const Text(
                                           'Tidak Valid',
-                                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                                          style: TextStyle(
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 13),
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
+                                      const SizedBox(width: 8),
                                       ElevatedButton.icon(
                                         onPressed: () => approveSiswa(sim),
-                                        icon: const Icon(Icons.check, color: Colors.white),
+                                        icon: const Icon(Icons.check,
+                                            color: Colors.white, size: 18),
                                         label: const Text(
                                           'Valid',
-                                          style: TextStyle(fontWeight: FontWeight.w600),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 13),
                                         ),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.green,
                                           foregroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
-                                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                                          elevation: 4,
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 14, vertical: 8),
+                                          elevation: 3,
                                         ),
                                       ),
                                     ],
@@ -302,10 +294,10 @@ class _AdminSimPageState extends State<AdminSimPage> {
                                 ],
                               ),
                             ),
-                          ),
-                        ),
-                      );
-                    },
+                          );
+                        },
+                      ),
+                    ),
                   ),
       ),
     );

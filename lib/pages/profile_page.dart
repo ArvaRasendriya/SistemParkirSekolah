@@ -5,7 +5,7 @@ import 'riwayat_page.dart';
 import 'qr_scan_page.dart';
 import 'daftar_page.dart';
 import 'admin_dashboard_page.dart';
-import 'login_page.dart'; // pastikan ada file login_page.dart
+import 'login_page.dart';
 import 'edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -20,7 +20,6 @@ class _ProfilePageState extends State<ProfilePage> {
   final supabase = Supabase.instance.client;
   List<Map<String, dynamic>> todayHistory = [];
   RealtimeChannel? channel;
-
   Map<String, dynamic>? profileData;
 
   @override
@@ -141,10 +140,13 @@ class _ProfilePageState extends State<ProfilePage> {
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const AdminDashboardPage()),
                                 );
                               },
-                              icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                              icon: const Icon(Icons.admin_panel_settings,
+                                  color: Colors.white),
                               tooltip: 'Admin Dashboard',
                             );
                           }
@@ -182,7 +184,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           const CircleAvatar(
                             radius: 32,
                             backgroundColor: Colors.white,
-                            child: Icon(Icons.person, size: 40, color: Colors.grey),
+                            child: Icon(Icons.person,
+                                size: 40, color: Colors.grey),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -190,7 +193,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ? const Text("Memuat...",
                                     style: TextStyle(color: Colors.white))
                                 : Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         profileData!['full_name'] ?? '-',
@@ -214,8 +218,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                         future: authService.getUserRole(),
                                         builder: (context, snapshot) {
                                           String roleText = "Anggota Satgas";
-                                          if (snapshot.connectionState == ConnectionState.done) {
-                                            if (snapshot.hasData && snapshot.data != null) {
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.done) {
+                                            if (snapshot.hasData &&
+                                                snapshot.data != null) {
                                               final role = snapshot.data!;
                                               if (role == 'admin') {
                                                 roleText = "Admin";
@@ -230,7 +236,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                           }
                                           return Text(roleText,
                                               style: const TextStyle(
-                                                  color: Colors.white70, fontSize: 13),
+                                                  color: Colors.white70,
+                                                  fontSize: 13),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis);
                                         },
@@ -240,10 +247,12 @@ class _ProfilePageState extends State<ProfilePage> {
                                         children: [
                                           const Text("Jadwal Piket",
                                               style: TextStyle(
-                                                  color: Colors.white54, fontSize: 12)),
+                                                  color: Colors.white54,
+                                                  fontSize: 12)),
                                           Expanded(
                                             child: Text(
-                                              profileData!['jadwal_piket'] ?? '-',
+                                              profileData!['jadwal_piket'] ??
+                                                  '-',
                                               style: const TextStyle(
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.w500,
@@ -261,24 +270,32 @@ class _ProfilePageState extends State<ProfilePage> {
                                         builder: (context, snapshot) {
                                           String statusText = "";
                                           Color statusColor = Colors.white;
-                                          if (snapshot.connectionState == ConnectionState.done) {
-                                            if (snapshot.hasData && snapshot.data != null) {
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.done) {
+                                            if (snapshot.hasData &&
+                                                snapshot.data != null) {
                                               final status = snapshot.data!;
                                               if (status == 'approved') {
-                                                statusText = "Account: Approved";
+                                                statusText =
+                                                    "Account: Approved";
                                                 statusColor = Colors.green;
                                               } else if (status == 'pending') {
-                                                statusText = "Account: Pending Approval";
+                                                statusText =
+                                                    "Account: Pending Approval";
                                                 statusColor = Colors.orange;
                                               } else if (status == 'rejected') {
-                                                statusText = "Account: Rejected";
+                                                statusText =
+                                                    "Account: Rejected";
                                                 statusColor = Colors.red;
                                               }
                                             }
                                           }
                                           return Text(
                                             statusText,
-                                            style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold),
+                                            style: TextStyle(
+                                                color: statusColor,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           );
@@ -300,9 +317,10 @@ class _ProfilePageState extends State<ProfilePage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const EditProfilePage()),
+                                  builder: (context) =>
+                                      const EditProfilePage()),
                             ).then((_) {
-                              _loadProfile(); // ⬅️ refresh profil setelah edit
+                              _loadProfile();
                             });
                           },
                         ),
@@ -315,7 +333,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 8),
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.08),
@@ -347,20 +366,23 @@ class _ProfilePageState extends State<ProfilePage> {
                                     final createdAtStr = item['created_at'];
                                     final jam = createdAtStr != null
                                         ? (() {
-                                            final createdAt = DateTime.parse(createdAtStr);
-                                            final localTime = createdAt.toLocal();
-                                            return '${localTime.hour.toString().padLeft(2,'0')}:${localTime.minute.toString().padLeft(2,'0')}';
+                                            final createdAt =
+                                                DateTime.parse(createdAtStr);
+                                            final localTime =
+                                                createdAt.toLocal();
+                                            return '${localTime.hour.toString().padLeft(2, '0')}:${localTime.minute.toString().padLeft(2, '0')}';
                                           })()
                                         : '--:--';
 
                                     return Container(
-                                      margin:
-                                          const EdgeInsets.symmetric(vertical: 6),
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 6),
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 10, horizontal: 12),
                                       decoration: BoxDecoration(
                                         color: Colors.white.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(14),
+                                        borderRadius:
+                                            BorderRadius.circular(14),
                                       ),
                                       child: Row(
                                         children: [
@@ -405,67 +427,107 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
 
-      // Bottom Navigation
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      // ✅ FloatingActionButton dengan lingkaran alas gradient + turun
+      floatingActionButton: Stack(
+        alignment: Alignment.center,
+        children: [
+          Transform.translate(
+            offset: const Offset(0, 6), // lingkaran ikut turun
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF0F2027),
+                    Color(0xFF203A43),
+                    Color(0xFF2C5364),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+            ),
           ),
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-        ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-          child: BottomNavigationBar(
-            backgroundColor: Colors.transparent,
-            selectedItemColor: Colors.grey,
-            unselectedItemColor: Colors.grey[500],
-            currentIndex: 0,
-            onTap: (index) {
-              if (index == 0) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const RiwayatPage()),
-                );
-              } else if (index == 1) {
+          Transform.translate(
+            offset: const Offset(0, 6), // tombol SCAN ikut turun
+            child: FloatingActionButton(
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const QrScanPage()),
                 );
+              },
+              backgroundColor: Colors.blue,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.qr_code_scanner,
+                  size: 32, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+      // ✅ Bottom NavigationBar
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: Colors.transparent,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF0F2027),
+                Color(0xFF203A43),
+                Color(0xFF2C5364),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: BottomNavigationBar(
+            backgroundColor: Colors.transparent,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.grey,
+            type: BottomNavigationBarType.fixed,
+            currentIndex: 1,
+            onTap: (index) {
+              if (index == 0) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const RiwayatPage()),
+                );
               } else if (index == 2) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const DaftarPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const DaftarPage()),
                 );
               }
             },
-            items: [
-              const BottomNavigationBarItem(
+            items: const [
+              BottomNavigationBarItem(
                 icon: Icon(Icons.history),
                 label: 'Riwayat',
               ),
               BottomNavigationBarItem(
-                icon: Container(
-                  padding: const EdgeInsets.all(15),
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.qr_code_scanner,
-                    color: Colors.white,
-                  ),
-                ),
+                icon: SizedBox(height: 32),
                 label: 'SCAN',
               ),
-              const BottomNavigationBarItem(
+              BottomNavigationBarItem(
                 icon: Icon(Icons.add),
                 label: 'Tambah',
               ),

@@ -87,6 +87,7 @@ class _SatgasListPageState extends State<SatgasListPage> {
           'Akun Satgas',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -124,7 +125,7 @@ class _SatgasListPageState extends State<SatgasListPage> {
                     ),
                   )
                 : Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(16, 55, 16, 16),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.3), // box hitam transparan

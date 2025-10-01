@@ -341,6 +341,7 @@ class CustomInputField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       style: const TextStyle(color: Colors.white),
+      cursorColor: Colors.white,
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,

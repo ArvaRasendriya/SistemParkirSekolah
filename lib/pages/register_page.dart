@@ -424,6 +424,7 @@ class CustomInputField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       style: const TextStyle(color: Colors.white),
+      cursorColor: Colors.white,
       decoration: InputDecoration(
         prefixIcon: icon != null ? Icon(icon, color: Colors.white70) : null,
         suffixIcon: suffixIcon,

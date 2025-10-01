@@ -4,6 +4,9 @@ import 'admin_approval_page.dart';
 import 'satgas_list_page.dart';
 import 'admin_sim_page.dart';
 import 'login_page.dart'; // pastikan ada file login_page.dart
+import 'package:fl_chart/fl_chart.dart';
+
+enum ChartType { pie, bar }
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -41,17 +44,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0F2027),
-      appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: _logout,
-          ),
-        ],
-      ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
         transitionBuilder: (child, animation) {
@@ -99,6 +91,8 @@ class _DashboardContentState extends State<DashboardContent> {
 
   bool loading = true;
 
+  ChartType selectedChart = ChartType.pie;
+
   @override
   void initState() {
     super.initState();
@@ -126,6 +120,8 @@ class _DashboardContentState extends State<DashboardContent> {
 
   @override
   Widget build(BuildContext context) {
+    final double maxY = (akunSatgas > akunSiswa ? akunSatgas : akunSiswa).toDouble() + 5.0;
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -159,40 +155,152 @@ class _DashboardContentState extends State<DashboardContent> {
                   ? const Center(
                       child: CircularProgressIndicator(color: Colors.white),
                     )
-                  : GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      children: [
-                        StatCard(
-                          title: "Akun Satgas",
-                          value: "$akunSatgas",
-                          change: "+0",
-                          icon: Icons.shield,
-                          color: Colors.blue,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const SatgasAccountsPage()),
-                            );
-                          },
-                        ),
-                        StatCard(
-                          title: "Akun Siswa",
-                          value: "$akunSiswa",
-                          change: "+0",
-                          icon: Icons.school,
-                          color: Colors.green,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const SiswaAccountsPage()),
-                            );
-                          },
-                        ),
-                      ],
+                  : SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          // Grid of two cards (kept as before but shrink-wrapped)
+                          GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            children: [
+                              StatCard(
+                                title: "Akun Satgas",
+                                value: "$akunSatgas",
+                                change: "+0",
+                                icon: Icons.shield,
+                                color: Colors.blue,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => const SatgasAccountsPage()),
+                                  );
+                                },
+                              ),
+                              StatCard(
+                                title: "Akun Siswa",
+                                value: "$akunSiswa",
+                                change: "+0",
+                                icon: Icons.school,
+                                color: Colors.green,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => const SiswaAccountsPage()),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Dropdown to choose chart type
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Pilih Chart: ",
+                                style: TextStyle(color: Colors.white, fontSize: 14),
+                              ),
+                              const SizedBox(width: 10),
+                              DropdownButton<ChartType>(
+                                dropdownColor: Colors.black87,
+                                value: selectedChart,
+                                style: const TextStyle(color: Colors.white),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: ChartType.pie,
+                                    child: Text("Pie Chart"),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: ChartType.bar,
+                                    child: Text("Bar Chart"),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedChart = value!;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Chart area
+                          SizedBox(
+                            height: 240,
+                            child: selectedChart == ChartType.pie
+                                ? PieChart(
+                                    PieChartData(
+                                      sectionsSpace: 4,
+                                      centerSpaceRadius: 40,
+                                      sections: [
+                                        PieChartSectionData(
+                                          value: akunSatgas.toDouble(),
+                                          title: 'Satgas\n${akunSatgas}',
+                                          color: Colors.blue,
+                                          radius: 60,
+                                          titleStyle: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        PieChartSectionData(
+                                          value: akunSiswa.toDouble(),
+                                          title: 'Siswa\n${akunSiswa}',
+                                          color: Colors.green,
+                                          radius: 60,
+                                          titleStyle: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : BarChart(
+                                    BarChartData(
+                                      maxY: maxY,
+                                      barGroups: [
+                                        BarChartGroupData(x: 0, barRods: [
+                                          BarChartRodData(toY: akunSatgas.toDouble(), color: Colors.blue, width: 18)
+                                        ], showingTooltipIndicators: const [0]),
+                                        BarChartGroupData(x: 1, barRods: [
+                                          BarChartRodData(toY: akunSiswa.toDouble(), color: Colors.green, width: 18)
+                                        ], showingTooltipIndicators: const [0]),
+                                      ],
+                                      titlesData: FlTitlesData(
+                                        show: true,
+                                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
+                                        bottomTitles: AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: true,
+                                            getTitlesWidget: (value, meta) {
+                                              if (value.toInt() == 0) {
+                                                return const Text('Satgas', style: TextStyle(color: Colors.white));
+                                              } else {
+                                                return const Text('Siswa', style: TextStyle(color: Colors.white));
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                      gridData: FlGridData(show: false),
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(height: 30),
+                        ],
+                      ),
                     ),
             ),
           ],
