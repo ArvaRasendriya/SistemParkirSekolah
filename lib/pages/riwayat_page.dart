@@ -340,30 +340,31 @@ class _RiwayatPageState extends State<RiwayatPage> {
         ],
       ),
 
-      // ===== FAB tengah =====
+      // Floating QR button
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Stack(
         alignment: Alignment.center,
         children: [
-          Transform.translate(
-            offset: const Offset(0, 6),
-            child: Container(
-              width: 76,
-              height: 76,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _g2.withOpacity(0.22),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color.fromARGB(255, 63, 55, 201).withOpacity(0.22),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
           ),
-          Transform.translate(
-            offset: const Offset(0, 6),
+
+          // Bigger FAB
+          SizedBox(
+            width: 90,
+            height: 90,
             child: FloatingActionButton(
               onPressed: () {
                 Navigator.push(
@@ -371,62 +372,52 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   MaterialPageRoute(builder: (_) => const QrScanPage()),
                 );
               },
-              backgroundColor: _g2,
+              backgroundColor: const Color.fromARGB(255, 63, 55, 201),
               shape: const CircleBorder(),
               child: const Icon(
                 Icons.qr_code_scanner,
-                size: 28,
+                size: 42,
                 color: Colors.white,
               ),
             ),
           ),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-      // ===== Bottom nav putih rounded =====
+      // Bottom nav
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
-        elevation: 8,
         color: Colors.transparent,
-        child: Container(
-          padding: EdgeInsets.only(
-            left: 8,
-            right: 8,
-            top: 8,
-            bottom: MediaQuery.of(context).padding.bottom + 8,
+        padding: EdgeInsets.zero,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20), // radius on top left
+            topRight: Radius.circular(20), // radius on top right
           ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8F8FF),
             ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              TextButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.history, color: _g2),
-                label: const Text('Riwayat', style: TextStyle(color: _g2)),
-              ),
-              const SizedBox(width: 40),
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const DaftarPage()),
-                  );
-                },
-                icon: const Icon(Icons.add, color: Color(0xFF98A2B3)),
-                label: const Text(
-                  'Tambah',
-                  style: TextStyle(color: Color(0xFF98A2B3)),
-                ),
-              ),
-            ],
+            child: BottomNavigationBar(
+              selectedItemColor: Color.fromARGB(255, 63, 55, 201),
+              unselectedItemColor: Color.fromARGB(254, 49, 54, 56),
+              selectedLabelStyle: const TextStyle(fontSize: 16),
+              unselectedLabelStyle: const TextStyle(fontSize: 10),
+              type: BottomNavigationBarType.fixed,
+              currentIndex: 0,
+              onTap: (index) {
+                if (index == 0) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const RiwayatPage()));
+                } else if (index == 1) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const DaftarPage()));
+                }
+              },
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.history, size: 30), label: 'Riwayat'),
+                BottomNavigationBarItem(icon: Icon(Icons.add, size: 30,), label: 'Tambah'),
+              ],
+            ),
           ),
         ),
       ),
