@@ -23,16 +23,24 @@ class _LoginPageState extends State<LoginPage>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
+  // ======= UI theme only (no feature change) =======
+  static const Color _primary = Color(0xFF4F46E5);
+  static const Color _label = Color(0xFF5B5B6B);
+  static const Color _hint = Color(0xFF9EA3AE);
+  static const Color _stroke = Color(0xFFE7E7F0);
+  static const Color _bg = Color(0xFFF8F8FF);
+
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _scaleAnimation =
-        Tween<double>(begin: 0.8, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
-
+    _scaleAnimation = Tween<double>(begin: .97, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
     _controller.forward();
   }
 
@@ -44,7 +52,7 @@ class _LoginPageState extends State<LoginPage>
     super.dispose();
   }
 
-  // === LOGIN DENGAN CEK ROLE (robust terhadap user.id null) ===
+  // ======= LOGIN (unchanged) =======
   void login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -82,7 +90,8 @@ class _LoginPageState extends State<LoginPage>
 
       if (profile == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Profile tidak ditemukan di tabel profiles")),
+          const SnackBar(
+              content: Text("Profile tidak ditemukan di tabel profiles")),
         );
         return;
       }
@@ -143,216 +152,235 @@ class _LoginPageState extends State<LoginPage>
     }
   }
 
-  InputDecoration _transparentDecoration(String hint) {
+  // ======= InputDecoration (outlined, rapih) =======
+  InputDecoration _outlinedDecoration({
+    required String hint,
+    Widget? suffixIcon,
+  }) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: const TextStyle(color: _hint, fontSize: 14),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.10),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(25),
-        borderSide: BorderSide.none,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: _stroke, width: 1),
       ),
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: _primary, width: 1.6),
+      ),
+      suffixIcon: suffixIcon,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AnimatedContainer(
-        duration: const Duration(seconds: 2),
-        curve: Curves.easeInOut,
-        width: double.infinity,
-        height: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 50),
+    // biar nyaman saat keyboard muncul (tambah padding bawah sesuai viewInsets)
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-                  // Animasi logo
-                  ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Image.asset(
-                      'assets/logo.png',
-                      width: 240,
-                      height: 240,
-                    ),
-                  ),
+    return GestureDetector(
+      // tap luar untuk tutup keyboard
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: _bg,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return FadeTransition(
+                opacity: _fadeAnimation,
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(bottom: bottomInset),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    // IntrinsicHeight + Spacer => konten benar2 center secara vertikal
+                    child: IntrinsicHeight(
+                      child: Center(
+                        child: Padding(
+                          // maxWidth 420 biar proporsional di HP tablet
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: Column(
+                              children: [
+                                // ====== TOP ======
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                        size: 20, color: Colors.black87),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () => Navigator.maybePop(context),
+                                  ),
+                                ),
 
-                  const SizedBox(height: 40),
+                                const SizedBox(height: 8),
 
-                  CustomInputField(
-                    controller: _emailController,
-                    hintText: 'Email',
-                  ),
-                  const SizedBox(height: 14),
+                                // Logo lebih proporsional (flexible)
+                                ScaleTransition(
+                                  scale: _scaleAnimation,
+                                  child: Column(
+                                    children: [
+                                      // logo responsif: lebar 24% layar, min 72, max 110
+                                      Builder(builder: (context) {
+                                        final w = MediaQuery.of(context).size.width;
+                                        final size = w * 0.50;
+                                        final clamped = size.clamp(72.0, 110.0);
+                                        return Image.asset(
+                                          'assets/logo.png',
+                                          width:  200,
+                                          height: 200,
+                                        );
+                                      }),
+                                      const SizedBox(height: 10),
+                                    ],
+                                  ),
+                                ),
 
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _transparentDecoration('Kata Sandi').copyWith(
-                      suffixIcon: IconButton(
-                        splashRadius: 20,
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+                                const SizedBox(height: 28),
 
-                  // === TOMBOL MASUK DENGAN ANIMASI TRANSISI WARNA GRADASI ===
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: StatefulBuilder(
-                      builder: (context, setStateBtn) {
-                        bool isPressed = false;
+                                // ====== FORM (center block) ======
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Email',
+                                        style: TextStyle(
+                                          color: _label,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      TextField(
+                                        controller: _emailController,
+                                        keyboardType: TextInputType.emailAddress,
+                                        textInputAction: TextInputAction.next,
+                                        decoration: _outlinedDecoration(hint: 'hint@gmail.com'),
+                                      ),
+                                      const SizedBox(height: 40),
+                                      const Text(
+                                        'Password',
+                                        style: TextStyle(
+                                          color: _label,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      TextField(
+                                        controller: _passwordController,
+                                        obscureText: _obscurePassword,
+                                        textInputAction: TextInputAction.done,
+                                        onSubmitted: (_) => login(),
+                                        decoration: _outlinedDecoration(
+                                          hint: '************',
+                                          suffixIcon: IconButton(
+                                            icon: Icon(
+                                              _obscurePassword
+                                                  ? Icons.visibility_off
+                                                  : Icons.visibility,
+                                              color: _hint,
+                                            ),
+                                            onPressed: () => setState(
+                                                () => _obscurePassword = !_obscurePassword),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 15),
+                                      TextButton(
+                                        style: TextButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          minimumSize: Size.zero,
+                                        ),
+                                        onPressed: () {},
+                                        child: const Text(
+                                          'Lupa password?',
+                                          style: TextStyle(color: _hint, fontSize: 12),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
 
-                        return GestureDetector(
-                          onTap: login,
-                          onTapDown: (_) => setStateBtn(() => isPressed = true),
-                          onTapUp: (_) => setStateBtn(() => isPressed = false),
-                          onTapCancel: () => setStateBtn(() => isPressed = false),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 500),
-                            curve: Curves.easeInOutCubic,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(30),
-                              gradient: LinearGradient(
-                                colors: isPressed
-                                    ? [
-                                        Color(0xFF2C5364),
-                                        Color(0xFF203443),
-                                        Color(0xFF0F2027),
-                                      ]
-                                    : [
-                                        Color(0xFF0F2027),
-                                        Color(0xFF203443),
-                                        Color(0xFF2C5364),
-                                      ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: isPressed ? 3 : 8,
-                                  offset: const Offset(0, 4),
+                                const SizedBox(height: 20),
+
+                                // Tombol
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 54,
+                                  child: ElevatedButton(
+                                    onPressed: login,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _primary,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      elevation: 0,
+                                      textStyle: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    child: const Text('Login'),
+                                  ),
+                                ),
+
+                                // ====== SPACER untuk vertical centering ======
+                                const SizedBox(height: 24),
+                                const Spacer(),
+
+                                // Footer
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8, bottom: 8),
+                                  child: Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    alignment: WrapAlignment.center,
+                                    children: [
+                                      const Text(
+                                        'Belum punya akun? ',
+                                        style: TextStyle(color: _hint, fontSize: 12.5),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => const RegisterPage(),
+                                            ),
+                                          );
+                                        },
+                                        child: const Text(
+                                          'Buat Akun',
+                                          style: TextStyle(
+                                            color: Colors.black87,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 12.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
-                            alignment: Alignment.center,
-                            child: AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 300),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: isPressed ? 15 : 16,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: isPressed ? 1.2 : 1.0,
-                              ),
-                              child: const Text("Masuk"),
-                            ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 22),
-
-                  const Text(
-                    "Tidak punya akun?",
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const RegisterPage()),
-                      );
-                    },
-                    child: const Text(
-                      "Daftar disini!",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ),
-      ),
-    );
-  }
-}
-
-class CustomInputField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hintText;
-  final bool obscureText;
-
-  const CustomInputField({
-    super.key,
-    required this.controller,
-    required this.hintText,
-    this.obscureText = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      style: const TextStyle(color: Colors.white),
-      cursorColor: Colors.white,
-      decoration: InputDecoration(
-        hintText: hintText,
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.10),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(25),
-          borderSide: BorderSide.none,
-        ),
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
       ),
     );
   }
