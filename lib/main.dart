@@ -5,6 +5,7 @@ import 'pages/daftar_page.dart';
 import 'pages/login_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/admin_dashboard_page.dart';
+import 'pages/welcome_page.dart'; // Added import for WelcomePage
 
 // Import splash screen
 import 'package:tefa_parkir/pages/splash_screen.dart';
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         '/admin': (context) => const SafeArea(child: AdminDashboardPage()),
         '/daftar': (context) => const SafeArea(child: DaftarPage()),
         '/auth': (context) => const SafeArea(child: AuthGate()),
+        '/welcome': (context) => const SafeArea(child: WelcomePage()),
       },
     );
   }

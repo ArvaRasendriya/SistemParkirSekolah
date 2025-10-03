@@ -69,10 +69,13 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
-flutter: 
+flutter:
   assets:
     - assets/sounds/beep.mp3
     - assets/logo.png
+    - assets/images/
+    - assets/images/logo.png
+    - assets/images/scooter_illustration.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

@@ -37,10 +37,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Pindah ke login setelah selesai
+    // Pindah ke welcome setelah selesai
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        Navigator.pushReplacementNamed(context, '/auth');
+        Navigator.pushReplacementNamed(context, '/welcome');
       }
     });
   }
