@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tefa_parkir/auth/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'riwayat_page.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'qr_scan_page.dart';
 import 'daftar_page.dart';
 import 'admin_dashboard_page.dart';
@@ -178,17 +179,18 @@ class _ProfilePageState extends State<ProfilePage> {
                                     children: [
                                       Text(
                                         profileData!['full_name'] ?? '-',
-                                        style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16),
+                                        style: GoogleFonts.poppins(
+
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
                                         profileData!['kelas'] ?? '-',
-                                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                        style: GoogleFonts.lato(color: Colors.white70, fontSize: 14),
                                       ),
                                       const SizedBox(height: 2),
                                       FutureBuilder<String?>(
@@ -202,18 +204,17 @@ class _ProfilePageState extends State<ProfilePage> {
                                             else roleText = role;
                                           }
                                           return Text(roleText,
-                                              style: const TextStyle(color: Colors.white70, fontSize: 13));
+                                              style: GoogleFonts.lato(color: Colors.white70, fontSize: 13));
                                         },
                                       ),
                                       const SizedBox(height: 8),
                                       Row(
                                         children: [
-                                          const Text("Jadwal Piket",
-                                              style: TextStyle(color: Colors.white54, fontSize: 12)),
+                                          const Text("Jadwal Piket", style: TextStyle(color: Colors.white54, fontSize: 12)),
                                           const Spacer(),
                                           Text(
                                             profileData!['jadwal_piket'] ?? '-',
-                                            style: const TextStyle(
+                                            style: GoogleFonts.lato(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w500,
                                                 fontSize: 12),
@@ -240,7 +241,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                             }
                                           }
                                           return Text(statusText,
-                                              style: TextStyle(
+                                              style: GoogleFonts.lato(
                                                   color: statusColor,
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.bold));
@@ -358,18 +359,48 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
 
       // Floating QR button
-      floatingActionButton: FloatingActionButton.large(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const QrScanPage()),
-          );
-        },
-        backgroundColor: const Color(0xFF3F37C9),
-        shape: const CircleBorder(),
-        child: const Icon(Icons.qr_code_scanner, size: 60, color: Colors.white),
-      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color.fromARGB(255, 63, 55, 201).withOpacity(0.22),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+          ),
+
+          // Bigger FAB
+          SizedBox(
+            width: 90,
+            height: 90,
+            child: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const QrScanPage()),
+                );
+              },
+              backgroundColor: const Color.fromARGB(255, 63, 55, 201),
+              shape: const CircleBorder(),
+              child: const Icon(
+                Icons.qr_code_scanner,
+                size: 42,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
 
       // Bottom nav
       bottomNavigationBar: BottomAppBar(
@@ -387,22 +418,21 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Color(0xFFF8F8FF),
             ),
             child: BottomNavigationBar(
-              selectedItemColor: Colors.white,
+              selectedItemColor: Color.fromARGB(255, 63, 55, 201),
               unselectedItemColor: Color.fromARGB(254, 49, 54, 56),
-              selectedLabelStyle: const TextStyle(fontSize: 10),
+              selectedLabelStyle: const TextStyle(fontSize: 16),
               unselectedLabelStyle: const TextStyle(fontSize: 10),
               type: BottomNavigationBarType.fixed,
-              currentIndex: 1,
+              currentIndex: 0,
               onTap: (index) {
                 if (index == 0) {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const RiwayatPage()));
-                } else if (index == 2) {
+                } else if (index == 1) {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const DaftarPage()));
                 }
               },
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.history, size: 30), label: 'Riwayat'),
-                BottomNavigationBarItem(icon: SizedBox(height: 32), label: 'SCAN'),
                 BottomNavigationBarItem(icon: Icon(Icons.add, size: 30,), label: 'Tambah'),
               ],
             ),
