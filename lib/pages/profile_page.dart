@@ -418,9 +418,9 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Color(0xFFF8F8FF),
             ),
             child: BottomNavigationBar(
-              selectedItemColor: Color.fromARGB(255, 63, 55, 201),
+              selectedItemColor: Color.fromARGB(254, 49, 54, 56),
               unselectedItemColor: Color.fromARGB(254, 49, 54, 56),
-              selectedLabelStyle: const TextStyle(fontSize: 16),
+              selectedLabelStyle: const TextStyle(fontSize: 10),
               unselectedLabelStyle: const TextStyle(fontSize: 10),
               type: BottomNavigationBarType.fixed,
               currentIndex: 0,
@@ -433,7 +433,7 @@ class _ProfilePageState extends State<ProfilePage> {
               },
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.history, size: 30), label: 'Riwayat'),
-                BottomNavigationBarItem(icon: Icon(Icons.add, size: 30,), label: 'Tambah'),
+                BottomNavigationBarItem(icon: Icon(Icons.add, size: 32,), label: 'Tambah'),
               ],
             ),
           ),

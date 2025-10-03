@@ -407,9 +407,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
               type: BottomNavigationBarType.fixed,
               currentIndex: 0,
               onTap: (index) {
-                if (index == 0) {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const RiwayatPage()));
-                } else if (index == 1) {
+                if (index == 1) {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const DaftarPage()));
                 }
               },
