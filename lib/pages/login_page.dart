@@ -208,16 +208,6 @@ class _LoginPageState extends State<LoginPage>
                               children: [
                                 // ====== TOP ======
                                 const SizedBox(height: 8),
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: IconButton(
-                                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                        size: 30, color: Color.fromARGB(255, 63, 55, 201)),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    onPressed: () => Navigator.maybePop(context),
-                                  ),
-                                ),
 
                                 const SizedBox(height: 8),
 
@@ -312,23 +302,23 @@ class _LoginPageState extends State<LoginPage>
 
                                       const SizedBox(height: 5,),
 
-                                      TextButton(
-                                        style: TextButton.styleFrom(
-                                          padding: EdgeInsets.zero,
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                          minimumSize: Size.zero,
-                                        ),
-                                        onPressed: () {},
-                                        child: const Text(
-                                          'Lupa password?',
-                                          style: TextStyle(
-                                            color: Color.fromRGBO(0,0,0, 0.5),
-                                            fontSize: 15,
-                                            fontFamily: 'Lato',
-                                            fontWeight: FontWeight.w700
-                                            ),
-                                        ),
-                                      ),
+                                      // TextButton(
+                                      //   style: TextButton.styleFrom(
+                                      //     padding: EdgeInsets.zero,
+                                      //     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      //     minimumSize: Size.zero,
+                                      //   ),
+                                      //   onPressed: () {},
+                                      //   child: const Text(
+                                      //     'Lupa password?',
+                                      //     style: TextStyle(
+                                      //       color: Color.fromRGBO(0,0,0, 0.5),
+                                      //       fontSize: 15,
+                                      //       fontFamily: 'Lato',
+                                      //       fontWeight: FontWeight.w700
+                                      //       ),
+                                      //   ),
+                                      // ),
                                     ],
                                   ),
                                 ),

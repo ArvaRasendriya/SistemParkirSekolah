@@ -18,7 +18,7 @@ class WelcomePage extends StatelessWidget {
               height: size.height * 0.4,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 63, 55, 201),
+                color: const Color(0xFF3F37C9),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(80),
                   bottomRight: Radius.circular(80),
@@ -72,7 +72,7 @@ class WelcomePage extends StatelessWidget {
                   Text(
                     'Selamat datang di Zon4',
                     style: TextStyle(
-                      color: const Color.fromARGB(255, 67, 97, 238),
+                      color: const Color(0xFF3F37C9),
                       fontFamily: 'Montserrat',
                       fontSize: isSmallScreen ? 18 : 26,
                       fontWeight: FontWeight.bold,
@@ -84,7 +84,7 @@ class WelcomePage extends StatelessWidget {
                   Text(
                     'Solusi mudah untuk mengelola parkir khusus pengemudi berlisensi',
                     style: TextStyle(
-                      color: Colors.black87,
+                      color: Color(0xFF313638),
                       fontSize: isSmallScreen ? 16 : 20,
                       fontFamily: 'Lato',
                       fontWeight: FontWeight.w600,
@@ -110,7 +110,7 @@ class WelcomePage extends StatelessWidget {
                 height: isSmallScreen ? 60 : 80,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 63, 55, 201),
+                    backgroundColor: const Color(0xFF3F37C9),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -128,7 +128,7 @@ class WelcomePage extends StatelessWidget {
                           'Mulai',
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            color: const Color.fromARGB(255, 255, 255, 255),
+                            color: const Color(0xFFF8F8FF),
                             fontSize: isSmallScreen ? 16 : 22,
                             fontWeight: FontWeight.w700,
                           ),
@@ -138,7 +138,7 @@ class WelcomePage extends StatelessWidget {
                         right: 16,
                         child: Icon(
                           Icons.arrow_forward,
-                          color: const Color.fromARGB(255, 255, 255, 255),
+                          color: const Color(0xFFF8F8FF),
                           size: isSmallScreen ? 28 : 34
                         ),
                       ),

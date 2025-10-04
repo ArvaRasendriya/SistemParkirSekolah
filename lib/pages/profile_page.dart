@@ -111,7 +111,7 @@ class _ProfilePageState extends State<ProfilePage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 63, 55, 201), Color.fromARGB(255, 29, 24, 121)],
+            colors: [Color(0xFF3F37C9), Color(0xFF1D1879)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -138,15 +138,15 @@ class _ProfilePageState extends State<ProfilePage> {
                                   MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
                                 );
                               },
-                              icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
-                            );
+                              icon: const Icon(Icons.admin_panel_settings, color: Color(0xFFF8F8FF),
+                            ));
                           }
                           return const SizedBox.shrink();
                         },
                       ),
                       IconButton(
                         onPressed: logout,
-                        icon: const Icon(Icons.logout, color: Colors.white),
+                        icon: const Icon(Icons.logout, color: Color(0xFFF8F8FF)),
                       ),
                     ],
                   ),
@@ -157,9 +157,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Color(0xFFF8F8FF).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.25)),
+                    border: Border.all(color: Color(0xFFF8F8FF).withOpacity(0.25)),
                   ),
                   child: Stack(
                     children: [
@@ -167,13 +167,13 @@ class _ProfilePageState extends State<ProfilePage> {
                         children: [
                           const CircleAvatar(
                             radius: 32,
-                            backgroundColor: Colors.white,
+                            backgroundColor: Color(0xFFF8F8FF),
                             child: Icon(Icons.person, size: 40, color: Colors.grey),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: profileData == null
-                                ? const Text("Memuat...", style: TextStyle(color: Colors.white))
+                                ? const Text("Memuat...", style: TextStyle(color: Color(0xFFF8F8FF)))
                                 : Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -181,7 +181,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         profileData!['full_name'] ?? '-',
                                         style: TextStyle(
                                           fontFamily: 'Montserrat',
-                                          color: Colors.white,
+                                          color: Color(0xFFF8F8FF),
                                           fontWeight: FontWeight.w700,
                                           fontSize: 16),
                                         maxLines: 1,
@@ -215,7 +215,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                           Text(
                                             profileData!['jadwal_piket'] ?? '-',
                                             style: GoogleFonts.lato(
-                                                color: Colors.white,
+                                                color: Color(0xFFF8F8FF),
                                                 fontWeight: FontWeight.w500,
                                                 fontSize: 12),
                                           ),
@@ -226,7 +226,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         future: authService.getUserStatus(),
                                         builder: (context, snapshot) {
                                           String statusText = "Account: ...";
-                                          Color statusColor = Colors.white;
+                                          Color statusColor = Color(0xFFF8F8FF);
                                           if (snapshot.hasData) {
                                             final status = snapshot.data!;
                                             if (status == 'approved') {
@@ -258,7 +258,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         top: 0,
                         right: 0,
                         child: IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.white),
+                          icon: const Icon(Icons.edit, color: Color(0xFFF8F8FF)),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -279,7 +279,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Color(0xFFF8F8FF).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
@@ -287,7 +287,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         const Text("Riwayat Absensi Hari Ini",
                             style: TextStyle(
-                                color: Colors.white,
+                                color: Color(0xFFF8F8FF),
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15)),
                         const SizedBox(height: 12),
@@ -314,14 +314,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                       margin: const EdgeInsets.symmetric(vertical: 6),
                                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.15),
+                                        color: Color(0xFFF8F8FF).withOpacity(0.15),
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                       child: Row(
                                         children: [
                                           const CircleAvatar(
                                             radius: 18,
-                                            backgroundColor: Colors.white,
+                                            backgroundColor: Color(0xFFF8F8FF),
                                             child: Icon(Icons.person,
                                                 color: Colors.grey, size: 18),
                                           ),
@@ -332,7 +332,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                               children: [
                                                 Text(nama,
                                                     style: const TextStyle(
-                                                        color: Colors.white,
+                                                        color: Color(0xFFF8F8FF),
                                                         fontSize: 14,
                                                         fontWeight: FontWeight.w500)),
                                                 Text(jam,
@@ -368,7 +368,7 @@ class _ProfilePageState extends State<ProfilePage> {
             height: 120,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color.fromARGB(255, 63, 55, 201).withOpacity(0.22),
+              color: const Color(0xFF3F37C9).withOpacity(0.22),
               boxShadow: const [
                 BoxShadow(
                   color: Colors.black26,
@@ -390,12 +390,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   MaterialPageRoute(builder: (_) => const QrScanPage()),
                 );
               },
-              backgroundColor: const Color.fromARGB(255, 63, 55, 201),
+              backgroundColor: const Color(0xFF3F37C9),
               shape: const CircleBorder(),
               child: const Icon(
                 Icons.qr_code_scanner,
                 size: 42,
-                color: Colors.white,
+                color: Color(0xFFF8F8FF),
               ),
             ),
           ),

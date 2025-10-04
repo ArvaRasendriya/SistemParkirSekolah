@@ -21,8 +21,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
   String? _selectedKelas; // 🔽 filter kelas
 
   // Palet gradient modern
-  static const Color _g1 = Color.fromARGB(255, 29, 24, 121);
-  static const Color _g2 = Color.fromARGB(255, 63, 55, 201);
+  static const Color _g1 = Color(0xFF1D1879);
+  static const Color _g2 = Color(0xFF3F37C9);
 
   @override
   void initState() {
@@ -134,7 +134,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
             height: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color.fromARGB(255, 63, 55, 201), Color.fromARGB(255, 29, 24, 121)],
+                colors: [Color(0xFF3F37C9), Color(0xFF1D1879)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -147,7 +147,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
               onRefresh: fetchRiwayat,
               child: _loading
                   ? const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
+                      child: CircularProgressIndicator(color: Color(0xFFF8F8FF)),
                     )
                   : SingleChildScrollView(
                       padding: const EdgeInsets.only(bottom: 96),
@@ -158,7 +158,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                           Padding(
                             padding: const EdgeInsets.only(left: 8, top: 8, bottom: 8),
                             child: IconButton(
-                              icon: const Icon(Icons.arrow_back, color: Colors.white),
+                              icon: const Icon(Icons.arrow_back, color: Color(0xFFF8F8FF)),
                               onPressed: () {
                                 Navigator.pop(context);
                               },
@@ -177,15 +177,15 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                         _searchQuery = value.toLowerCase();
                                       });
                                     },
-                                    style: const TextStyle(color: Colors.black87),
+                                    style: const TextStyle(color: Color(0xFF313638)),
                                     decoration: InputDecoration(
                                       hintText: "Siapa yang kamu cari?",
                                       hintStyle: const TextStyle(
-                                        color: Color.fromARGB(255, 49, 54, 56),
+                                        color: Color(0xFF313638),
                                       ),
                                       prefixIcon: const Icon(
                                         Icons.search,
-                                        color: Color.fromARGB(255, 49, 54, 56),
+                                        color: Color(0xFF313638),
                                       ),
                                       suffixIcon: _searchQuery.isNotEmpty
                                           ? IconButton(
@@ -198,7 +198,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                             )
                                           : null,
                                       filled: true,
-                                      fillColor: Colors.white,
+                                      fillColor: Color(0xFFF8F8FF),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide.none,
@@ -210,26 +210,26 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.15),
+                                    color: Color(0xFFF8F8FF).withOpacity(0.15),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.white.withOpacity(0.25)),
+                                    border: Border.all(color: Color(0xFFF8F8FF).withOpacity(0.25)),
                                   ),
                                   child: DropdownButton<String?>(
                                     value: _selectedKelas,
                                     hint: const Text(
                                       "Semua Kelas",
-                                      style: TextStyle(color: Colors.white),
+                                      style: TextStyle(color: Color(0xFFF8F8FF)),
                                     ),
-                                    dropdownColor: Colors.white.withOpacity(0.15),
-                                    style: const TextStyle(color: Colors.white),
-                                    iconEnabledColor: Colors.white,
+                                    dropdownColor: Color(0xFFF8F8FF).withOpacity(0.15),
+                                    style: const TextStyle(color: Color(0xFFF8F8FF)),
+                                    iconEnabledColor: Color(0xFFF8F8FF),
                                     underline: const SizedBox(),
                                     items: [
                                       const DropdownMenuItem<String?>(
                                         value: null,
                                         child: Text(
                                           "Semua Kelas",
-                                          style: TextStyle(color: Colors.white),
+                                          style: TextStyle(color: Color(0xFFF8F8FF)),
                                         ),
                                       ),
                                       ...kelasList.map(
@@ -237,7 +237,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                           value: k,
                                           child: Text(
                                             k,
-                                            style: const TextStyle(color: Colors.white),
+                                            style: const TextStyle(color: Color(0xFFF8F8FF)),
                                           ),
                                         ),
                                       ),
@@ -264,17 +264,17 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                     Container(
                                       margin: const EdgeInsets.only(bottom: 12),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.1),
+                                        color: Color(0xFFF8F8FF).withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: ExpansionTile(
                                         initiallyExpanded: key == 'Hari Ini',
-                                        iconColor: Colors.white,
+                                        iconColor: Color(0xFFF8F8FF),
                                         collapsedIconColor: Colors.white70,
                                         title: Text(
                                           key,
                                           style: const TextStyle(
-                                            color: Colors.white,
+                                            color: Color(0xFFF8F8FF),
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -289,7 +289,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
                                           return Card(
                                             color:
-                                                Colors.white.withOpacity(0.05),
+                                                Color(0xFFF8F8FF).withOpacity(0.05),
                                             margin: const EdgeInsets.symmetric(
                                               horizontal: 12,
                                               vertical: 6,
@@ -307,7 +307,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                               title: Text(
                                                 nama,
                                                 style: const TextStyle(
-                                                  color: Colors.white,
+                                                  color: Color(0xFFF8F8FF),
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
@@ -350,10 +350,10 @@ class _RiwayatPageState extends State<RiwayatPage> {
             height: 120,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color.fromARGB(255, 63, 55, 201).withOpacity(0.22),
+              color: const Color(0xFF3F37C9).withOpacity(0.22),
               boxShadow: const [
                 BoxShadow(
-                  color: Colors.black26,
+                  color: Color(0xFF313638),
                   blurRadius: 10,
                   offset: Offset(0, 3),
                 ),
@@ -372,12 +372,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   MaterialPageRoute(builder: (_) => const QrScanPage()),
                 );
               },
-              backgroundColor: const Color.fromARGB(255, 63, 55, 201),
+              backgroundColor: const Color(0xFF3F37C9),
               shape: const CircleBorder(),
               child: const Icon(
                 Icons.qr_code_scanner,
                 size: 42,
-                color: Colors.white,
+                color: Color(0xFFF8F8FF),
               ),
             ),
           ),
@@ -400,8 +400,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
               color: Color(0xFFF8F8FF),
             ),
             child: BottomNavigationBar(
-              selectedItemColor: Color.fromARGB(255, 63, 55, 201),
-              unselectedItemColor: Color.fromARGB(254, 49, 54, 56),
+              selectedItemColor: Color(0xFF3F37C9),
+              unselectedItemColor: Color(0xFF313638),
               selectedLabelStyle: const TextStyle(fontSize: 16),
               unselectedLabelStyle: const TextStyle(fontSize: 10),
               type: BottomNavigationBarType.fixed,
