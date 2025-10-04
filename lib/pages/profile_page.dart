@@ -179,10 +179,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                     children: [
                                       Text(
                                         profileData!['full_name'] ?? '-',
-                                        style: GoogleFonts.poppins(
-
+                                        style: TextStyle(
+                                          fontFamily: 'Montserrat',
                                           color: Colors.white,
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight: FontWeight.w700,
                                           fontSize: 16),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,

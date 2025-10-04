@@ -28,14 +28,14 @@ class WelcomePage extends StatelessWidget {
                 children: [
                   // Logo positioned properly
                   Positioned(
-                    top: isSmallScreen ? size.height * 0.11 : size.height * 0.14,
+                    top: isSmallScreen ? size.height * 0.11 : size.height * 0.10,
                     left: 0,
                     right: 0,
                     child: Center(
                       child: Image.asset(
                         'assets/images/logo.png',
-                        width: isSmallScreen ? size.width * 0.7 : size.width * 0.6,
-                        height: isSmallScreen ? size.width * 0.7 : size.width * 0.6,
+                        width: isSmallScreen ? size.width * 0.8 : size.width * 0.7,
+                        height: isSmallScreen ? size.width * 0.8 : size.width * 0.7,
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -71,8 +71,9 @@ class WelcomePage extends StatelessWidget {
                 children: [
                   Text(
                     'Selamat datang di Zon4',
-                    style: GoogleFonts.montserrat(
+                    style: TextStyle(
                       color: const Color.fromARGB(255, 67, 97, 238),
+                      fontFamily: 'Montserrat',
                       fontSize: isSmallScreen ? 18 : 26,
                       fontWeight: FontWeight.bold,
                       height: 1.2,
@@ -82,10 +83,11 @@ class WelcomePage extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     'Solusi mudah untuk mengelola parkir khusus pengemudi berlisensi',
-                    style: GoogleFonts.lato(
+                    style: TextStyle(
                       color: Colors.black87,
-                      fontSize: isSmallScreen ? 18 : 24,
-                      fontWeight: FontWeight.w800,
+                      fontSize: isSmallScreen ? 16 : 20,
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.w600,
                       height: 1.3,
                     ),
                     textAlign: TextAlign.center,
@@ -117,24 +119,28 @@ class WelcomePage extends StatelessWidget {
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/auth');
                   },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    alignment: Alignment.center,
                     children: [
-                      const Spacer(),
-                      Text(
-                        'Mulai',
-                        style: GoogleFonts.poppins(
-                          color: const Color.fromARGB(255, 255, 255, 255),
-                          fontSize: isSmallScreen ? 22 : 28,
-                          fontWeight: FontWeight.bold,
+                      Center(
+                        child: Text(
+                          'Mulai',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: const Color.fromARGB(255, 255, 255, 255),
+                            fontSize: isSmallScreen ? 16 : 22,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                      const Spacer(),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.arrow_forward, 
-                        color: const Color.fromARGB(255, 255, 255, 255), 
-                        size: isSmallScreen ? 28 : 34
+                      Positioned(
+                        right: 16,
+                        child: Icon(
+                          Icons.arrow_forward,
+                          color: const Color.fromARGB(255, 255, 255, 255),
+                          size: isSmallScreen ? 28 : 34
+                        ),
                       ),
                     ],
                   ),
