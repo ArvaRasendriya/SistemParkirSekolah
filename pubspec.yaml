@@ -98,6 +98,7 @@ flutter:
     - assets/logo.png
     - assets/images/
     - assets/images/logo.png
+    - assets/images/logo2.png
     - assets/images/scooter_illustration.png
 
   # The following line ensures that the Material Icons font is
