@@ -11,6 +11,11 @@ import 'daftar_gagal_page.dart';
 import 'profile_page.dart';
 import 'sim_scanner.dart';
 
+// UI theme constants to match register_page
+const Color _primary = Color(0xFF4F46E5);
+const Color _hint = Color(0xFF9EA3AE);
+const Color _stroke = Color(0xFFE7E7F0);
+
 class DaftarPage extends StatefulWidget {
   const DaftarPage({super.key});
 
@@ -48,6 +53,12 @@ class _DaftarPageState extends State<DaftarPage>
 
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
+
+  static const Color mainBlue = Color(0xFF3F37C9);
+  static const Color gradientStart = Color(0xFF3F37C9);
+  static const Color gradientEnd = Color(0xFF1D1879);
+  static const Color whiteColor = Color(0xFFF8F8FF);
+  static const Color blackColor = Color(0xFF313638);
 
   @override
   void initState() {
@@ -126,7 +137,6 @@ class _DaftarPageState extends State<DaftarPage>
 
       final id = const Uuid().v4();
 
-      // 🚀 Pastikan pakai BUCKET STORAGE yang benar (contoh: "siswa")
       final simFileName = "${DateTime.now().millisecondsSinceEpoch}.jpg";
       final simPath = "sim/$simFileName";
       await supabase.storage.from("siswa").uploadBinary(
@@ -136,7 +146,6 @@ class _DaftarPageState extends State<DaftarPage>
       );
       final simUrl = supabase.storage.from("siswa").getPublicUrl(simPath);
 
-      // 🚀 Insert ke tabel pending_siswa
       final response = await supabase.from("pending_siswa").insert({
         "id": id,
         "nama": namaC.text,
@@ -149,7 +158,6 @@ class _DaftarPageState extends State<DaftarPage>
 
       debugPrint("Insert response: $response");
 
-      // 🚀 Kalau sukses → ke berhasil page
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -171,12 +179,18 @@ class _DaftarPageState extends State<DaftarPage>
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenHeight = mediaQuery.size.height;
+    final screenWidth = mediaQuery.size.width;
+    final size = MediaQuery.of(context).size;
+    final bool isSmallScreen = size.height < 700;
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F2027),
+        backgroundColor: mainBlue,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white70),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pushReplacement(
               context,
@@ -186,12 +200,13 @@ class _DaftarPageState extends State<DaftarPage>
         ),
       ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
+              gradientStart,
+              gradientEnd,
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -199,150 +214,199 @@ class _DaftarPageState extends State<DaftarPage>
         ),
         child: Column(
           children: [
-            const SizedBox(height: 60),
-            Expanded(
-              child: FadeTransition(
-                opacity: _fadeAnim,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(28),
-                      topRight: Radius.circular(28),
-                    ),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.15),
-                    ),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Daftarkan Data Siswa",
+                  style: TextStyle(
+                    fontFamily: 'Lato',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 26,                    color: whiteColor,
                   ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 16),
-                        Text(
-                          "Daftar Akun Siswa",
-                          style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          "Silakan isi data diri dengan benar",
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.white70,
-                          ),
-                        ),
-                        const SizedBox(height: 28),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Silahkan isi data dengan benar",
+                  style: TextStyle(
+                    fontFamily: 'Lato',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: whiteColor.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: whiteColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(28),
+                    topRight: Radius.circular(28),
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel("Nama"),
+                      _buildTextField(namaC, "John Doe", Icons.person),
+                      const SizedBox(height: 16),
 
-                        _buildTextField(namaC, "Nama", Icons.person),
-                        const SizedBox(height: 16),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildDropdown(
-                                  _selectedGrade, grades, 'Kelas', (String? newValue) {
-                                setState(() {
-                                  _selectedGrade = newValue;
-                                });
-                              }),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _buildDropdown(
-                                  _selectedMajor, majors, 'Jurusan', (String? newValue) {
-                                setState(() {
-                                  _selectedMajor = newValue;
-                                });
-                              }),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _buildDropdown(
-                                  _selectedClass, classes, 'Rombel', (String? newValue) {
-                                setState(() {
-                                  _selectedClass = newValue;
-                                });
-                              }),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _buildDropdown(
-                            _selectedJurusan, jurusans, 'Jurusan', (String? newValue) {
-                          setState(() {
-                            _selectedJurusan = newValue;
-                          });
-                        }),
-
-                        const SizedBox(height: 16),
-                        _buildTextField(emailC, "Email", Icons.email,
-                            keyboardType: TextInputType.emailAddress),
-                        const SizedBox(height: 20),
-
-                        GestureDetector(
-                          onTap: _pickSimImage,
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.25),
-                              ),
-                            ),
-                            child: Row(
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(Icons.camera_alt_rounded,
-                                    color: _simBytes == null
-                                        ? Colors.white70
-                                        : Colors.greenAccent),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _simBytes == null
-                                        ? "Pilih Foto SIM"
-                                        : "SIM berhasil dipilih",
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                _buildLabel("Kelas", fontSize: 14),
+                                const SizedBox(height: 6),
+                                _buildDropdown(
+                                  _selectedGrade,
+                                  grades,
+                                  "X",
+                                  (String? newValue) {
+                                    setState(() {
+                                      _selectedGrade = newValue;
+                                    });
+                                  },
                                 ),
-                                if (_simBytes != null)
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.memory(
-                                      _simBytes!,
-                                      width: 60,
-                                      height: 40,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
                               ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 32),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildLabel("Jurusan", fontSize: 14),
+                                const SizedBox(height: 6),
+                                _buildDropdown(
+                                  _selectedMajor,
+                                  majors,
+                                  "RPL",
+                                  (String? newValue) {
+                                    setState(() {
+                                      _selectedMajor = newValue;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildLabel("Rombel", fontSize: 14),
+                                const SizedBox(height: 6),
+                                _buildDropdown(
+                                  _selectedClass,
+                                  classes,
+                                  "3",
+                                  (String? newValue) {
+                                    setState(() {
+                                      _selectedClass = newValue;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
 
-                        ElevatedButton(
+                      _buildLabel("Jurusan"),
+                      _buildDropdown(
+                        _selectedJurusan,
+                        jurusans,
+                        "Pilih Jurusan",
+                        (String? newValue) {
+                          setState(() {
+                            _selectedJurusan = newValue;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      _buildLabel("Email"),
+                      _buildTextField(emailC, "john_doe67@gmail.com", Icons.email,
+                          keyboardType: TextInputType.emailAddress),
+                      const SizedBox(height: 16),
+
+                      _buildLabel("Foto Sim"),
+                      GestureDetector(
+                        onTap: _pickSimImage,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: whiteColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: whiteColor.withOpacity(0.25),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.camera_alt_rounded,
+                                color: _simBytes == null ? Colors.grey : Colors.greenAccent,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _simBytes == null ? "Pilih Foto Sim" : "SIM berhasil dipilih",
+                                  style: GoogleFonts.poppins(
+                                    color: blackColor.withOpacity(0.7),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              if (_simBytes != null)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.memory(
+                                    _simBytes!,
+                                    width: 60,
+                                    height: 40,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: isSmallScreen ? 60 : 80,
+                        child: ElevatedButton(
                           onPressed: _isLoading ? null : _daftarUser,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF203A43),
+                            backgroundColor: mainBlue,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 14, horizontal: 40),
                             elevation: 5,
                           ),
                           child: _isLoading
+                          
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
@@ -354,14 +418,15 @@ class _DaftarPageState extends State<DaftarPage>
                               : Text(
                                   "Selesai",
                                   style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: whiteColor,
                                   ),
                                 ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                   ),
                 ),
               ),
@@ -372,61 +437,170 @@ class _DaftarPageState extends State<DaftarPage>
     );
   }
 
-  Widget _buildTextField(
-      TextEditingController controller, String hint, IconData icon,
-      {TextInputType keyboardType = TextInputType.text}) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      style: GoogleFonts.poppins(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.poppins(color: Colors.white70),
-        prefixIcon: Icon(icon, color: Colors.white70, size: 22),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(color: Colors.white, width: 1.5),
-        ),
-      ),
+  Widget _buildLabel(String text, {double fontSize = 15}) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontFamily: 'Lato',
+        fontWeight: FontWeight.w900,
+        color: _primary,
+      ).copyWith(fontSize: fontSize),
     );
   }
 
-  Widget _buildDropdown<T>(T? value, List<T> items, String hint,
-      void Function(T?) onChanged) {
-    return DropdownButtonFormField<T>(
-      value: value,
-      hint: Text(hint, style: GoogleFonts.poppins(color: Colors.white)),
-      items: items.map<DropdownMenuItem<T>>((T item) {
-        return DropdownMenuItem<T>(
-          value: item,
-          child: Text(item.toString(),
-              style: GoogleFonts.poppins(color: Colors.white)),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.12),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(color: Colors.white, width: 1.5),
-        ),
+  Widget _buildTextField(
+      TextEditingController controller, String hint, IconData? icon,
+      {TextInputType keyboardType = TextInputType.text}) {
+    return CustomInputField(
+      controller: controller,
+      hintText: hint,
+      icon: icon,
+      keyboardType: keyboardType,
+      textStyle: const TextStyle(
+        fontSize: 15,
+        fontFamily: 'Lato',
+        fontWeight: FontWeight.w700,
+        color: Color(0xFF313638)
       ),
-      dropdownColor: const Color(0xFF2C5364),
-      style: GoogleFonts.poppins(color: Colors.white),
-      isDense: true,
+      hintStyle: const TextStyle(
+        fontSize: 15,
+        fontFamily: 'Lato',
+        fontWeight: FontWeight.w700,
+        color: Color(0xFF313638)
+      ),
+      textColor: Colors.black87,
+      hintColor: Colors.black38,
+      fillColor: Colors.white,
     );
   }
+
+  Widget _buildDropdown(String? value, List<String> items, String? hint,
+      ValueChanged<String?> onChanged) {
+    return buildDropdown(
+      value: value,
+      hint: hint ?? items.first,
+      items: items,
+      onChanged: onChanged,
+      hasIcon: false,
+      textColor: Colors.black87,
+      hintColor: Colors.black54,
+      fillColor: Colors.white,
+      dropdownColor: Colors.white,
+    );
+  }
+}
+
+class CustomInputField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final bool obscureText;
+  final IconData? icon;
+  final Widget? suffixIcon;
+  final Color? textColor;
+  final Color? hintColor;
+  final Color? fillColor;
+  final TextInputType keyboardType;
+  final TextStyle? textStyle;
+  final TextStyle? hintStyle;
+
+  const CustomInputField({
+    super.key,
+    required this.controller,
+    required this.hintText,
+    this.obscureText = false,
+    this.icon,
+    this.suffixIcon,
+    this.textColor,
+    this.hintColor,
+    this.fillColor,
+    this.keyboardType = TextInputType.text,
+    this.textStyle,
+    this.hintStyle
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      style: TextStyle(color: textColor ?? Colors.black),
+      cursorColor: textColor ?? Colors.black,
+      decoration: InputDecoration(
+        prefixIcon: icon != null ? Icon(icon, color: (textColor ?? Colors.black).withOpacity(0.7)) : null,
+        suffixIcon: suffixIcon,
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: hintColor ?? Colors.black.withOpacity(0.3),
+          fontSize: 14,
+          fontFamily: 'Lato',
+          fontWeight: FontWeight.w700,
+        ),
+        filled: true,
+        fillColor: fillColor ?? Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: _stroke, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: _primary, width: 1.6),
+        ),
+      ),
+    );
+  }
+}
+
+Widget buildDropdown({
+  required String? value,
+  required String hint,
+  required List<String> items,
+  required ValueChanged<String?> onChanged,
+  bool hasIcon = true,
+  Color? textColor,
+  Color? hintColor,
+  Color? fillColor,
+  Color? dropdownColor,
+}) {
+  return DropdownButtonFormField<String>(
+    initialValue: value,
+    isExpanded: true,
+    hint: Container(
+      alignment: Alignment.center,
+      child: Text(
+        hint,
+        style: TextStyle(color: hintColor ?? Colors.white, fontSize: 14),
+      ),
+    ),
+    dropdownColor: dropdownColor ?? const Color(0xFF203A43),
+    style: TextStyle(color: textColor ?? Colors.white, fontSize: 14),
+    items: items.map((String v) {
+      return DropdownMenuItem<String>(
+        value: v,
+        child: Text(
+          v,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: textColor ?? Colors.white, fontSize: 14),
+        ),
+      );
+    }).toList(),
+    onChanged: onChanged,
+    decoration: InputDecoration(
+      prefixIcon: hasIcon
+          ? Icon(
+              Icons.school,
+              color: (textColor ?? Colors.white).withValues(alpha: 0.7),
+            )
+          : null,
+      filled: true,
+      fillColor: fillColor ?? Colors.black.withValues(alpha: 0.2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(30),
+        borderSide: BorderSide.none,
+      ),
+    ),
+  );
 }
