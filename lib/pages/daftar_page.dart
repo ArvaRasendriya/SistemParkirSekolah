@@ -564,7 +564,7 @@ Widget buildDropdown({
   Color? dropdownColor,
 }) {
   return DropdownButtonFormField<String>(
-    initialValue: value,
+    value: value,
     isExpanded: true,
     hint: Container(
       alignment: Alignment.center,
