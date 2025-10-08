@@ -135,19 +135,24 @@ class _AdminSimPageState extends State<AdminSimPage> {
 
   @override
   Widget build(BuildContext context) {
+    const textColor = Color(0xFFF8F8FF);
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text(
           'Data SIM',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(Icons.refresh, color: textColor),
             onPressed: _fetchSimData,
           ),
         ],
@@ -156,9 +161,8 @@ class _AdminSimPageState extends State<AdminSimPage> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
+              Color(0xFF3F37C9),
+              Color(0xFF1D1879),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -170,51 +174,54 @@ class _AdminSimPageState extends State<AdminSimPage> {
                 ? const Center(
                     child: Text(
                       'Belum ada data SIM',
-                      style: TextStyle(fontSize: 18, color: Colors.white70),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   )
                 : Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 1, 16, 16), // ✅ ditambahkan seperti SatgasListPage
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    padding: const EdgeInsets.fromLTRB(16, 80, 16, 16),
+                    child: RefreshIndicator(
+                      onRefresh: _fetchSimData,
+                      color: const Color(0xFF3F37C9),
                       child: ListView.builder(
-                        padding: const EdgeInsets.all(12),
                         itemCount: simData.length,
                         itemBuilder: (context, index) {
                           final sim = simData[index];
-                          return Card(
-                            color: const Color(0xFF1E2A32),
+                          return Container(
                             margin: const EdgeInsets.only(bottom: 12),
-                            elevation: 4,
-                            shadowColor: Colors.black45,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.white24,
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(16),
+                              leading: const Icon(Icons.credit_card,
+                                  color: textColor, size: 28),
+                              title: Text(
+                                sim["nama"] ?? "-",
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                              subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.credit_card,
-                                          color: Colors.white70, size: 20),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          sim["nama"] ?? "-",
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                   const SizedBox(height: 6),
                                   Text(
                                     'Email: ${sim["email"] ?? "-"}',
@@ -234,39 +241,41 @@ class _AdminSimPageState extends State<AdminSimPage> {
                                   Text(
                                     'Status: ${sim["status"] ?? "pending"}',
                                     style: const TextStyle(
-                                      color: Colors.orange,
-                                      fontWeight: FontWeight.w500,
+                                      color: Colors.orangeAccent,
+                                      fontWeight: FontWeight.w600,
                                       fontSize: 13,
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: 12),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       OutlinedButton.icon(
                                         style: OutlinedButton.styleFrom(
                                           side: const BorderSide(
-                                              color: Colors.red, width: 1.2),
+                                              color: Colors.redAccent,
+                                              width: 1.2),
                                           shape: RoundedRectangleBorder(
                                             borderRadius:
-                                                BorderRadius.circular(8),
+                                                BorderRadius.circular(10),
                                           ),
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 8),
+                                              horizontal: 12, vertical: 8),
                                         ),
                                         onPressed: () =>
                                             rejectSiswa(sim["id"]),
                                         icon: const Icon(Icons.close,
-                                            color: Colors.red, size: 18),
+                                            color: Colors.redAccent, size: 18),
                                         label: const Text(
                                           'Tidak Valid',
                                           style: TextStyle(
-                                              color: Colors.red,
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 13),
+                                            color: Colors.redAccent,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13,
+                                          ),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
+                                      const SizedBox(width: 10),
                                       ElevatedButton.icon(
                                         onPressed: () => approveSiswa(sim),
                                         icon: const Icon(Icons.check,
@@ -274,23 +283,26 @@ class _AdminSimPageState extends State<AdminSimPage> {
                                         label: const Text(
                                           'Valid',
                                           style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 13),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13,
+                                          ),
                                         ),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.green,
+                                          backgroundColor:
+                                              const ui.Color.fromARGB(255, 55, 201, 92),
                                           foregroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
                                             borderRadius:
-                                                BorderRadius.circular(8),
+                                                BorderRadius.circular(10),
                                           ),
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 14, vertical: 8),
-                                          elevation: 3,
+                                              horizontal: 16, vertical: 8),
+                                          elevation: 5,
+                                          shadowColor: Colors.blueAccent,
                                         ),
                                       ),
                                     ],
-                                  )
+                                  ),
                                 ],
                               ),
                             ),
