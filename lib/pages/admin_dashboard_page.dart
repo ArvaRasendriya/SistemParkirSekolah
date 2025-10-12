@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'satgas_list_page.dart';
 import 'admin_sim_page.dart';
-import 'login_page.dart'; // pastikan ada file login_page.dart
+import 'login_page.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 enum ChartType { pie, bar }
@@ -42,13 +42,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F2027),
+      backgroundColor: const Color(0xFF2A0A5E),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B2A38),
-        title: const Text('Admin Dashboard'),
+        backgroundColor: const Color(0xFF3B0A80),
+        title: const SizedBox.shrink(), // Hilangkan tulisan "Admin Dashboard"
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white), // tombol logout putih penuh
             onPressed: _logout,
             tooltip: 'Logout',
           ),
@@ -62,7 +62,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         child: _pages[_selectedIndex],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF1B2A38),
+        backgroundColor: const Color(0xFF3B0A80),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
@@ -78,7 +78,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
+        selectedItemColor: Colors.amberAccent,
         unselectedItemColor: Colors.white70,
         onTap: _onItemTapped,
       ),
@@ -100,7 +100,6 @@ class _DashboardContentState extends State<DashboardContent> {
   int akunSiswa = 0;
 
   bool loading = true;
-
   ChartType selectedChart = ChartType.pie;
 
   @override
@@ -136,9 +135,9 @@ class _DashboardContentState extends State<DashboardContent> {
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFF0F2027),
-            Color(0xFF203A43),
-            Color(0xFF2C5364),
+            Color(0xFF3B0A80),
+            Color(0xFF5E17EB),
+            Color(0xFF7C3AED),
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -149,7 +148,7 @@ class _DashboardContentState extends State<DashboardContent> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
             const Text(
               'Welcome to Admin Dashboard',
               style: TextStyle(
@@ -168,7 +167,6 @@ class _DashboardContentState extends State<DashboardContent> {
                   : SingleChildScrollView(
                       child: Column(
                         children: [
-                          // Grid of two cards (kept as before but shrink-wrapped)
                           GridView.count(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -181,7 +179,7 @@ class _DashboardContentState extends State<DashboardContent> {
                                 value: "$akunSatgas",
                                 change: "+0",
                                 icon: Icons.shield,
-                                color: Colors.blue,
+                                color: Colors.pinkAccent.shade100, // lebih terang
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -195,7 +193,7 @@ class _DashboardContentState extends State<DashboardContent> {
                                 value: "$akunSiswa",
                                 change: "+0",
                                 icon: Icons.school,
-                                color: Colors.green,
+                                color: Colors.blueAccent.shade100, // lebih terang
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -206,10 +204,7 @@ class _DashboardContentState extends State<DashboardContent> {
                               ),
                             ],
                           ),
-
                           const SizedBox(height: 20),
-
-                          // Dropdown to choose chart type
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -219,7 +214,7 @@ class _DashboardContentState extends State<DashboardContent> {
                               ),
                               const SizedBox(width: 10),
                               DropdownButton<ChartType>(
-                                dropdownColor: Colors.black87,
+                                dropdownColor: const Color(0xFF3B0A80),
                                 value: selectedChart,
                                 style: const TextStyle(color: Colors.white),
                                 items: const [
@@ -240,10 +235,7 @@ class _DashboardContentState extends State<DashboardContent> {
                               ),
                             ],
                           ),
-
                           const SizedBox(height: 20),
-
-                          // Chart area
                           SizedBox(
                             height: 240,
                             child: selectedChart == ChartType.pie
@@ -255,7 +247,7 @@ class _DashboardContentState extends State<DashboardContent> {
                                         PieChartSectionData(
                                           value: akunSatgas.toDouble(),
                                           title: 'Satgas\n$akunSatgas',
-                                          color: Colors.blue,
+                                          color: Colors.pinkAccent.shade100, // terang
                                           radius: 60,
                                           titleStyle: const TextStyle(
                                               color: Colors.white,
@@ -265,7 +257,7 @@ class _DashboardContentState extends State<DashboardContent> {
                                         PieChartSectionData(
                                           value: akunSiswa.toDouble(),
                                           title: 'Siswa\n$akunSiswa',
-                                          color: Colors.green,
+                                          color: Colors.blueAccent.shade100, // terang
                                           radius: 60,
                                           titleStyle: const TextStyle(
                                               color: Colors.white,
@@ -280,11 +272,17 @@ class _DashboardContentState extends State<DashboardContent> {
                                       maxY: maxY,
                                       barGroups: [
                                         BarChartGroupData(x: 0, barRods: [
-                                          BarChartRodData(toY: akunSatgas.toDouble(), color: Colors.blue, width: 18)
-                                        ], showingTooltipIndicators: const [0]),
+                                          BarChartRodData(
+                                              toY: akunSatgas.toDouble(),
+                                              color: Colors.pinkAccent.shade100,
+                                              width: 18)
+                                        ]),
                                         BarChartGroupData(x: 1, barRods: [
-                                          BarChartRodData(toY: akunSiswa.toDouble(), color: Colors.green, width: 18)
-                                        ], showingTooltipIndicators: const [0]),
+                                          BarChartRodData(
+                                              toY: akunSiswa.toDouble(),
+                                              color: Colors.blueAccent.shade100,
+                                              width: 18)
+                                        ]),
                                       ],
                                       titlesData: FlTitlesData(
                                         show: true,
@@ -308,7 +306,6 @@ class _DashboardContentState extends State<DashboardContent> {
                                     ),
                                   ),
                           ),
-                          const SizedBox(height: 30),
                         ],
                       ),
                     ),
@@ -344,40 +341,31 @@ class StatCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Card(
-        color: const Color(0xFF1B2A38),
+        color: const Color(0xFF3B0A80),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 3,
+        elevation: 8, // lebih tinggi agar shadow lebih terlihat
+        shadowColor: color.withOpacity(0.5), // shadow warna icon
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CircleAvatar(
-                backgroundColor: color.withOpacity(0.2),
-                radius: 24,
-                child: Icon(icon, color: color, size: 28),
+                backgroundColor: Colors.white.withOpacity(0.15),
+                radius: 26,
+                child: Icon(icon, color: color, size: 32), // icon lebih besar & terang
               ),
               const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(fontSize: 16, color: Colors.white),
-              ),
+              Text(title, style: const TextStyle(fontSize: 16, color: Colors.white)),
               const SizedBox(height: 8),
               Text(
                 value,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color),
               ),
               const SizedBox(height: 4),
               Text(
                 change,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: change.contains("+") ? Colors.green : Colors.red,
-                ),
+                style: TextStyle(fontSize: 14, color: change.contains("+") ? Colors.green : Colors.red),
               ),
             ],
           ),
@@ -387,7 +375,7 @@ class StatCard extends StatelessWidget {
   }
 }
 
-/// ====== DETAIL PAGES YANG DIPERTAHANKAN ======
+// ====== DETAIL PAGES ======
 
 class SatgasAccountsPage extends StatelessWidget {
   const SatgasAccountsPage({super.key});
@@ -396,39 +384,29 @@ class SatgasAccountsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final supabase = Supabase.instance.client;
     return Scaffold(
-      backgroundColor: const Color(0xFF0F2027),
+      backgroundColor: const Color(0xFF2A0A5E),
       appBar: AppBar(
         title: const Text("Akun Satgas"),
-        backgroundColor: const Color(0xFF1B2A38),
+        backgroundColor: const Color(0xFF3B0A80),
       ),
       body: FutureBuilder<List<dynamic>>(
         future: supabase.from('profiles').select('email'),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-                child: CircularProgressIndicator(color: Colors.white));
+            return const Center(child: CircularProgressIndicator(color: Colors.white));
           }
           if (snapshot.hasError) {
-            return Center(
-              child: Text("Error: ${snapshot.error}",
-                  style: const TextStyle(color: Colors.red)),
-            );
+            return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
           }
           final data = snapshot.data ?? [];
           if (data.isEmpty) {
-            return const Center(
-              child: Text("Tidak ada data",
-                  style: TextStyle(color: Colors.white)),
-            );
+            return const Center(child: Text("Tidak ada data", style: TextStyle(color: Colors.white)));
           }
           return ListView.builder(
             itemCount: data.length,
             itemBuilder: (_, i) {
               return ListTile(
-                title: Text(
-                  data[i]['email'],
-                  style: const TextStyle(color: Colors.white),
-                ),
+                title: Text(data[i]['email'], style: const TextStyle(color: Colors.white)),
               );
             },
           );
@@ -445,45 +423,34 @@ class SiswaAccountsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final supabase = Supabase.instance.client;
     return Scaffold(
-      backgroundColor: const Color(0xFF0F2027),
+      backgroundColor: const Color(0xFF2A0A5E),
       appBar: AppBar(
         title: const Text("Akun Siswa"),
-        backgroundColor: const Color(0xFF1B2A38),
+        backgroundColor: const Color(0xFF3B0A80),
       ),
       body: FutureBuilder<List<dynamic>>(
         future: supabase.from('siswa').select('nama, qr_url'),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-                child: CircularProgressIndicator(color: Colors.white));
+            return const Center(child: CircularProgressIndicator(color: Colors.white));
           }
           if (snapshot.hasError) {
-            return Center(
-              child: Text("Error: ${snapshot.error}",
-                  style: const TextStyle(color: Colors.red)),
-            );
+            return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
           }
           final data = snapshot.data ?? [];
           if (data.isEmpty) {
-            return const Center(
-              child: Text("Tidak ada data",
-                  style: TextStyle(color: Colors.white)),
-            );
+            return const Center(child: Text("Tidak ada data", style: TextStyle(color: Colors.white)));
           }
           return ListView.builder(
             itemCount: data.length,
             itemBuilder: (_, i) {
               return Card(
-                color: const Color(0xFF1B2A38),
+                color: const Color(0xFF3B0A80),
                 child: ListTile(
-                  leading: data[i]['qr_url'] != null &&
-                          data[i]['qr_url'].toString().isNotEmpty
+                  leading: data[i]['qr_url'] != null && data[i]['qr_url'].toString().isNotEmpty
                       ? Image.network(data[i]['qr_url'], width: 50)
                       : const Icon(Icons.qr_code, color: Colors.white),
-                  title: Text(
-                    data[i]['nama'],
-                    style: const TextStyle(color: Colors.white),
-                  ),
+                  title: Text(data[i]['nama'], style: const TextStyle(color: Colors.white)),
                 ),
               );
             },
