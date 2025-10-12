@@ -54,6 +54,8 @@ dependencies:
   crop_your_image: ^2.0.0
   image_cropper: ^11.0.0
 
+  shared_preferences: any
+  http: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'admin_approval_page.dart';
 import 'satgas_list_page.dart';
 import 'admin_sim_page.dart';
 import 'login_page.dart'; // pastikan ada file login_page.dart
@@ -255,7 +254,7 @@ class _DashboardContentState extends State<DashboardContent> {
                                       sections: [
                                         PieChartSectionData(
                                           value: akunSatgas.toDouble(),
-                                          title: 'Satgas\n${akunSatgas}',
+                                          title: 'Satgas\n$akunSatgas',
                                           color: Colors.blue,
                                           radius: 60,
                                           titleStyle: const TextStyle(
@@ -265,7 +264,7 @@ class _DashboardContentState extends State<DashboardContent> {
                                         ),
                                         PieChartSectionData(
                                           value: akunSiswa.toDouble(),
-                                          title: 'Siswa\n${akunSiswa}',
+                                          title: 'Siswa\n$akunSiswa',
                                           color: Colors.green,
                                           radius: 60,
                                           titleStyle: const TextStyle(
@@ -355,8 +354,8 @@ class StatCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 backgroundColor: color.withOpacity(0.2),
-                child: Icon(icon, color: color, size: 28),
                 radius: 24,
+                child: Icon(icon, color: color, size: 28),
               ),
               const SizedBox(height: 12),
               Text(

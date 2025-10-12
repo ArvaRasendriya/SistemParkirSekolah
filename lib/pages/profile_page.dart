@@ -199,8 +199,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                           String roleText = "Anggota Satgas";
                                           if (snapshot.hasData) {
                                             final role = snapshot.data!;
-                                            if (role == 'admin') roleText = "Admin";
-                                            else if (role == 'satgas') roleText = "Anggota Satgas";
+                                            if (role == 'admin') {
+                                              roleText = "Admin";
+                                            } else if (role == 'satgas') roleText = "Anggota Satgas";
                                             else roleText = role;
                                           }
                                           return Text(roleText,

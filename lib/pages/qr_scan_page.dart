@@ -8,7 +8,6 @@ import 'package:vibration/vibration.dart'; // ✅ vibration
 import 'package:uuid/uuid.dart'; // ✅ cek UUID valid
 import 'dart:async';
 import 'qr_result_page.dart';
-import 'gagal_scan_page.dart';
 
 // ✅ UI untuk QR gagal
 class DaftarGagalPage extends StatelessWidget {

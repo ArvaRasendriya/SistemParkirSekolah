@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -564,7 +563,7 @@ Widget buildDropdown({
   Color? dropdownColor,
 }) {
   return DropdownButtonFormField<String>(
-    value: value,
+    initialValue: value,
     isExpanded: true,
     hint: Container(
       alignment: Alignment.center,

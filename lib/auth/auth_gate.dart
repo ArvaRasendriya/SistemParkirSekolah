@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../pages/login_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/admin_dashboard_page.dart';
-import '../pages/welcome_page.dart';
 import 'auth_service.dart';
 
 class AuthGate extends StatefulWidget {
