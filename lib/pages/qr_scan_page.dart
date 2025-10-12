@@ -1,11 +1,10 @@
-
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart'; // ✅ untuk kIsWeb
-import 'package:vibration/vibration.dart'; // ✅ vibration
-import 'package:uuid/uuid.dart'; // ✅ cek UUID valid
+import 'package:flutter/foundation.dart';
+import 'package:vibration/vibration.dart';
+import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'qr_result_page.dart';
 
@@ -16,25 +15,26 @@ class DaftarGagalPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue.shade400,
+      backgroundColor: const Color(0xFF3B3EFF), // 🟣 warna utama tema
       body: Center(
         child: Container(
           padding: const EdgeInsets.all(24),
           margin: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withOpacity(0.9),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cancel, size: 100, color: Colors.red),
+              const Icon(Icons.cancel, size: 100, color: Colors.redAccent),
               const SizedBox(height: 20),
               const Text(
                 "Identitas Tidak Valid",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: Color(0xFF3B3EFF),
                 ),
               ),
               const SizedBox(height: 30),
@@ -43,8 +43,8 @@ class DaftarGagalPage extends StatelessWidget {
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.blue,
+                  backgroundColor: const Color(0xFF3B3EFF),
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -86,7 +86,6 @@ class _QrScanPageState extends State<QrScanPage>
   void initState() {
     super.initState();
 
-    // animasi garis scanner
     _lineController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -96,7 +95,6 @@ class _QrScanPageState extends State<QrScanPage>
       CurvedAnimation(parent: _lineController, curve: Curves.linear),
     );
 
-    // animasi teks pulse
     _textController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -130,20 +128,17 @@ class _QrScanPageState extends State<QrScanPage>
     }
   }
 
-  // ✅ fungsi cek apakah input valid UUID
   bool isValidUuid(String input) {
-  try {
-    Uuid.parse(input);
-    return true;
-  } catch (e) {
-    return false;
+    try {
+      Uuid.parse(input);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
-}
+
   Future<void> _fetchUserAndNavigate(String userId) async {
     try {
-      debugPrint("📌 Scanned code: $userId");
-
-      // ✅ cek dulu UUID valid
       if (!isValidUuid(userId)) {
         if (!mounted) return;
         setState(() => isProcessing = false);
@@ -155,7 +150,6 @@ class _QrScanPageState extends State<QrScanPage>
         return;
       }
 
-      // kalau valid UUID → baru query Supabase
       final response =
           await supabase.from('siswa').select().eq('id', userId).maybeSingle();
 
@@ -264,15 +258,16 @@ class _QrScanPageState extends State<QrScanPage>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        // 🎨 ubah ke tema biru-ungu
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
+              Color(0xFF3B3EFF), // ungu terang
+              Color(0xFF2A2AFF), // biru-ungu
+              Color(0xFF1E1E99), // biru gelap
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: Stack(
@@ -292,47 +287,30 @@ class _QrScanPageState extends State<QrScanPage>
                   cameraController.toggleTorch();
                   setState(() => torchOn = !torchOn);
                 },
-                icon: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (child, anim) =>
-                      ScaleTransition(scale: anim, child: child),
-                  child: Icon(
-                    torchOn ? Icons.flash_on : Icons.flash_off,
-                    key: ValueKey(torchOn),
-                    color: Colors.cyanAccent,
-                    size: 30,
-                  ),
+                icon: Icon(
+                  torchOn ? Icons.flash_on : Icons.flash_off,
+                  color: Colors.white,
+                  size: 30,
                 ),
               ),
             ),
             Column(
               children: [
                 const Spacer(),
-                SizedBox(
-                  width: 250,
-                  child: AnimatedBuilder(
-                    animation: _textAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _textAnimation.value,
-                        child: const Text(
-                          "ZON4",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            shadows: [
-                              Shadow(
-                                blurRadius: 12,
-                                color: Colors.cyanAccent,
-                                offset: Offset(0, 0),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                const Text(
+                  "ZON4",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 8,
+                        color: Colors.white70,
+                        offset: Offset(0, 0),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -346,12 +324,11 @@ class _QrScanPageState extends State<QrScanPage>
                         Container(
                           decoration: BoxDecoration(
                             border: Border.all(
-                                color: Colors.cyanAccent.withOpacity(0.9),
-                                width: 3),
+                                color: Colors.white.withOpacity(0.9), width: 3),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.cyanAccent.withOpacity(0.5),
+                                color: Colors.white.withOpacity(0.3),
                                 blurRadius: 25,
                                 spreadRadius: 2,
                               )
@@ -369,7 +346,10 @@ class _QrScanPageState extends State<QrScanPage>
                                 height: 4,
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: [Colors.cyanAccent, Colors.white],
+                                    colors: [
+                                      Color(0xFFB3A7FF),
+                                      Colors.white,
+                                    ],
                                   ),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
@@ -386,7 +366,7 @@ class _QrScanPageState extends State<QrScanPage>
                               height: 40,
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.cyanAccent,
+                                color: Color(0xFFB3A7FF),
                               ),
                             ),
                           ),
@@ -404,8 +384,8 @@ class _QrScanPageState extends State<QrScanPage>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      backgroundColor: Colors.cyanAccent,
-                      shadowColor: Colors.black45,
+                      backgroundColor: const Color(0xFFB3A7FF),
+                      foregroundColor: Colors.black87,
                       elevation: 6,
                     ),
                     onPressed: () {
@@ -414,7 +394,6 @@ class _QrScanPageState extends State<QrScanPage>
                     child: const Text(
                       "KEMBALI",
                       style: TextStyle(
-                        color: Colors.black87,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -429,4 +408,3 @@ class _QrScanPageState extends State<QrScanPage>
     );
   }
 }
-

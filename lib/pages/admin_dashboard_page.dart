@@ -45,10 +45,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       backgroundColor: const Color(0xFF2A0A5E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF3B0A80),
-        title: const SizedBox.shrink(), // Hilangkan tulisan "Admin Dashboard"
+        title: const SizedBox.shrink(),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white), // tombol logout putih penuh
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: _logout,
             tooltip: 'Logout',
           ),
@@ -174,33 +174,22 @@ class _DashboardContentState extends State<DashboardContent> {
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
                             children: [
+                              // Tidak bisa dipencet (onTap dihilangkan)
                               StatCard(
                                 title: "Akun Satgas",
                                 value: "$akunSatgas",
                                 change: "+0",
                                 icon: Icons.shield,
-                                color: Colors.pinkAccent.shade100, // lebih terang
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) => const SatgasAccountsPage()),
-                                  );
-                                },
+                                color: Colors.pinkAccent.shade100,
+                                onTap: null,
                               ),
                               StatCard(
                                 title: "Akun Siswa",
                                 value: "$akunSiswa",
                                 change: "+0",
                                 icon: Icons.school,
-                                color: Colors.blueAccent.shade100, // lebih terang
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) => const SiswaAccountsPage()),
-                                  );
-                                },
+                                color: Colors.blueAccent.shade100,
+                                onTap: null,
                               ),
                             ],
                           ),
@@ -247,7 +236,7 @@ class _DashboardContentState extends State<DashboardContent> {
                                         PieChartSectionData(
                                           value: akunSatgas.toDouble(),
                                           title: 'Satgas\n$akunSatgas',
-                                          color: Colors.pinkAccent.shade100, // terang
+                                          color: Colors.pinkAccent.shade100,
                                           radius: 60,
                                           titleStyle: const TextStyle(
                                               color: Colors.white,
@@ -257,7 +246,7 @@ class _DashboardContentState extends State<DashboardContent> {
                                         PieChartSectionData(
                                           value: akunSiswa.toDouble(),
                                           title: 'Siswa\n$akunSiswa',
-                                          color: Colors.blueAccent.shade100, // terang
+                                          color: Colors.blueAccent.shade100,
                                           radius: 60,
                                           titleStyle: const TextStyle(
                                               color: Colors.white,
@@ -338,13 +327,15 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: onTap, // tetap ada tapi null, jadi tidak bisa dipencet
       borderRadius: BorderRadius.circular(16),
+      splashColor: Colors.transparent, // hilangkan efek klik
+      highlightColor: Colors.transparent,
       child: Card(
         color: const Color(0xFF3B0A80),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 8, // lebih tinggi agar shadow lebih terlihat
-        shadowColor: color.withOpacity(0.5), // shadow warna icon
+        elevation: 8,
+        shadowColor: color.withOpacity(0.5),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -353,7 +344,7 @@ class StatCard extends StatelessWidget {
               CircleAvatar(
                 backgroundColor: Colors.white.withOpacity(0.15),
                 radius: 26,
-                child: Icon(icon, color: color, size: 32), // icon lebih besar & terang
+                child: Icon(icon, color: color, size: 32),
               ),
               const SizedBox(height: 12),
               Text(title, style: const TextStyle(fontSize: 16, color: Colors.white)),
@@ -370,92 +361,6 @@ class StatCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ====== DETAIL PAGES ======
-
-class SatgasAccountsPage extends StatelessWidget {
-  const SatgasAccountsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final supabase = Supabase.instance.client;
-    return Scaffold(
-      backgroundColor: const Color(0xFF2A0A5E),
-      appBar: AppBar(
-        title: const Text("Akun Satgas"),
-        backgroundColor: const Color(0xFF3B0A80),
-      ),
-      body: FutureBuilder<List<dynamic>>(
-        future: supabase.from('profiles').select('email'),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.white));
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
-          }
-          final data = snapshot.data ?? [];
-          if (data.isEmpty) {
-            return const Center(child: Text("Tidak ada data", style: TextStyle(color: Colors.white)));
-          }
-          return ListView.builder(
-            itemCount: data.length,
-            itemBuilder: (_, i) {
-              return ListTile(
-                title: Text(data[i]['email'], style: const TextStyle(color: Colors.white)),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class SiswaAccountsPage extends StatelessWidget {
-  const SiswaAccountsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final supabase = Supabase.instance.client;
-    return Scaffold(
-      backgroundColor: const Color(0xFF2A0A5E),
-      appBar: AppBar(
-        title: const Text("Akun Siswa"),
-        backgroundColor: const Color(0xFF3B0A80),
-      ),
-      body: FutureBuilder<List<dynamic>>(
-        future: supabase.from('siswa').select('nama, qr_url'),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.white));
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
-          }
-          final data = snapshot.data ?? [];
-          if (data.isEmpty) {
-            return const Center(child: Text("Tidak ada data", style: TextStyle(color: Colors.white)));
-          }
-          return ListView.builder(
-            itemCount: data.length,
-            itemBuilder: (_, i) {
-              return Card(
-                color: const Color(0xFF3B0A80),
-                child: ListTile(
-                  leading: data[i]['qr_url'] != null && data[i]['qr_url'].toString().isNotEmpty
-                      ? Image.network(data[i]['qr_url'], width: 50)
-                      : const Icon(Icons.qr_code, color: Colors.white),
-                  title: Text(data[i]['nama'], style: const TextStyle(color: Colors.white)),
-                ),
-              );
-            },
-          );
-        },
       ),
     );
   }
