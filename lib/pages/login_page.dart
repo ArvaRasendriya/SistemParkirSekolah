@@ -4,6 +4,7 @@ import 'package:tefa_parkir/pages/register_page.dart';
 import 'package:tefa_parkir/pages/profile_page.dart';
 import 'package:tefa_parkir/pages/admin_dashboard_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../theme/app_theme.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,89 +16,85 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage>
     with SingleTickerProviderStateMixin {
   final authService = AuthService();
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
 
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-
-    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _scaleAnimation =
-        Tween<double>(begin: 0.8, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
-
-    _controller.forward();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeInOut,
+    );
+    
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    _animController.forward();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _animController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  // === LOGIN DENGAN CEK ROLE (robust terhadap user.id null) ===
-  void login() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
 
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email dan password harus diisi")),
-      );
-      return;
-    }
+    setState(() => _isLoading = true);
 
     try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+      
       await authService.signInWithEmailPassword(email, password);
       final supabase = Supabase.instance.client;
-      final User? currentUser =
-          supabase.auth.currentUser ?? supabase.auth.currentSession?.user;
+      final currentUser = supabase.auth.currentUser;
 
       if (currentUser == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                "Login sepertinya berhasil tapi user tidak ditemukan. Cek implementasi AuthService."),
-          ),
-        );
-        return;
+        throw Exception('User tidak ditemukan setelah login');
       }
-
-      final uid = currentUser.id;
 
       final profile = await supabase
           .from('profiles')
           .select('role, status')
-          .eq('id', uid)
+          .eq('id', currentUser.id)
           .maybeSingle();
 
       if (profile == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Profile tidak ditemukan di tabel profiles")),
-        );
-        return;
+        throw Exception('Profile tidak ditemukan');
       }
 
       final role = (profile['role'] as String?)?.toLowerCase();
       final status = (profile['status'] as String?)?.toLowerCase();
 
-      if (status != null && (status == 'pending' || status == 'inactive')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Akun Anda belum aktif (status: $status)")),
-        );
-        return;
+      if (status != 'approved') {
+        throw Exception('Akun Anda belum disetujui (status: $status)');
       }
 
       if (!mounted) return;
+
       if (role == 'admin') {
         Navigator.pushReplacement(
           context,
@@ -109,249 +106,172 @@ class _LoginPageState extends State<LoginPage>
           MaterialPageRoute(builder: (_) => const ProfilePage()),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Role tidak dikenali: $role")),
-        );
+        throw Exception('Role tidak dikenali: $role');
       }
     } catch (e) {
       if (mounted) {
-        if (e.toString().contains('not approved')) {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text('Approval Required'),
-                content: const Text('You are not approved by an admin yet.'),
-                actions: <Widget>[
-                  TextButton(
-                    child: const Text('OK'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      authService.signOut();
-                    },
-                  ),
-                ],
-              );
-            },
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error saat login: $e")),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: AppTheme.error,
+          ),
+        );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  InputDecoration _transparentDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      filled: true,
-      fillColor: Colors.white.withOpacity(0.10),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(25),
-        borderSide: BorderSide.none,
-      ),
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AnimatedContainer(
-        duration: const Duration(seconds: 2),
-        curve: Curves.easeInOut,
-        width: double.infinity,
-        height: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 50),
+    final size = MediaQuery.of(context).size;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-                  // Animasi logo
-                  ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Image.asset(
-                      'assets/logo.png',
-                      width: 240,
-                      height: 240,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: AppTheme.surface,
+        body: SafeArea(
+          child: LoadingOverlay(
+            isLoading: _isLoading,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: bottomInset),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: size.height - 24),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceL,
+                      vertical: AppTheme.spaceM,
                     ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  CustomInputField(
-                    controller: _emailController,
-                    hintText: 'Email',
-                  ),
-                  const SizedBox(height: 14),
-
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _transparentDecoration('Kata Sandi').copyWith(
-                      suffixIcon: IconButton(
-                        splashRadius: 20,
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // === TOMBOL MASUK DENGAN ANIMASI TRANSISI WARNA GRADASI ===
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: StatefulBuilder(
-                      builder: (context, setStateBtn) {
-                        bool isPressed = false;
-
-                        return GestureDetector(
-                          onTap: login,
-                          onTapDown: (_) => setStateBtn(() => isPressed = true),
-                          onTapUp: (_) => setStateBtn(() => isPressed = false),
-                          onTapCancel: () => setStateBtn(() => isPressed = false),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 500),
-                            curve: Curves.easeInOutCubic,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(30),
-                              gradient: LinearGradient(
-                                colors: isPressed
-                                    ? [
-                                        Color(0xFF2C5364),
-                                        Color(0xFF203443),
-                                        Color(0xFF0F2027),
-                                      ]
-                                    : [
-                                        Color(0xFF0F2027),
-                                        Color(0xFF203443),
-                                        Color(0xFF2C5364),
-                                      ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                    child: FadeTransition(
+                      opacity: _fadeAnim,
+                      child: SlideTransition(
+                        position: _slideAnim,
+                        child: Column(
+                          children: [
+                            const Spacer(flex: 1),
+                            
+                            // Logo
+                            Image.asset(
+                              'assets/images/logo2.png',
+                              width: size.width * 0.5,
+                              height: size.width * 0.5,
+                            ),
+                            
+                            const SizedBox(height: AppTheme.spaceXL),
+                            
+                            // Form
+                            Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppTextField(
+                                    controller: _emailController,
+                                    labelText: 'Email',
+                                    hintText: 'hint@gmail.com',
+                                    prefixIcon: Icons.email_outlined,
+                                    keyboardType: TextInputType.emailAddress,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Email wajib diisi';
+                                      }
+                                      if (!value.contains('@')) {
+                                        return 'Format email tidak valid';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  
+                                  const SizedBox(height: AppTheme.spaceL),
+                                  
+                                  AppTextField(
+                                    controller: _passwordController,
+                                    labelText: 'Password',
+                                    hintText: '••••••••••••',
+                                    prefixIcon: Icons.lock_outline,
+                                    obscureText: _obscurePassword,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscurePassword = !_obscurePassword;
+                                        });
+                                      },
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Password wajib diisi';
+                                      }
+                                      if (value.length < 6) {
+                                        return 'Password minimal 6 karakter';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: isPressed ? 3 : 8,
-                                  offset: const Offset(0, 4),
+                            ),
+                            
+                            const SizedBox(height: AppTheme.spaceXXL),
+                            
+                            // Login Button
+                            AppButton(
+                              text: 'Login',
+                              onPressed: _login,
+                              isLoading: _isLoading,
+                              height: 56,
+                            ),
+                            
+                            const Spacer(flex: 2),
+                            
+                            // Register Link
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Belum punya akun? ',
+                                  style: AppTheme.bodyMedium.copyWith(
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const RegisterPage(),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    'Buat Akun',
+                                    style: AppTheme.bodyMedium.copyWith(
+                                      color: AppTheme.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
-                            alignment: Alignment.center,
-                            child: AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 300),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: isPressed ? 15 : 16,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: isPressed ? 1.2 : 1.0,
-                              ),
-                              child: const Text("Masuk"),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 22),
-
-                  const Text(
-                    "Tidak punya akun?",
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const RegisterPage()),
-                      );
-                    },
-                    child: const Text(
-                      "Daftar disini!",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber,
+                            
+                            const SizedBox(height: AppTheme.spaceL),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class CustomInputField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hintText;
-  final bool obscureText;
-
-  const CustomInputField({
-    super.key,
-    required this.controller,
-    required this.hintText,
-    this.obscureText = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: hintText,
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.10),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(25),
-          borderSide: BorderSide.none,
-        ),
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
       ),
     );
   }

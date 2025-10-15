@@ -10,14 +10,47 @@ class ScanResultPage extends StatefulWidget {
 }
 
 class _ScanResultPageState extends State<ScanResultPage> {
+  // 🧠 Simpan QR yang sudah pernah discan di memory (static biar persist antar halaman)
+  static final Set<String> _scannedQrIds = {};
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final formattedTime = DateFormat("HH:mm").format(now);
     final formattedDate = DateFormat("dd-MM-yyyy").format(now);
 
-    // 🔑 mapping status jadi Approved/Rejected
-    final isApproved = widget.userData["status"] == "Masuk";
+    // Ambil status dari backend (jika ada)
+    final rawStatus =
+        (widget.userData["status"] ?? "").toString().toLowerCase().trim();
+
+    // Identitas unik QR (bisa dari ID, nama, atau kombinasi lainnya)
+    final qrId = (widget.userData["id"] ??
+            widget.userData["nama"] ??
+            widget.userData["qr_code"] ??
+            "")
+        .toString();
+
+    // ✅ Logika status lokal + backend
+    bool isApproved = false;
+
+    // Jika QR sudah pernah discan di app → langsung tolak
+    if (_scannedQrIds.contains(qrId)) {
+      isApproved = false;
+    } else if (rawStatus.isEmpty ||
+        rawStatus.contains("belum") ||
+        rawStatus.contains("baru") ||
+        rawStatus.contains("masuk") ||
+        rawStatus == "approved") {
+      isApproved = true;
+      _scannedQrIds.add(qrId); // tandai sudah digunakan
+    } else if (rawStatus.contains("sudah") ||
+        rawStatus.contains("rejected") ||
+        rawStatus.contains("dipakai") ||
+        rawStatus.contains("used")) {
+      isApproved = false;
+      _scannedQrIds.add(qrId); // juga tandai agar tetap ditolak ke depannya
+    }
+
     final statusText = isApproved ? "Approved" : "Rejected";
     final statusColor = isApproved ? Colors.green : Colors.red;
     final statusIcon = isApproved ? Icons.check_circle : Icons.cancel;
@@ -40,10 +73,10 @@ class _ScanResultPageState extends State<ScanResultPage> {
             margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4), // 🔄 lebih tipis transparan
+              color: Colors.black.withOpacity(0.4),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withOpacity(0.4), // 🔄 border putih samar
+                color: Colors.white.withOpacity(0.4),
                 width: 1,
               ),
               boxShadow: [
@@ -58,7 +91,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Foto dengan tombol zoom
+                // 📸 Foto
                 Center(
                   child: Stack(
                     children: [
@@ -86,7 +119,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
                             : const Icon(Icons.credit_card,
                                 size: 60, color: Colors.grey),
                       ),
-                      // Tombol zoom
+                      // 🔍 Zoom button
                       Positioned(
                         bottom: 8,
                         right: 8,
@@ -131,7 +164,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // ✅ Status sudah dimapping
+                // ✅ Status
                 Row(
                   children: [
                     const Text(
@@ -139,7 +172,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white, // 🔄 teks putih
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -150,25 +183,25 @@ class _ScanResultPageState extends State<ScanResultPage> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: statusColor, // biarkan sesuai status
+                        color: statusColor,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
 
-                // Info siswa
+                // 🧑 Info siswa
                 _infoRow("Nama", widget.userData["nama"] ?? "-"),
                 _infoRow("Kelas", widget.userData["kelas"] ?? "-"),
                 _infoRow("Jurusan", widget.userData["jurusan"] ?? "-"),
                 const SizedBox(height: 8),
 
-                // Waktu & Tanggal
+                // ⏰ Waktu & Tanggal
                 _infoRow("Waktu", formattedTime),
                 _infoRow("Tanggal", formattedDate),
                 const SizedBox(height: 20),
 
-                // Tombol selesai
+                // 🔘 Tombol selesai
                 Center(
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context),
@@ -202,6 +235,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
     );
   }
 
+  // 🔧 Widget info baris
   static Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -212,7 +246,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.white, // 🔄 teks putih
+              color: Colors.white,
             ),
           ),
           const SizedBox(width: 8),
@@ -221,7 +255,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
               value,
               style: const TextStyle(
                 fontSize: 16,
-                color: Colors.white, // 🔄 teks putih
+                color: Colors.white,
               ),
               overflow: TextOverflow.ellipsis,
             ),

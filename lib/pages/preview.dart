@@ -10,158 +10,154 @@ class PreviewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text(
-          "Preview",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: AnimatedContainer(
-        duration: const Duration(milliseconds: 800),
-        curve: Curves.easeInOut,
+      backgroundColor: Colors.transparent,
+      body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0F2027), // hitam kebiruan
-              Color(0xFF203A43), // biru gelapan
-              Color(0xFF2C5364), // biru gradasi
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: Hero(
-            tag: "previewImage",
-            child: AnimatedScale(
-              duration: const Duration(milliseconds: 600),
-              curve: Curves.easeOutBack,
-              scale: 1,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Image.file(
-                  croppedFile,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
+              Color(0xFF3F37C9), // Ungu terang
+              Color(0xFF1D1879), // Ungu gelap
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black54,
-              blurRadius: 10,
-              offset: Offset(0, -2),
-            ),
-          ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.8, end: 1),
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeOutBack,
-              builder: (context, scale, child) {
-                return Transform.scale(scale: scale, child: child);
-              },
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  elevation: 8,
-                  shadowColor: Colors.black54,
+        child: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              const Text(
+                "Preview",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
                 ),
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    PageRouteBuilder(
-                      transitionDuration: const Duration(milliseconds: 500),
-                      pageBuilder: (_, __, ___) =>
-                          CropPage(imageFile: croppedFile),
-                      transitionsBuilder:
-                          (_, animation, secondaryAnimation, child) {
-                        final curved =
-                            CurvedAnimation(parent: animation, curve: Curves.easeInOut);
-                        return FadeTransition(
-                          opacity: curved,
-                          child: ScaleTransition(
-                            scale: curved,
-                            child: child,
-                          ),
-                        );
-                      },
+              ),
+              const SizedBox(height: 24),
+
+              // 🔹 Card putih berisi gambar & tombol
+              Expanded(
+                child: Center(
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                  );
-                },
-                icon: const Icon(Icons.refresh, color: Colors.white),
-                label: const Text(
-                  "Ulangi",
-                  style: TextStyle(color: Colors.white),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            croppedFile,
+                            height: 200,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "Pastikan Foto anda terlihat jelas",
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+
+                        // 🔹 Tombol "Selesai"
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3F37C9),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.pop(context, croppedFile);
+                            },
+                            child: const Text(
+                              "Selesai",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.8, end: 1),
-              duration: const Duration(milliseconds: 600),
-              curve: Curves.easeOutBack,
-              builder: (context, scale, child) {
-                return Transform.scale(scale: scale, child: child);
-              },
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.greenAccent.shade700,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+
+              // 🔹 Teks bawah kecil
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      PageRouteBuilder(
+                        transitionDuration: const Duration(milliseconds: 400),
+                        pageBuilder: (_, __, ___) =>
+                            CropPage(imageFile: croppedFile),
+                        transitionsBuilder:
+                            (_, animation, __, child) => FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Foto sudah jelas? ",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
+                      ),
+                      Text(
+                        "ulangi ",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      Icon(
+                        Icons.refresh,
+                        color: Colors.white70,
+                        size: 16,
+                      ),
+                    ],
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  elevation: 8,
-                  shadowColor: Colors.black54,
-                ),
-                onPressed: () {
-                  Navigator.pop(context, croppedFile);
-                },
-                icon: const Icon(Icons.check, color: Colors.white),
-                label: const Text(
-                  "Gunakan",
-                  style: TextStyle(color: Colors.white),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

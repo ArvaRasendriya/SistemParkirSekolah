@@ -43,16 +43,24 @@ class _SatgasListPageState extends State<SatgasListPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Akun'),
-        content: Text('Apakah kamu yakin ingin menghapus akun untuk $email? Perbuatan ini tidak bisa dibatalkan.'),
+        backgroundColor: const Color(0xFF2A1F6F),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Hapus Akun',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Apakah kamu yakin ingin menghapus akun untuk $email?\nTindakan ini tidak bisa dibatalkan.',
+          style: const TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: const Text('Batal', style: TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text('Hapus', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -66,7 +74,7 @@ class _SatgasListPageState extends State<SatgasListPage> {
             const SnackBar(content: Text('Akun berhasil dihapus')),
           );
         }
-        fetchSatgasAccounts(); // Refresh the list
+        fetchSatgasAccounts();
       } catch (e) {
         debugPrint('Error menghapus akun: $e');
         if (mounted) {
@@ -80,28 +88,36 @@ class _SatgasListPageState extends State<SatgasListPage> {
 
   @override
   Widget build(BuildContext context) {
+    const textColor = Color(0xFFF8F8FF);
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text(
           'Akun Satgas',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.check_circle, color: Colors.white),
+            icon: const Icon(Icons.check_circle, color: textColor),
+            tooltip: 'Pending Approvals',
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AdminApprovalPage()),
+                MaterialPageRoute(
+                  builder: (context) => const AdminApprovalPage(),
+                ),
               );
             },
-            tooltip: 'Pending Approvals',
           ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(Icons.refresh, color: textColor),
             onPressed: fetchSatgasAccounts,
           ),
         ],
@@ -109,81 +125,114 @@ class _SatgasListPageState extends State<SatgasListPage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [Color(0xFF3F37C9), Color(0xFF1D1879)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: isLoading
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            ? const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              )
             : satgasAccounts.isEmpty
                 ? const Center(
                     child: Text(
                       'Tidak ada akun satgas ditemukan.',
-                      style: TextStyle(fontSize: 16, color: Colors.white70),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   )
                 : Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.3), // box hitam transparan
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: satgasAccounts.length,
-                        itemBuilder: (context, index) {
-                          final account = satgasAccounts[index];
-                          final email = account['email'] ?? 'No email';
-                          final status = account['status'] ?? 'Unknown';
-                          final createdAt = account['created_at'];
-                          final formattedDate = createdAt != null
-                              ? DateTime.parse(createdAt).toLocal().toString().substring(0, 16)
-                              : 'Unknown date';
+                    padding: const EdgeInsets.fromLTRB(16, 80, 16, 16),
+                    child: RefreshIndicator(
+                      onRefresh: fetchSatgasAccounts,
+                      color: const Color(0xFF3F37C9),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white24, width: 1),
+                        ),
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(12),
+                          itemCount: satgasAccounts.length,
+                          itemBuilder: (context, index) {
+                            final account = satgasAccounts[index];
+                            final email = account['email'] ?? 'No email';
+                            final status = account['status'] ?? 'Unknown';
+                            final createdAt = account['created_at'];
+                            final formattedDate = createdAt != null
+                                ? DateTime.parse(createdAt)
+                                    .toLocal()
+                                    .toString()
+                                    .substring(0, 16)
+                                : 'Unknown date';
 
-                          return Card(
-                            color: Colors.white.withOpacity(0.08),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              leading: const Icon(Icons.person,
-                                  color: Colors.grey, size: 32),
-                              title: Text(
-                                email,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Status: $status',
-                                    style: const TextStyle(
-                                        color: Colors.white70, fontSize: 13),
-                                  ),
-                                  Text(
-                                    'Registered: $formattedDate',
-                                    style: const TextStyle(
-                                        color: Colors.white70, fontSize: 13),
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border:
+                                    Border.all(color: Colors.white24, width: 1),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.25),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
                                   ),
                                 ],
                               ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteAccount(account['id'], email),
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.person,
+                                  color: textColor,
+                                  size: 32,
+                                ),
+                                title: Text(
+                                  email,
+                                  style: const TextStyle(
+                                    color: textColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Status: $status',
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13),
+                                      ),
+                                      Text(
+                                        'Registered: $formattedDate',
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.redAccent),
+                                  onPressed: () =>
+                                      _deleteAccount(account['id'], email),
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),

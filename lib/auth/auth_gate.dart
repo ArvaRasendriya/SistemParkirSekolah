@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../pages/login_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/admin_dashboard_page.dart';
@@ -15,9 +15,33 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   final authService = AuthService();
+  bool? isFirstTimeUser;
+
+  @override
+  void initState() {
+    super.initState();
+    checkFirstTimeUser();
+  }
+
+  Future<void> checkFirstTimeUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final firstTime = prefs.getBool('isFirstTimeUser') ?? true;
+    setState(() {
+      isFirstTimeUser = firstTime;
+    });
+    if (firstTime) {
+      await prefs.setBool('isFirstTimeUser', false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isFirstTimeUser == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return StreamBuilder(
       // Listen to auth changes
       stream: Supabase.instance.client.auth.onAuthStateChange,

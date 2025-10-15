@@ -89,117 +89,146 @@ class _SimScannerPageState extends State<SimScannerPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF0F2027), // hitam kebiruan
-              Color(0xFF203A43), // biru gelapan
-              Color(0xFF2C5364), // biru gradasi
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: FutureBuilder(
-          future: _initializeControllerFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done &&
-                _controller != null) {
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  return Stack(
-                    children: [
-                      GestureDetector(
-                        onTapUp: (details) =>
-                            _onViewTapped(details, constraints),
-                        child: CameraPreview(_controller!),
-                      ),
+      backgroundColor: Colors.black,
+      body: FutureBuilder(
+        future: _initializeControllerFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done &&
+              _controller != null) {
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    GestureDetector(
+                      onTapUp: (details) => _onViewTapped(details, constraints),
+                      child: CameraPreview(_controller!),
+                    ),
 
-                      // Animasi lingkaran fokus
-                      if (_showFocusCircle && _focusPoint != null)
-                        Positioned(
-                          left: _focusPoint!.dx - 25,
-                          top: _focusPoint!.dy - 25,
-                          child: AnimatedOpacity(
-                            opacity: _showFocusCircle ? 1.0 : 0.0,
+                    // Garis frame tengah (16:9)
+                    Center(
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 4,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Lingkaran fokus
+                    if (_showFocusCircle && _focusPoint != null)
+                      Positioned(
+                        left: _focusPoint!.dx - 25,
+                        top: _focusPoint!.dy - 25,
+                        child: AnimatedOpacity(
+                          opacity: _showFocusCircle ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.yellow,
-                                  width: 2,
-                                ),
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.yellow,
+                                width: 2,
                               ),
                             ),
                           ),
                         ),
+                      ),
 
-                      // Tombol cancel & capture
-                      Positioned(
-                        bottom: 30,
-                        left: 0,
-                        right: 0,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _animatedButton(
-                              color: Colors.red,
-                              icon: Icons.close,
-                              label: "Cancel",
-                              onPressed: () => Navigator.pop(context),
+                    // Bagian atas (Back + ZON4)
+                    Positioned(
+                      top: 40,
+                      left: 16,
+                      right: 16,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Tombol back (panah)
+                          IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                              size: 26,
                             ),
-                            _animatedButton(
-                              color: Colors.green,
-                              icon: Icons.camera_alt,
-                              label: "Capture",
-                              onPressed: _captureImage,
+                            onPressed: () => Navigator.pop(context),
+                          ),
+
+                          // Tulisan ZON4 di tengah
+                          const Expanded(
+                            child: Center(
+                              child: Text(
+                                "ZON4",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
                             ),
-                          ],
+                          ),
+
+                          const SizedBox(width: 40), // Spacer biar seimbang
+                        ],
+                      ),
+                    ),
+
+                    // Tulisan "Pastikan Kartu Anda Sesuai"
+                    Positioned(
+                      bottom: 120,
+                      left: 0,
+                      right: 0,
+                      child: const Text(
+                        "Pastikan kartu anda sesuai",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
                         ),
                       ),
-                    ],
-                  );
-                },
-              );
-            } else {
-              return const Center(child: CircularProgressIndicator());
-            }
-          },
-        ),
-      ),
-    );
-  }
+                    ),
 
-  /// Widget tombol dengan animasi
-  Widget _animatedButton({
-    required Color color,
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() {}),
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          elevation: 6,
-        ),
-        onPressed: onPressed,
-        icon: Icon(icon, size: 22),
-        label: Text(
-          label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
+                    // Tombol capture (ikon kamera putih bulat)
+                    Positioned(
+                      bottom: 40,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: _captureImage,
+                          child: Container(
+                            width: 70,
+                            height: 70,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.black,
+                              size: 32,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
       ),
     );
   }

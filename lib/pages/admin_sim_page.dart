@@ -1,7 +1,4 @@
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminSimPage extends StatefulWidget {
@@ -14,154 +11,121 @@ class AdminSimPage extends StatefulWidget {
 class _AdminSimPageState extends State<AdminSimPage> {
   final supabase = Supabase.instance.client;
   List<Map<String, dynamic>> simData = [];
+  List<Map<String, dynamic>> filteredData = [];
   bool _loading = true;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchSimData();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredData = simData.where((item) {
+        final nama = (item["nama"] ?? "").toString().toLowerCase();
+        final kelas = (item["kelas"] ?? "").toString().toLowerCase();
+        return nama.contains(query) || kelas.contains(query);
+      }).toList();
+    });
   }
 
   Future<void> _fetchSimData() async {
     setState(() => _loading = true);
     try {
-      final response =
-          await supabase.from("pending_siswa").select().order("created_at");
+      final response = await supabase
+          .from("siswa")
+          .select()
+          .order("created_at", ascending: false);
+
       setState(() {
         simData = List<Map<String, dynamic>>.from(response);
+        filteredData = simData;
       });
     } catch (e) {
       debugPrint("Error fetch data: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Gagal memuat data")),
-      );
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
-
-  Future<void> approveSiswa(Map<String, dynamic> data) async {
-    try {
-      final id = data["id"];
-
-      // Generate QR
-      final qrValidationResult = QrValidator.validate(
-        data: id,
-        version: QrVersions.auto,
-        errorCorrectionLevel: QrErrorCorrectLevel.Q,
-      );
-      if (qrValidationResult.status != QrValidationStatus.valid) {
-        throw Exception("QR Code tidak valid");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gagal memuat data SIM")),
+        );
       }
-
-      final painter = QrPainter.withQr(
-        qr: qrValidationResult.qrCode!,
-        color: const Color(0xFF000000),
-        emptyColor: const Color(0xFFFFFFFF),
-        gapless: true,
-      );
-
-      final uiImage = await painter.toImage(300);
-      final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
-      final qrBytes = byteData!.buffer.asUint8List();
-
-      final qrFileName = "${DateTime.now().millisecondsSinceEpoch}.png";
-      final qrPath = "qr/$qrFileName";
-      await supabase.storage.from("siswa").uploadBinary(
-            qrPath,
-            qrBytes,
-            fileOptions: const FileOptions(contentType: "image/png"),
-          );
-      final qrUrl = supabase.storage.from("siswa").getPublicUrl(qrPath);
-
-      await supabase.from("siswa").insert({
-        "id": id,
-        "nama": data["nama"],
-        "kelas": data["kelas"],
-        "jurusan": data["jurusan"],
-        "email": data["email"],
-        "sim_url": data["sim_url"],
-        "qr_url": qrUrl,
-        "status": "approved",
-        "created_at": DateTime.now().toIso8601String(),
-      });
-
-      await supabase.from("pending_siswa").delete().eq("id", id);
-
-      Future.microtask(() async {
-        try {
-          final response = await supabase.functions.invoke(
-            "sendEmailQr",
-            body: {
-              "email": data["email"],
-              "nama": data["nama"],
-              "kelas": data["kelas"],
-              "jurusan": data["jurusan"],
-              "qr_url": qrUrl,
-            },
-          );
-          debugPrint("📧 Email sent: ${response.data}");
-        } catch (e) {
-          debugPrint("❌ Gagal kirim email: $e");
-        }
-      });
-
-    // Refresh UI
-    _fetchSimData();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Siswa ${data["nama"]} berhasil di-approve ✅')),
-    );
-  } catch (e) {
-    debugPrint("Error approve: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Gagal approve: $e")),
-    );
-  }
-}
-
-  Future<void> rejectSiswa(String id) async {
-    try {
-      await supabase.from("pending_siswa").delete().eq("id", id);
-      _fetchSimData();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('SIM $id ditolak ❌')),
-      );
-    } catch (e) {
-      debugPrint("Error reject: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal reject: $e")),
-      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _deleteSim(String id) async {
+    try {
+      await supabase.from("siswa").delete().eq("id", id);
+      _fetchSimData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Data SIM berhasil dihapus 🗑️")),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error delete SIM: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gagal menghapus data SIM")),
+        );
+      }
+    }
+  }
+
+  void _goToPendingApproval() {
+    Navigator.pushNamed(context, '/pendingSimApproval');
   }
 
   @override
   Widget build(BuildContext context) {
+    const textColor = Color(0xFFF8F8FF);
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text(
           'Data SIM',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF0F2027),
-                Color(0xFF203A43),
-                Color(0xFF2C5364),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: InkWell(
+              onTap: _goToPendingApproval,
+              borderRadius: BorderRadius.circular(30),
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF5146D9),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
             ),
           ),
-        ),
-        actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(Icons.refresh, color: textColor),
             onPressed: _fetchSimData,
           ),
         ],
@@ -169,145 +133,157 @@ class _AdminSimPageState extends State<AdminSimPage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
-            ],
+            colors: [Color(0xFF3F37C9), Color(0xFF1D1879)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: _loading
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : simData.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Belum ada data SIM',
-                      style: TextStyle(fontSize: 18, color: Colors.white70),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: simData.length,
-                    itemBuilder: (context, index) {
-                      final sim = simData[index];
-                      return TweenAnimationBuilder(
-                        duration: Duration(milliseconds: 600 + (index * 200)),
-                        curve: Curves.easeOut,
-                        tween: Tween<double>(begin: 0, end: 1),
-                        builder: (context, value, child) {
-                          return Opacity(
-                            opacity: value,
-                            child: Transform.translate(
-                              offset: Offset(0, (1 - value) * 40),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3), // 🔹 bayangan belakang
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Card(
-                            color: const Color(0xFF1E2A32), // 🔹 warna konsisten elegan
-                            margin: const EdgeInsets.all(6),
-                            elevation: 6,
-                            shadowColor: Colors.black54,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.credit_card,
-                                          color: Colors.white70),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          sim["nama"] ?? "-",
-                                          style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    'Email: ${sim["email"] ?? "-"}',
-                                    style: const TextStyle(color: Colors.white70),
-                                  ),
-                                  Text(
-                                    'Kelas: ${sim["kelas"] ?? "-"}',
-                                    style: const TextStyle(color: Colors.white70),
-                                  ),
-                                  Text(
-                                    'Jurusan: ${sim["jurusan"] ?? "-"}',
-                                    style: const TextStyle(color: Colors.white70),
-                                  ),
-                                  Text(
-                                    'Status: ${sim["status"] ?? "pending"}',
-                                    style: const TextStyle(
-                                      color: Colors.orange,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      OutlinedButton.icon(
-                                        style: OutlinedButton.styleFrom(
-                                          side: const BorderSide(color: Colors.red, width: 1.5),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                        ),
-                                        onPressed: () => rejectSiswa(sim["id"]),
-                                        icon: const Icon(Icons.close, color: Colors.red),
-                                        label: const Text(
-                                          'Tidak Valid',
-                                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      ElevatedButton.icon(
-                                        onPressed: () => approveSiswa(sim),
-                                        icon: const Icon(Icons.check, color: Colors.white),
-                                        label: const Text(
-                                          'Valid',
-                                          style: TextStyle(fontWeight: FontWeight.w600),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.green,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                                          elevation: 4,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                            ),
+            ? const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              )
+            : Padding(
+                padding: const EdgeInsets.fromLTRB(16, 80, 16, 16),
+                child: Column(
+                  children: [
+                    // 🔍 Search Bar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: "Siapa yang kamu cari?",
+                          hintStyle: const TextStyle(color: Colors.white70),
+                          prefixIcon:
+                              const Icon(Icons.search, color: Colors.white),
+                          border: InputBorder.none,
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 14),
+                          suffixIcon: PopupMenuButton<String>(
+                            icon: const Icon(Icons.filter_list,
+                                color: Colors.white),
+                            onSelected: (value) {
+                              if (value == 'Semua Kelas') {
+                                setState(() {
+                                  filteredData = simData;
+                                });
+                              } else {
+                                setState(() {
+                                  filteredData = simData
+                                      .where((item) =>
+                                          (item["kelas"] ?? "")
+                                              .toString()
+                                              .toLowerCase() ==
+                                          value.toLowerCase())
+                                      .toList();
+                                });
+                              }
+                            },
+                            itemBuilder: (context) {
+                              final kelasSet = simData
+                                  .map((e) => e["kelas"]?.toString() ?? "")
+                                  .where((k) => k.isNotEmpty)
+                                  .toSet()
+                                  .toList();
+                              return [
+                                const PopupMenuItem(
+                                    value: 'Semua Kelas',
+                                    child: Text('Semua Kelas')),
+                                ...kelasSet.map(
+                                  (k) =>
+                                      PopupMenuItem(value: k, child: Text(k)),
+                                ),
+                              ];
+                            },
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 📋 Daftar Data
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _fetchSimData,
+                        color: const Color(0xFF3F37C9),
+                        child: filteredData.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'Tidak ada hasil ditemukan 😕',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: textColor,
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                itemCount: filteredData.length,
+                                itemBuilder: (context, index) {
+                                  final sim = filteredData[index];
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                          color: Colors.white24, width: 1),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ListTile(
+                                      leading: const Icon(Icons.credit_card,
+                                          color: textColor),
+                                      title: Text(
+                                        sim["nama"] ?? "-",
+                                        style: const TextStyle(
+                                          color: textColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            "Kelas: ${sim["kelas"] ?? "-"}",
+                                            style: const TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 13),
+                                          ),
+                                          Text(
+                                            "Email: ${sim["email"] ?? "-"}",
+                                            style: const TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 13),
+                                          ),
+                                        ],
+                                      ),
+                                      trailing: IconButton(
+                                        icon: const Icon(Icons.delete,
+                                            color: Colors.redAccent),
+                                        onPressed: () =>
+                                            _deleteSim(sim["id"]),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
       ),
     );
   }

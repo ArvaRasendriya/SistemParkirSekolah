@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'admin_approval_page.dart';
 import 'satgas_list_page.dart';
 import 'admin_sim_page.dart';
-import 'login_page.dart'; // pastikan ada file login_page.dart
+import 'login_page.dart';
+import 'package:fl_chart/fl_chart.dart';
+
+enum ChartType { pie, bar }
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -40,15 +42,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F2027),
+      backgroundColor: const Color(0xFF2A0A5E),
       appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        backgroundColor: const Color(0xFF3B0A80),
+        title: const SizedBox.shrink(),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: _logout,
+            tooltip: 'Logout',
           ),
         ],
       ),
@@ -60,7 +62,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         child: _pages[_selectedIndex],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF1B2A38),
+        backgroundColor: const Color(0xFF3B0A80),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
@@ -76,7 +78,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
+        selectedItemColor: Colors.amberAccent,
         unselectedItemColor: Colors.white70,
         onTap: _onItemTapped,
       ),
@@ -98,6 +100,7 @@ class _DashboardContentState extends State<DashboardContent> {
   int akunSiswa = 0;
 
   bool loading = true;
+  ChartType selectedChart = ChartType.pie;
 
   @override
   void initState() {
@@ -126,13 +129,15 @@ class _DashboardContentState extends State<DashboardContent> {
 
   @override
   Widget build(BuildContext context) {
+    final double maxY = (akunSatgas > akunSiswa ? akunSatgas : akunSiswa).toDouble() + 5.0;
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFF0F2027),
-            Color(0xFF203A43),
-            Color(0xFF2C5364),
+            Color(0xFF3B0A80),
+            Color(0xFF5E17EB),
+            Color(0xFF7C3AED),
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -143,7 +148,7 @@ class _DashboardContentState extends State<DashboardContent> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
             const Text(
               'Welcome to Admin Dashboard',
               style: TextStyle(
@@ -159,40 +164,139 @@ class _DashboardContentState extends State<DashboardContent> {
                   ? const Center(
                       child: CircularProgressIndicator(color: Colors.white),
                     )
-                  : GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      children: [
-                        StatCard(
-                          title: "Akun Satgas",
-                          value: "$akunSatgas",
-                          change: "+0",
-                          icon: Icons.shield,
-                          color: Colors.blue,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const SatgasAccountsPage()),
-                            );
-                          },
-                        ),
-                        StatCard(
-                          title: "Akun Siswa",
-                          value: "$akunSiswa",
-                          change: "+0",
-                          icon: Icons.school,
-                          color: Colors.green,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const SiswaAccountsPage()),
-                            );
-                          },
-                        ),
-                      ],
+                  : SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            children: [
+                              // Tidak bisa dipencet (onTap dihilangkan)
+                              StatCard(
+                                title: "Akun Satgas",
+                                value: "$akunSatgas",
+                                change: "+0",
+                                icon: Icons.shield,
+                                color: Colors.pinkAccent.shade100,
+                                onTap: null,
+                              ),
+                              StatCard(
+                                title: "Akun Siswa",
+                                value: "$akunSiswa",
+                                change: "+0",
+                                icon: Icons.school,
+                                color: Colors.blueAccent.shade100,
+                                onTap: null,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Pilih Chart: ",
+                                style: TextStyle(color: Colors.white, fontSize: 14),
+                              ),
+                              const SizedBox(width: 10),
+                              DropdownButton<ChartType>(
+                                dropdownColor: const Color(0xFF3B0A80),
+                                value: selectedChart,
+                                style: const TextStyle(color: Colors.white),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: ChartType.pie,
+                                    child: Text("Pie Chart"),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: ChartType.bar,
+                                    child: Text("Bar Chart"),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedChart = value!;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            height: 240,
+                            child: selectedChart == ChartType.pie
+                                ? PieChart(
+                                    PieChartData(
+                                      sectionsSpace: 4,
+                                      centerSpaceRadius: 40,
+                                      sections: [
+                                        PieChartSectionData(
+                                          value: akunSatgas.toDouble(),
+                                          title: 'Satgas\n$akunSatgas',
+                                          color: Colors.pinkAccent.shade100,
+                                          radius: 60,
+                                          titleStyle: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        PieChartSectionData(
+                                          value: akunSiswa.toDouble(),
+                                          title: 'Siswa\n$akunSiswa',
+                                          color: Colors.blueAccent.shade100,
+                                          radius: 60,
+                                          titleStyle: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : BarChart(
+                                    BarChartData(
+                                      maxY: maxY,
+                                      barGroups: [
+                                        BarChartGroupData(x: 0, barRods: [
+                                          BarChartRodData(
+                                              toY: akunSatgas.toDouble(),
+                                              color: Colors.pinkAccent.shade100,
+                                              width: 18)
+                                        ]),
+                                        BarChartGroupData(x: 1, barRods: [
+                                          BarChartRodData(
+                                              toY: akunSiswa.toDouble(),
+                                              color: Colors.blueAccent.shade100,
+                                              width: 18)
+                                        ]),
+                                      ],
+                                      titlesData: FlTitlesData(
+                                        show: true,
+                                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
+                                        bottomTitles: AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: true,
+                                            getTitlesWidget: (value, meta) {
+                                              if (value.toInt() == 0) {
+                                                return const Text('Satgas', style: TextStyle(color: Colors.white));
+                                              } else {
+                                                return const Text('Siswa', style: TextStyle(color: Colors.white));
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                      gridData: FlGridData(show: false),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
                     ),
             ),
           ],
@@ -223,154 +327,40 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: onTap, // tetap ada tapi null, jadi tidak bisa dipencet
       borderRadius: BorderRadius.circular(16),
+      splashColor: Colors.transparent, // hilangkan efek klik
+      highlightColor: Colors.transparent,
       child: Card(
-        color: const Color(0xFF1B2A38),
+        color: const Color(0xFF3B0A80),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 3,
+        elevation: 8,
+        shadowColor: color.withOpacity(0.5),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CircleAvatar(
-                backgroundColor: color.withOpacity(0.2),
-                child: Icon(icon, color: color, size: 28),
-                radius: 24,
+                backgroundColor: Colors.white.withOpacity(0.15),
+                radius: 26,
+                child: Icon(icon, color: color, size: 32),
               ),
               const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(fontSize: 16, color: Colors.white),
-              ),
+              Text(title, style: const TextStyle(fontSize: 16, color: Colors.white)),
               const SizedBox(height: 8),
               Text(
                 value,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color),
               ),
               const SizedBox(height: 4),
               Text(
                 change,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: change.contains("+") ? Colors.green : Colors.red,
-                ),
+                style: TextStyle(fontSize: 14, color: change.contains("+") ? Colors.green : Colors.red),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// ====== DETAIL PAGES YANG DIPERTAHANKAN ======
-
-class SatgasAccountsPage extends StatelessWidget {
-  const SatgasAccountsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final supabase = Supabase.instance.client;
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F2027),
-      appBar: AppBar(
-        title: const Text("Akun Satgas"),
-        backgroundColor: const Color(0xFF1B2A38),
-      ),
-      body: FutureBuilder<List<dynamic>>(
-        future: supabase.from('profiles').select('email'),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-                child: CircularProgressIndicator(color: Colors.white));
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text("Error: ${snapshot.error}",
-                  style: const TextStyle(color: Colors.red)),
-            );
-          }
-          final data = snapshot.data ?? [];
-          if (data.isEmpty) {
-            return const Center(
-              child: Text("Tidak ada data",
-                  style: TextStyle(color: Colors.white)),
-            );
-          }
-          return ListView.builder(
-            itemCount: data.length,
-            itemBuilder: (_, i) {
-              return ListTile(
-                title: Text(
-                  data[i]['email'],
-                  style: const TextStyle(color: Colors.white),
-                ),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class SiswaAccountsPage extends StatelessWidget {
-  const SiswaAccountsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final supabase = Supabase.instance.client;
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F2027),
-      appBar: AppBar(
-        title: const Text("Akun Siswa"),
-        backgroundColor: const Color(0xFF1B2A38),
-      ),
-      body: FutureBuilder<List<dynamic>>(
-        future: supabase.from('siswa').select('nama, qr_url'),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-                child: CircularProgressIndicator(color: Colors.white));
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text("Error: ${snapshot.error}",
-                  style: const TextStyle(color: Colors.red)),
-            );
-          }
-          final data = snapshot.data ?? [];
-          if (data.isEmpty) {
-            return const Center(
-              child: Text("Tidak ada data",
-                  style: TextStyle(color: Colors.white)),
-            );
-          }
-          return ListView.builder(
-            itemCount: data.length,
-            itemBuilder: (_, i) {
-              return Card(
-                color: const Color(0xFF1B2A38),
-                child: ListTile(
-                  leading: data[i]['qr_url'] != null &&
-                          data[i]['qr_url'].toString().isNotEmpty
-                      ? Image.network(data[i]['qr_url'], width: 50)
-                      : const Icon(Icons.qr_code, color: Colors.white),
-                  title: Text(
-                    data[i]['nama'],
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              );
-            },
-          );
-        },
       ),
     );
   }

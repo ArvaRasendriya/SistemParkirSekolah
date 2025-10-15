@@ -14,13 +14,18 @@ class CropPage extends StatelessWidget {
       aspectRatio: null,
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: 'Crop SIM/KTP',
-          toolbarColor: Colors.blue,
+          toolbarTitle: 'Crop SIM',
+          toolbarColor: const Color(0xFF2E239D), // 🔹 Warna tengah gradasi
+          statusBarColor: const Color(0xFF1D1879),
           toolbarWidgetColor: Colors.white,
           hideBottomControls: false,
+          backgroundColor: Colors.black,
+          showCropGrid: true,
+          initAspectRatio: CropAspectRatioPreset.original,
+          lockAspectRatio: false,
         ),
         IOSUiSettings(
-          title: 'Crop SIM/KTP',
+          title: 'Crop SIM',
         ),
       ],
     );
@@ -43,92 +48,93 @@ class CropPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text(
-          "Crop Gambar",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
+      backgroundColor: Colors.black,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
+              Color(0xFF3F37C9),
+              Color(0xFF1D1879),
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
-        child: Column(
-          children: [
-            Expanded(
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: const Duration(milliseconds: 800),
-                curve: Curves.easeOut,
-                builder: (context, value, child) {
-                  return Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, (1 - value) * 50),
-                      child: child,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // 🔹 Header atas
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back,
+                          color: Colors.white, size: 26),
+                      onPressed: () => Navigator.pop(context),
                     ),
-                  );
-                },
+                    const Expanded(
+                      child: Center(
+                        child: Text(
+                          "ZON4",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                            shadows: [
+                              Shadow(
+                                color: Colors.white24,
+                                offset: Offset(0, 3),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.crop, color: Colors.white, size: 26),
+                      onPressed: () => _cropImage(context),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 🔹 Gambar
+              Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.file(imageFile, fit: BoxFit.contain),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: const Duration(milliseconds: 1000),
-                curve: Curves.easeOutBack,
-                builder: (context, value, child) {
-                  return Transform.scale(
-                    scale: value,
-                    child: child,
-                  );
-                },
-                child: ElevatedButton.icon(
-                  onPressed: () => _cropImage(context),
-                  icon: const Icon(Icons.crop, color: Colors.white),
-                  label: const Text(
-                    "Crop",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 14, horizontal: 24),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    backgroundColor: Colors.transparent,
-                    foregroundColor: Colors.white,
-                    shadowColor: Colors.black45,
-                    elevation: 6,
-                  ).copyWith(
-                    backgroundColor: MaterialStateProperty.resolveWith(
-                      (states) => null,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(
+                      imageFile,
+                      fit: BoxFit.contain,
+                      width: double.infinity,
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text(
+                  "Lanjutkan untuk crop foto anda",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
