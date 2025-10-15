@@ -398,6 +398,23 @@ class _RegisterPageState extends State<RegisterPage>
                                     ],
                                   ),
 
+                                  const SizedBox(height: AppTheme.spaceL),
+                                  Text(
+                                    'Jurusan',
+                                    style: AppTheme.bodyMedium.copyWith(
+                                      color: AppTheme.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppTheme.spaceS),
+                                  _buildDropdown(
+                                    value: _selectedJurusan,
+                                    hint: 'Rekayasa Perangkat Lunak',
+                                    items: jurusans,
+                                    onChanged: (v) => setState(() => _selectedJurusan = v),
+                                  ),
+                                  
+
                                   const SizedBox(height: AppTheme.spaceXL),
 
                                   // Register Button
