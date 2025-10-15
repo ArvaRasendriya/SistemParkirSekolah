@@ -401,7 +401,7 @@ Widget buildDropdown({
   Color dropdownColor = Colors.white,
 }) {
   return DropdownButtonFormField<String>(
-    initialValue: value,
+    value: value,
     hint: Text(
       hint ?? items.first,
       style: TextStyle(

@@ -541,7 +541,7 @@ class _RegisterPageState extends State<RegisterPage>
     Color? dropdownColor,
   }) {
     return DropdownButtonFormField<String>(
-      initialValue: value,
+      value: value,
       isExpanded: true,
       hint: Container(
         alignment: Alignment.center,

@@ -3,9 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'satgas_list_page.dart';
 import 'admin_sim_page.dart';
 import 'login_page.dart';
-import 'package:fl_chart/fl_chart.dart';
-
-enum ChartType { pie, bar }
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -56,9 +53,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
-        transitionBuilder: (child, animation) {
-          return FadeTransition(opacity: animation, child: child);
-        },
+        transitionBuilder: (child, animation) =>
+            FadeTransition(opacity: animation, child: child),
         child: _pages[_selectedIndex],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -95,12 +91,15 @@ class DashboardContent extends StatefulWidget {
 
 class _DashboardContentState extends State<DashboardContent> {
   final supabase = Supabase.instance.client;
-
-  int akunSatgas = 0;
-  int akunSiswa = 0;
-
   bool loading = true;
-  ChartType selectedChart = ChartType.pie;
+
+  int simAcc = 0;
+  int simPending = 0;
+  int akunSatgas = 0;
+  int akunAdmin = 0;
+  int jumlahParkir = 0;
+  int jumlahBlmP = 0;
+  List<dynamic> aktivitas = [];
 
   @override
   void initState() {
@@ -108,259 +107,276 @@ class _DashboardContentState extends State<DashboardContent> {
     _loadStats();
   }
 
-  Future<void> _loadStats() async {
-    try {
-      final satgasRes = await supabase.from('profiles').select();
-      akunSatgas = satgasRes.length;
+ Future<void> _loadStats() async {
+  try {
+    // ✅ 1. Jumlah data dari tabel siswa
+    final simAccRes = await supabase.from('siswa').select('*');
 
-      final siswaRes = await supabase.from('siswa').select();
-      akunSiswa = siswaRes.length;
+    // ✅ 2. Jumlah data dari tabel pending_siswa
+    final simPendingRes = await supabase.from('pending_siswa').select('*');
 
-      setState(() {
-        loading = false;
-      });
-    } catch (e) {
-      print("Error load stats: $e");
-      setState(() {
-        loading = false;
-      });
-    }
+    // ✅ 3. Jumlah akun satgas dari tabel profiles
+    final satgasRes = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'satgas');
+
+    // ✅ 4. Jumlah akun admin dari tabel profiles
+    final adminRes = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'admin');
+
+    // ✅ Aktivitas diambil dari siswa (opsional, tetap sama)
+    final aktivitasRes = await supabase
+        .from('siswa')
+        .select('nama, status')
+        .order('created_at', ascending: false)
+        .limit(3);
+
+    // ✅ 5. Jumlah siswa yang parkir hari ini
+    final jumlahParkirRes = await supabase
+        .from('parkir')
+        .select('siswa_id')
+        .eq('tanggal', DateTime.now().toIso8601String().split('T')[0]); // Mengambil parkir hari ini
+
+    // ✅ 6. Jumlah siswa yang belum parkir hari ini
+    final jumlahBlmP = simAccRes.length - (jumlahParkirRes as List).length;
+
+    setState(() {
+      simAcc = (simAccRes as List).length;
+      simPending = (simPendingRes as List).length;
+      akunSatgas = (satgasRes as List).length;
+      akunAdmin = (adminRes as List).length;
+      aktivitas = aktivitasRes as List;
+      jumlahParkir = (jumlahParkirRes as List).length;
+      loading = false;
+    });
+  } catch (e) {
+    print("Error load stats: $e");
+    setState(() {
+      loading = false;
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
-    final double maxY = (akunSatgas > akunSiswa ? akunSatgas : akunSiswa).toDouble() + 5.0;
+    if (loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+
+    final total = simAcc + simPending + akunSatgas + akunAdmin;
+    double _percent(int value) => total == 0 ? 0 : value / total;
 
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFF3B0A80),
-            Color(0xFF5E17EB),
-            Color(0xFF7C3AED),
+            Color(0xFF3F37C9),
+            Color(0xFF1D1879),
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 20),
-            const Text(
-              'Welcome to Admin Dashboard',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "ADMIN DASBOARD",
+                style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.w600),
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 30),
-            Expanded(
-              child: loading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    )
-                  : SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          GridView.count(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            children: [
-                              // Tidak bisa dipencet (onTap dihilangkan)
-                              StatCard(
-                                title: "Akun Satgas",
-                                value: "$akunSatgas",
-                                change: "+0",
-                                icon: Icons.shield,
-                                color: Colors.pinkAccent.shade100,
-                                onTap: null,
-                              ),
-                              StatCard(
-                                title: "Akun Siswa",
-                                value: "$akunSiswa",
-                                change: "+0",
-                                icon: Icons.school,
-                                color: Colors.blueAccent.shade100,
-                                onTap: null,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                "Pilih Chart: ",
-                                style: TextStyle(color: Colors.white, fontSize: 14),
-                              ),
-                              const SizedBox(width: 10),
-                              DropdownButton<ChartType>(
-                                dropdownColor: const Color(0xFF3B0A80),
-                                value: selectedChart,
-                                style: const TextStyle(color: Colors.white),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: ChartType.pie,
-                                    child: Text("Pie Chart"),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: ChartType.bar,
-                                    child: Text("Bar Chart"),
-                                  ),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedChart = value!;
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            height: 240,
-                            child: selectedChart == ChartType.pie
-                                ? PieChart(
-                                    PieChartData(
-                                      sectionsSpace: 4,
-                                      centerSpaceRadius: 40,
-                                      sections: [
-                                        PieChartSectionData(
-                                          value: akunSatgas.toDouble(),
-                                          title: 'Satgas\n$akunSatgas',
-                                          color: Colors.pinkAccent.shade100,
-                                          radius: 60,
-                                          titleStyle: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        PieChartSectionData(
-                                          value: akunSiswa.toDouble(),
-                                          title: 'Siswa\n$akunSiswa',
-                                          color: Colors.blueAccent.shade100,
-                                          radius: 60,
-                                          titleStyle: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : BarChart(
-                                    BarChartData(
-                                      maxY: maxY,
-                                      barGroups: [
-                                        BarChartGroupData(x: 0, barRods: [
-                                          BarChartRodData(
-                                              toY: akunSatgas.toDouble(),
-                                              color: Colors.pinkAccent.shade100,
-                                              width: 18)
-                                        ]),
-                                        BarChartGroupData(x: 1, barRods: [
-                                          BarChartRodData(
-                                              toY: akunSiswa.toDouble(),
-                                              color: Colors.blueAccent.shade100,
-                                              width: 18)
-                                        ]),
-                                      ],
-                                      titlesData: FlTitlesData(
-                                        show: true,
-                                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
-                                        bottomTitles: AxisTitles(
-                                          sideTitles: SideTitles(
-                                            showTitles: true,
-                                            getTitlesWidget: (value, meta) {
-                                              if (value.toInt() == 0) {
-                                                return const Text('Satgas', style: TextStyle(color: Colors.white));
-                                              } else {
-                                                return const Text('Siswa', style: TextStyle(color: Colors.white));
-                                              }
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                      gridData: FlGridData(show: false),
-                                    ),
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              const Text(
+                "ADMIN",
+                style: TextStyle(
+                  fontSize: 32,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                "Selamat datang di admin dasboard",
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // === Dua Card Besar ===
+              Row(
+                children: [
+                  Expanded(
+                    child: _bigStatCard(jumlahParkir.toString(), "Jumlah yg sudah parkir"),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _bigStatCard(jumlahBlmP.toString(), "Jumlah yg belum parkir"),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // === Empat Circle Progress Mini ===
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _miniProgressCircle(
+                    value: _percent(simAcc),
+                    label: "SIM Acc ($simAcc)",
+                  ),
+                  _miniProgressCircle(
+                    value: _percent(simPending),
+                    label: "SIM Pending ($simPending)",
+                  ),
+                  _miniProgressCircle(
+                    value: _percent(akunSatgas),
+                    label: "Satgas ($akunSatgas)",
+                  ),
+                  _miniProgressCircle(
+                    value: _percent(akunAdmin),
+                    label: "Admin ($akunAdmin)",
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+
+              // === Aktivitas Terbaru ===
+              const Text(
+                "Aktivitas Terbaru",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Column(
+                children: aktivitas.isNotEmpty
+                    ? aktivitas
+                        .map((data) => _activityCard(
+                            'Siswa "${data['nama']}" → ${data['status']}'))
+                        .toList()
+                    : [
+                        _activityCard("Belum ada aktivitas terbaru"),
+                      ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
   }
-}
 
-class StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String change;
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onTap;
+  // Card besar jumlah parkir
+  static Widget _bigStatCard(String value, String label) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2B0A70),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 48,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-  const StatCard({
-    super.key,
-    required this.title,
-    required this.value,
-    required this.change,
-    required this.icon,
-    required this.color,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap, // tetap ada tapi null, jadi tidak bisa dipencet
-      borderRadius: BorderRadius.circular(16),
-      splashColor: Colors.transparent, // hilangkan efek klik
-      highlightColor: Colors.transparent,
-      child: Card(
-        color: const Color(0xFF3B0A80),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 8,
-        shadowColor: color.withOpacity(0.5),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+  // Circle progress kecil
+  static Widget _miniProgressCircle({
+    required double value,
+    required String label,
+  }) {
+    return Column(
+      children: [
+        SizedBox(
+          width: 58,
+          height: 58,
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              CircleAvatar(
-                backgroundColor: Colors.white.withOpacity(0.15),
-                radius: 26,
-                child: Icon(icon, color: color, size: 32),
+              CircularProgressIndicator(
+                value: value,
+                strokeWidth: 6,
+                backgroundColor: Colors.white12,
+                color: Colors.white,
               ),
-              const SizedBox(height: 12),
-              Text(title, style: const TextStyle(fontSize: 16, color: Colors.white)),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                change,
-                style: TextStyle(fontSize: 14, color: change.contains("+") ? Colors.green : Colors.red),
+              Center(
+                child: Text(
+                  "${(value * 100).toInt()}%",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
               ),
             ],
           ),
         ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  // Card aktivitas
+  static Widget _activityCard(String text) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF4B19B5),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white, fontSize: 16),
       ),
     );
   }
