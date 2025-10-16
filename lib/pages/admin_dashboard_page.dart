@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'satgas_list_page.dart';
 import 'admin_sim_page.dart';
 import 'login_page.dart';
+import 'profile_page.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 enum ChartType { pie, bar }
@@ -47,6 +48,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         backgroundColor: const Color(0xFF3B0A80),
         title: const SizedBox.shrink(),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfilePage()),
+              );
+            },
+            tooltip: 'Switch to Satgas',
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: _logout,

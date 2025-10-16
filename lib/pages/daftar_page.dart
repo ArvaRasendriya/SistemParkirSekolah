@@ -143,7 +143,6 @@ class _DaftarPageState extends State<DaftarPage>
         _simBytes!,
         fileOptions: const FileOptions(contentType: "image/jpeg"),
       );
-      final simUrl = supabase.storage.from("siswa").getPublicUrl(simPath);
 
       final response = await supabase.from("pending_siswa").insert({
         "id": id,
@@ -151,7 +150,7 @@ class _DaftarPageState extends State<DaftarPage>
         "kelas": kelasC.text,
         "jurusan": jurusanC.text,
         "email": emailC.text,
-        "sim_url": simUrl,
+        "sim_url": simPath,
         "created_at": DateTime.now().toIso8601String(),
       }).select();
 
