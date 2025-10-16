@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../theme/app_theme.dart';
 
 class PendingSimApprovalPage extends StatefulWidget {
   const PendingSimApprovalPage({super.key});
@@ -33,9 +34,14 @@ class _PendingSimApprovalPageState extends State<PendingSimApprovalPage> {
       });
     } catch (e) {
       debugPrint("Error fetching pending data: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Gagal memuat data pending SIM")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Gagal memuat data pending SIM"),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
     } finally {
       setState(() => _loading = false);
     }
@@ -107,14 +113,24 @@ class _PendingSimApprovalPageState extends State<PendingSimApprovalPage> {
       });
 
       _fetchPending();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Siswa ${data["nama"]} berhasil di-approve ✅')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Siswa ${data["nama"]} berhasil di-approve ✅'),
+            backgroundColor: AppTheme.success,
+          ),
+        );
+      }
     } catch (e) {
       debugPrint("Error approve: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal approve: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Gagal approve: $e"),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
     }
   }
 
@@ -122,170 +138,437 @@ class _PendingSimApprovalPageState extends State<PendingSimApprovalPage> {
     try {
       await supabase.from("pending_siswa").delete().eq("id", id);
       _fetchPending();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data SIM ditolak ❌')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Data SIM ditolak ❌'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
     } catch (e) {
       debugPrint("Error reject: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Gagal menolak data SIM")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Gagal menolak data SIM"),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
     }
+  }
+
+  void _showDetailDialog(Map<String, dynamic> sim) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+              gradient: AppTheme.primaryGradient,
+              boxShadow: AppTheme.shadowLarge(),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppTheme.spaceL),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppTheme.spaceM),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                        ),
+                        child: const Icon(
+                          Icons.credit_card,
+                          color: AppTheme.textOnPrimary,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spaceM),
+                      Expanded(
+                        child: Text(
+                          sim["nama"] ?? "-",
+                          style: AppTheme.h3.copyWith(
+                            color: AppTheme.textOnPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.spaceL),
+
+                  // Info Cards
+                  _buildInfoCard(
+                    icon: Icons.email,
+                    label: "Email",
+                    value: sim["email"],
+                  ),
+                  const SizedBox(height: AppTheme.spaceM),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildInfoCard(
+                          icon: Icons.class_,
+                          label: "Kelas",
+                          value: sim["kelas"],
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spaceM),
+                      Expanded(
+                        child: _buildInfoCard(
+                          icon: Icons.school,
+                          label: "Jurusan",
+                          value: sim["jurusan"],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.spaceM),
+                  
+                  _buildInfoCard(
+                    icon: Icons.calendar_today,
+                    label: "Tanggal Daftar",
+                    value: sim["created_at"] != null
+                        ? DateTime.parse(sim["created_at"])
+                            .toLocal()
+                            .toString()
+                            .substring(0, 16)
+                        : "-",
+                  ),
+                  const SizedBox(height: AppTheme.spaceL),
+
+                  // SIM Image
+                  if (sim["sim_url"] != null) ...[
+                    Text(
+                      "Foto SIM",
+                      style: AppTheme.bodyLarge.copyWith(
+                        color: AppTheme.textOnPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.spaceM),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                      child: Image.network(
+                        sim["sim_url"],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 200,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 200,
+                            color: Colors.white.withOpacity(0.1),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                                color: AppTheme.textOnPrimary,
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 200,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.broken_image,
+                                  color: AppTheme.textOnPrimary.withOpacity(0.5),
+                                  size: 48,
+                                ),
+                                const SizedBox(height: AppTheme.spaceS),
+                                Text(
+                                  "Gagal memuat gambar SIM",
+                                  style: AppTheme.bodySmall.copyWith(
+                                    color: AppTheme.textOnPrimary.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.spaceL),
+                  ],
+
+                  // Close Button
+                  AppButton(
+                    text: "Tutup",
+                    onPressed: () => Navigator.pop(context),
+                    isSecondary: true,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String label,
+    required dynamic value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spaceM),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: AppTheme.textOnPrimary.withOpacity(0.8),
+            size: 20,
+          ),
+          const SizedBox(width: AppTheme.spaceS),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTheme.bodySmall.copyWith(
+                    color: AppTheme.textOnPrimary.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value?.toString() ?? '-',
+                  style: AppTheme.bodyMedium.copyWith(
+                    color: AppTheme.textOnPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    const textColor = Color(0xFFF8F8FF);
-
-    return Scaffold(
+    return GradientScaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
-          'Pending Approvals',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: textColor,
+        title: Text(
+          'Pending SIM Approval',
+          style: AppTheme.h3.copyWith(
+            color: AppTheme.textOnPrimary,
           ),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textColor),
+          icon: const Icon(Icons.arrow_back, color: AppTheme.textOnPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: textColor),
+            icon: const Icon(Icons.refresh, color: AppTheme.textOnPrimary),
             onPressed: _fetchPending,
           ),
         ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF3F37C9),
-              Color(0xFF1D1879),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: _loading
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : pendingList.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Tidak ada data pending SIM',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+      body: _loading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.textOnPrimary),
+            )
+          : pendingList.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 80,
+                        color: AppTheme.textOnPrimary.withOpacity(0.5),
                       ),
-                    ),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 80, 16, 16),
-                    child: ListView.builder(
-                      itemCount: pendingList.length,
-                      itemBuilder: (context, index) {
-                        final sim = pendingList[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: Colors.white24, width: 1),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(height: AppTheme.spaceL),
+                      Text(
+                        'Tidak ada data pending SIM',
+                        style: AppTheme.bodyLarge.copyWith(
+                          color: AppTheme.textOnPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.spaceL,
+                    100,
+                    AppTheme.spaceL,
+                    AppTheme.spaceL,
+                  ),
+                  child: ListView.builder(
+                    itemCount: pendingList.length,
+                    itemBuilder: (context, index) {
+                      final sim = pendingList[index];
+                      return GlassCard(
+                        padding: const EdgeInsets.all(AppTheme.spaceL),
+                        opacity: 0.15,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.person,
-                                        color: textColor, size: 26),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
+                                Container(
+                                  padding: const EdgeInsets.all(AppTheme.spaceM),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                                  ),
+                                  child: const Icon(
+                                    Icons.person,
+                                    color: AppTheme.textOnPrimary,
+                                    size: 28,
+                                  ),
+                                ),
+                                const SizedBox(width: AppTheme.spaceM),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
                                         sim["nama"] ?? "-",
-                                        style: const TextStyle(
-                                          color: textColor,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
+                                        style: AppTheme.h3.copyWith(
+                                          color: AppTheme.textOnPrimary,
+                                          fontSize: 18,
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  "Email: ${sim["email"] ?? "-"}",
-                                  style: const TextStyle(
-                                      color: Colors.white70, fontSize: 13),
-                                ),
-                                Text(
-                                  "Kelas: ${sim["kelas"] ?? "-"}",
-                                  style: const TextStyle(
-                                      color: Colors.white70, fontSize: 13),
-                                ),
-                                Text(
-                                  "Jurusan: ${sim["jurusan"] ?? "-"}",
-                                  style: const TextStyle(
-                                      color: Colors.white70, fontSize: 13),
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () =>
-                                          rejectSiswa(sim["id"].toString()),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.redAccent,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 18, vertical: 8),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "${sim["kelas"]} - ${sim["jurusan"]}",
+                                        style: AppTheme.bodySmall.copyWith(
+                                          color: AppTheme.textOnPrimary.withOpacity(0.7),
                                         ),
                                       ),
-                                      child: const Text("Reject"),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton(
-                                      onPressed: () => approveSiswa(sim),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.greenAccent
-                                            .withOpacity(0.9),
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 18, vertical: 8),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      child: const Text("Approve"),
-                                    ),
-                                  ],
-                                )
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.info_outline,
+                                    color: AppTheme.textOnPrimary,
+                                  ),
+                                  onPressed: () => _showDetailDialog(sim),
+                                ),
                               ],
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                            const SizedBox(height: AppTheme.spaceM),
+                            Container(
+                              padding: const EdgeInsets.all(AppTheme.spaceM),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusS),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.email,
+                                    size: 16,
+                                    color: AppTheme.textOnPrimary.withOpacity(0.7),
+                                  ),
+                                  const SizedBox(width: AppTheme.spaceS),
+                                  Expanded(
+                                    child: Text(
+                                      sim["email"] ?? "-",
+                                      style: AppTheme.bodySmall.copyWith(
+                                        color: AppTheme.textOnPrimary.withOpacity(0.9),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: AppTheme.spaceL),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () => rejectSiswa(sim["id"].toString()),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.error,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: AppTheme.spaceM,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      "Reject",
+                                      style: AppTheme.button.copyWith(
+                                        fontSize: 14,
+                                        color: AppTheme.textOnPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: AppTheme.spaceM),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () => approveSiswa(sim),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.success,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: AppTheme.spaceM,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      "Approve",
+                                      style: AppTheme.button.copyWith(
+                                        fontSize: 14,
+                                        color: AppTheme.textOnPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
+                      );
+                    },
                   ),
-      ),
+                ),
     );
   }
 }

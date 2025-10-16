@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tefa_parkir/auth/auth_service.dart';
+import '../auth/auth_service.dart';
+import '../theme/app_theme.dart';
 
 class AdminApprovalPage extends StatefulWidget {
   const AdminApprovalPage({super.key});
@@ -32,7 +33,10 @@ class _AdminApprovalPageState extends State<AdminApprovalPage> {
       setState(() => isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading pending profiles: $e')),
+          SnackBar(
+            content: Text('Error loading pending profiles: $e'),
+            backgroundColor: AppTheme.error,
+          ),
         );
       }
     }
@@ -44,14 +48,20 @@ class _AdminApprovalPageState extends State<AdminApprovalPage> {
       await fetchPendingProfiles();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile approved successfully')),
+          SnackBar(
+            content: const Text('Profile approved successfully'),
+            backgroundColor: AppTheme.success,
+          ),
         );
       }
     } catch (e) {
       debugPrint('Error approving profile: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error approving profile: $e')),
+          SnackBar(
+            content: Text('Error approving profile: $e'),
+            backgroundColor: AppTheme.error,
+          ),
         );
       }
     }
@@ -63,216 +73,456 @@ class _AdminApprovalPageState extends State<AdminApprovalPage> {
       await fetchPendingProfiles();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile rejected')),
+          SnackBar(
+            content: const Text('Profile rejected'),
+            backgroundColor: AppTheme.error,
+          ),
         );
       }
     } catch (e) {
       debugPrint('Error rejecting profile: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error rejecting profile: $e')),
+          SnackBar(
+            content: Text('Error rejecting profile: $e'),
+            backgroundColor: AppTheme.error,
+          ),
         );
       }
     }
   }
 
+  void _showDetailDialog(Map<String, dynamic> profile) {
+    final fullName = profile['full_name'] ?? '-';
+    final email = profile['email'] ?? 'No email';
+    final role = profile['role'] ?? 'Unknown';
+    final kelas = profile['kelas'] ?? '-';
+    final jurusan = profile['jurusan'] ?? '-';
+    final createdAt = profile['created_at'];
+    final formattedDate = createdAt != null
+        ? DateTime.parse(createdAt)
+            .toLocal()
+            .toString()
+            .substring(0, 16)
+        : 'Unknown date';
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.75,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+              gradient: AppTheme.primaryGradient,
+              boxShadow: AppTheme.shadowLarge(),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppTheme.spaceL),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppTheme.spaceM),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                        ),
+                        child: const Icon(
+                          Icons.person,
+                          color: AppTheme.textOnPrimary,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spaceM),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              fullName,
+                              style: AppTheme.h3.copyWith(
+                                color: AppTheme.textOnPrimary,
+                                fontSize: 18,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              role.toUpperCase(),
+                              style: AppTheme.bodySmall.copyWith(
+                                color: AppTheme.textOnPrimary.withOpacity(0.7),
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.spaceL),
+
+                  // Info Cards
+                  _buildInfoCard(
+                    icon: Icons.email,
+                    label: "Email",
+                    value: email,
+                  ),
+                  const SizedBox(height: AppTheme.spaceM),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildInfoCard(
+                          icon: Icons.class_,
+                          label: "Kelas",
+                          value: kelas,
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spaceM),
+                      Expanded(
+                        child: _buildInfoCard(
+                          icon: Icons.school,
+                          label: "Jurusan",
+                          value: jurusan,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.spaceM),
+
+                  _buildInfoCard(
+                    icon: Icons.calendar_today,
+                    label: "Tanggal Daftar",
+                    value: formattedDate,
+                  ),
+                  const SizedBox(height: AppTheme.spaceL),
+
+                  // Close Button
+                  AppButton(
+                    text: "Tutup",
+                    onPressed: () => Navigator.pop(context),
+                    isSecondary: true,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String label,
+    required dynamic value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spaceM),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: AppTheme.textOnPrimary.withOpacity(0.8),
+            size: 20,
+          ),
+          const SizedBox(width: AppTheme.spaceS),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTheme.bodySmall.copyWith(
+                    color: AppTheme.textOnPrimary.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value?.toString() ?? '-',
+                  style: AppTheme.bodyMedium.copyWith(
+                    color: AppTheme.textOnPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GradientScaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          'Pending Approvals',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            fontFamily: 'Montserrat',
+        title: Text(
+          'Pending Admin Approval',
+          style: AppTheme.h3.copyWith(
+            color: AppTheme.textOnPrimary,
           ),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.textOnPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(Icons.refresh, color: AppTheme.textOnPrimary),
             onPressed: fetchPendingProfiles,
           ),
         ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF3F37C9),
-              Color(0xFF1D1879),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 600),
-          child: isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                )
-              : pendingProfiles.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Tidak ada akun pending',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white70,
-                          fontFamily: 'Montserrat',
-                          fontWeight: FontWeight.w500,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppTheme.textOnPrimary),
+              )
+            : pendingProfiles.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 80,
+                          color: AppTheme.textOnPrimary.withOpacity(0.5),
                         ),
-                      ),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 90, 16, 16),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.35),
-                            width: 1.8,
+                        const SizedBox(height: AppTheme.spaceL),
+                        Text(
+                          'Tidak ada akun pending',
+                          style: AppTheme.bodyLarge.copyWith(
+                            color: AppTheme.textOnPrimary,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.25),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
                         ),
-                        padding: const EdgeInsets.all(14),
-                        child: ListView.builder(
-                          key: ValueKey(pendingProfiles.length),
-                          itemCount: pendingProfiles.length,
-                          itemBuilder: (context, index) {
-                            final profile = pendingProfiles[index];
-                            final email = profile['email'] ?? 'No email';
-                            final role = profile['role'] ?? 'Unknown';
-                            final createdAt = profile['created_at'];
-                            final formattedDate = createdAt != null
-                                ? DateTime.parse(createdAt)
-                                    .toLocal()
-                                    .toString()
-                                    .substring(0, 16)
-                                : 'Unknown date';
+                      ],
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceL,
+                      100,
+                      AppTheme.spaceL,
+                      AppTheme.spaceL,
+                    ),
+                    child: ListView.builder(
+                      key: ValueKey(pendingProfiles.length),
+                      itemCount: pendingProfiles.length,
+                      itemBuilder: (context, index) {
+                        final profile = pendingProfiles[index];
+                        final fullName = profile['full_name'] ?? 'No name';
+                        final email = profile['email'] ?? 'No email';
+                        final role = profile['role'] ?? 'Unknown';
+                        final kelas = profile['kelas'] ?? '-';
+                        final jurusan = profile['jurusan'] ?? '-';
 
-                            return Card(
-                              color: Colors.white.withOpacity(0.08),
-                              elevation: 5,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                side: BorderSide(
-                                  color: Colors.white.withOpacity(0.4),
-                                  width: 1.6,
-                                ),
-                              ),
-                              margin: const EdgeInsets.only(bottom: 14),
-                              shadowColor: Colors.black.withOpacity(0.3),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: AppTheme.spaceM),
+                          child: GlassCard(
+                            padding: const EdgeInsets.all(AppTheme.spaceL),
+                            opacity: 0.15,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
                                   children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.person,
-                                            color: Colors.white70, size: 28),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            email,
-                                            style: const TextStyle(
+                                    Container(
+                                      padding: const EdgeInsets.all(AppTheme.spaceM),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                                      ),
+                                      child: const Icon(
+                                        Icons.person,
+                                        color: AppTheme.textOnPrimary,
+                                        size: 28,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppTheme.spaceM),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            fullName,
+                                            style: AppTheme.h3.copyWith(
+                                              color: AppTheme.textOnPrimary,
                                               fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                              fontFamily: 'Montserrat',
                                             ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Role: $role',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontFamily: 'Montserrat',
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            "$kelas - $jurusan",
+                                            style: AppTheme.bodySmall.copyWith(
+                                              color: AppTheme.textOnPrimary.withOpacity(0.7),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    Text(
-                                      'Applied: $formattedDate',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontFamily: 'Montserrat',
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.info_outline,
+                                        color: AppTheme.textOnPrimary,
                                       ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        ElevatedButton(
-                                          onPressed: () =>
-                                              rejectProfile(profile['id']),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                Colors.red.withOpacity(0.85),
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 18,
-                                              vertical: 10,
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            'Reject',
-                                            style: TextStyle(
-                                                fontFamily: 'Montserrat'),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        ElevatedButton(
-                                          onPressed: () =>
-                                              approveProfile(profile['id']),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                Colors.green.withOpacity(0.85),
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 18,
-                                              vertical: 10,
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            'Approve',
-                                            style: TextStyle(
-                                                fontFamily: 'Montserrat'),
-                                          ),
-                                        ),
-                                      ],
+                                      onPressed: () => _showDetailDialog(profile),
                                     ),
                                   ],
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                                const SizedBox(height: AppTheme.spaceM),
+                                
+                                // Email Container
+                                Container(
+                                  padding: const EdgeInsets.all(AppTheme.spaceM),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(AppTheme.radiusS),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.email,
+                                        size: 16,
+                                        color: AppTheme.textOnPrimary.withOpacity(0.7),
+                                      ),
+                                      const SizedBox(width: AppTheme.spaceS),
+                                      Expanded(
+                                        child: Text(
+                                          email,
+                                          style: AppTheme.bodySmall.copyWith(
+                                            color: AppTheme.textOnPrimary.withOpacity(0.9),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                
+                                const SizedBox(height: AppTheme.spaceS),
+                                
+                                // Role Badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppTheme.spaceM,
+                                    vertical: AppTheme.spaceS,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryLight.withOpacity(0.3),
+                                    borderRadius: BorderRadius.circular(AppTheme.radiusS),
+                                    border: Border.all(
+                                      color: AppTheme.primaryLight.withOpacity(0.5),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.admin_panel_settings,
+                                        size: 14,
+                                        color: AppTheme.textOnPrimary,
+                                      ),
+                                      const SizedBox(width: AppTheme.spaceS),
+                                      Text(
+                                        "Role: $role",
+                                        style: AppTheme.bodySmall.copyWith(
+                                          color: AppTheme.textOnPrimary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                
+                                const SizedBox(height: AppTheme.spaceL),
+                                
+                                // Action Buttons
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: () => rejectProfile(profile['id']),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.error,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: AppTheme.spaceM,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          "Reject",
+                                          style: AppTheme.button.copyWith(
+                                            fontSize: 14,
+                                            color: AppTheme.textOnPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppTheme.spaceM),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: () => approveProfile(profile['id']),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.success,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: AppTheme.spaceM,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          "Approve",
+                                          style: AppTheme.button.copyWith(
+                                            fontSize: 14,
+                                            color: AppTheme.textOnPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
-        ),
+                  ),
       ),
     );
   }

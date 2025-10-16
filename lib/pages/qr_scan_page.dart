@@ -34,6 +34,8 @@ class _QrScanPageState extends State<QrScanPage>
   late Animation<double> _successAnimation;
   
   bool showSuccess = false;
+  String? lastScannedCode;
+  DateTime? lastScanTime;
 
   @override
   void initState() {
@@ -42,7 +44,6 @@ class _QrScanPageState extends State<QrScanPage>
   }
 
   void _setupAnimations() {
-    // Scan line animation
     _scanLineController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -55,20 +56,18 @@ class _QrScanPageState extends State<QrScanPage>
       ),
     );
 
-    // Pulse animation for corners
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
       CurvedAnimation(
         parent: _pulseController,
         curve: Curves.easeInOut,
       ),
     );
 
-    // Success animation
     _successController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -121,6 +120,35 @@ class _QrScanPageState extends State<QrScanPage>
     }
   }
 
+  bool _isInScanArea(Barcode barcode, Size screenSize) {
+    final scanAreaSize = screenSize.width * 0.70;
+    final centerX = screenSize.width / 2;
+    final centerY = screenSize.height / 2;
+    
+    final scanAreaLeft = centerX - (scanAreaSize / 2);
+    final scanAreaRight = centerX + (scanAreaSize / 2);
+    final scanAreaTop = centerY - (scanAreaSize / 2);
+    final scanAreaBottom = centerY + (scanAreaSize / 2);
+
+    final corners = barcode.corners;
+    if (corners.isEmpty) return false;
+
+    // Check if QR code center is within scan area
+    double sumX = 0;
+    double sumY = 0;
+    for (var corner in corners) {
+      sumX += corner.dx;
+      sumY += corner.dy;
+    }
+    final centerQrX = sumX / corners.length;
+    final centerQrY = sumY / corners.length;
+
+    return centerQrX >= scanAreaLeft &&
+        centerQrX <= scanAreaRight &&
+        centerQrY >= scanAreaTop &&
+        centerQrY <= scanAreaBottom;
+  }
+
   Future<void> _fetchUserAndNavigate(String userId) async {
     if (!isValidUuid(userId)) {
       if (mounted) {
@@ -143,7 +171,6 @@ class _QrScanPageState extends State<QrScanPage>
         if (!mounted) return;
         
         if (success) {
-          // Show success animation
           setState(() => showSuccess = true);
           _successController.forward();
           
@@ -221,11 +248,13 @@ class _QrScanPageState extends State<QrScanPage>
         ),
         title: Row(
           children: [
-            Icon(Icons.error_outline, color: AppTheme.error),
+            Icon(Icons.error_outline, color: AppTheme.error, size: 28),
             const SizedBox(width: AppTheme.spaceS),
-            Text(
-              'Gagal',
-              style: AppTheme.h3.copyWith(color: AppTheme.error),
+            Expanded(
+              child: Text(
+                'Gagal',
+                style: AppTheme.h3.copyWith(color: AppTheme.error),
+              ),
             ),
           ],
         ),
@@ -245,22 +274,40 @@ class _QrScanPageState extends State<QrScanPage>
   }
 
   void _onDetect(BarcodeCapture capture) async {
-    if (isProcessing) return;
+    if (isProcessing || capture.barcodes.isEmpty) return;
+
+    final barcode = capture.barcodes.first;
+    final code = barcode.rawValue;
     
-    final code = capture.barcodes.first.rawValue;
-    if (code != null) {
-      setState(() => isProcessing = true);
+    if (code == null) return;
 
-      await _playBeep();
-      await _vibrate();
-
-      await _fetchUserAndNavigate(code);
+    // Prevent duplicate scans within 3 seconds
+    if (lastScannedCode == code && lastScanTime != null) {
+      final diff = DateTime.now().difference(lastScanTime!);
+      if (diff.inSeconds < 3) return;
     }
+
+    // Check if QR is in scan area
+    final size = MediaQuery.of(context).size;
+    if (!_isInScanArea(barcode, size)) {
+      return;
+    }
+
+    lastScannedCode = code;
+    lastScanTime = DateTime.now();
+    
+    setState(() => isProcessing = true);
+
+    await _playBeep();
+    await _vibrate();
+
+    await _fetchUserAndNavigate(code);
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final scanAreaSize = size.width * 0.70;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -275,94 +322,92 @@ class _QrScanPageState extends State<QrScanPage>
             ),
           ),
 
-          // Overlay dengan frame scan
+          // Dark Overlay
           Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+            child: CustomPaint(
+              painter: ScanAreaPainter(
+                scanAreaSize: scanAreaSize,
+                screenSize: size,
               ),
-              child: Center(
-                child: SizedBox(
-                  width: size.width * 0.75,
-                  height: size.width * 0.75,
-                  child: Stack(
-                    children: [
-                      // Transparent center (scanning area)
-                      Center(
-                        child: Container(
-                          width: size.width * 0.75,
-                          height: size.width * 0.75,
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-                            border: Border.all(
-                              color: AppTheme.primary.withOpacity(0.5),
-                              width: 2,
-                            ),
-                          ),
-                        ),
+            ),
+          ),
+
+          // Scan Frame
+          Center(
+            child: SizedBox(
+              width: scanAreaSize,
+              height: scanAreaSize,
+              child: Stack(
+                children: [
+                  // Border
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: AppTheme.primary.withOpacity(0.6),
+                        width: 2,
                       ),
-
-                      // Animated corners
-                      ..._buildCorners(),
-
-                      // Scanning line
-                      AnimatedBuilder(
-                        animation: _scanLineAnimation,
-                        builder: (context, child) {
-                          return Positioned(
-                            top: (size.width * 0.75) * _scanLineAnimation.value,
-                            left: 0,
-                            right: 0,
-                            child: Container(
-                              height: 3,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.transparent,
-                                    AppTheme.primary,
-                                    AppTheme.primaryLight,
-                                    AppTheme.primary,
-                                    Colors.transparent,
-                                  ],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.primary,
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-
-                      // Success checkmark
-                      if (showSuccess)
-                        ScaleTransition(
-                          scale: _successAnimation,
-                          child: Center(
-                            child: Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: AppTheme.success,
-                                shape: BoxShape.circle,
-                                boxShadow: AppTheme.shadowLarge(),
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 50,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                      borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+                    ),
                   ),
-                ),
+
+                  // Animated corners
+                  ..._buildCorners(scanAreaSize),
+
+                  // Scanning line
+                  AnimatedBuilder(
+                    animation: _scanLineAnimation,
+                    builder: (context, child) {
+                      return Positioned(
+                        top: scanAreaSize * _scanLineAnimation.value,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          height: 3,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.transparent,
+                                AppTheme.primary,
+                                AppTheme.primaryLight,
+                                AppTheme.primary,
+                                Colors.transparent,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primary,
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // Success checkmark
+                  if (showSuccess)
+                    ScaleTransition(
+                      scale: _successAnimation,
+                      child: Center(
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppTheme.success,
+                            shape: BoxShape.circle,
+                            boxShadow: AppTheme.shadowLarge(),
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 50,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -378,64 +423,39 @@ class _QrScanPageState extends State<QrScanPage>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Back button
-                    IconButton(
+                    _buildIconButton(
+                      icon: Icons.arrow_back,
                       onPressed: () => Navigator.pop(context),
-                      icon: Container(
-                        padding: const EdgeInsets.all(AppTheme.spaceS),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                        ),
-                      ),
                     ),
-
-                    // App logo/title
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppTheme.spaceL,
                         vertical: AppTheme.spaceS,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withOpacity(0.6),
                         borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+                        border: Border.all(
+                          color: AppTheme.primary.withOpacity(0.5),
+                          width: 1,
+                        ),
                       ),
                       child: Text(
-                        'ZON4',
+                        'SCAN QR',
                         style: AppTheme.h3.copyWith(
                           color: Colors.white,
                           letterSpacing: 2,
+                          fontSize: 16,
                         ),
                       ),
                     ),
-
-                    // Torch button
-                    IconButton(
+                    _buildIconButton(
+                      icon: torchOn ? Icons.flash_on : Icons.flash_off,
                       onPressed: () {
                         cameraController.toggleTorch();
                         setState(() => torchOn = !torchOn);
                       },
-                      icon: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        child: Container(
-                          key: ValueKey(torchOn),
-                          padding: const EdgeInsets.all(AppTheme.spaceS),
-                          decoration: BoxDecoration(
-                            color: torchOn
-                                ? AppTheme.primary.withOpacity(0.8)
-                                : Colors.black.withOpacity(0.5),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            torchOn ? Icons.flash_on : Icons.flash_off,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+                      isActive: torchOn,
                     ),
                   ],
                 ),
@@ -451,45 +471,43 @@ class _QrScanPageState extends State<QrScanPage>
             child: SafeArea(
               child: Container(
                 padding: const EdgeInsets.all(AppTheme.spaceXL),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppTheme.spaceL,
-                        vertical: AppTheme.spaceM,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.qr_code_2,
-                            color: AppTheme.primary,
-                            size: 32,
-                          ),
-                          const SizedBox(height: AppTheme.spaceS),
-                          Text(
-                            'Arahkan QR Code ke area scan',
-                            style: AppTheme.bodyMedium.copyWith(
-                              color: Colors.white,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: AppTheme.spaceXS),
-                          Text(
-                            'Scan otomatis ketika QR terdeteksi',
-                            style: AppTheme.bodySmall.copyWith(
-                              color: Colors.white70,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
+                child: Container(
+                  padding: const EdgeInsets.all(AppTheme.spaceL),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+                    border: Border.all(
+                      color: AppTheme.primary.withOpacity(0.3),
+                      width: 1,
                     ),
-                  ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.qr_code_scanner,
+                        color: AppTheme.primary,
+                        size: 40,
+                      ),
+                      const SizedBox(height: AppTheme.spaceM),
+                      Text(
+                        'Letakkan QR Code di dalam kotak',
+                        style: AppTheme.bodyLarge.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppTheme.spaceS),
+                      Text(
+                        'Pastikan QR code berada di tengah area scan',
+                        style: AppTheme.bodySmall.copyWith(
+                          color: Colors.white70,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -498,25 +516,28 @@ class _QrScanPageState extends State<QrScanPage>
           // Loading overlay
           if (isProcessing && !showSuccess)
             Container(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withOpacity(0.8),
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.all(AppTheme.spaceXL),
                   decoration: BoxDecoration(
                     color: AppTheme.surface,
                     borderRadius: BorderRadius.circular(AppTheme.radiusL),
+                    boxShadow: AppTheme.shadowLarge(),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const CircularProgressIndicator(
                         color: AppTheme.primary,
+                        strokeWidth: 3,
                       ),
-                      const SizedBox(height: AppTheme.spaceM),
+                      const SizedBox(height: AppTheme.spaceL),
                       Text(
-                        'Memproses...',
+                        'Memproses QR Code...',
                         style: AppTheme.bodyLarge.copyWith(
                           color: AppTheme.textPrimary,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -529,9 +550,48 @@ class _QrScanPageState extends State<QrScanPage>
     );
   }
 
-  List<Widget> _buildCorners() {
+  Widget _buildIconButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    bool isActive = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isActive
+            ? AppTheme.primary.withOpacity(0.9)
+            : Colors.black.withOpacity(0.6),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isActive
+              ? AppTheme.primary
+              : Colors.white.withOpacity(0.3),
+          width: 2,
+        ),
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: AppTheme.primary.withOpacity(0.5),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ]
+            : null,
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(
+          icon,
+          color: Colors.white,
+          size: 24,
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildCorners(double scanAreaSize) {
+    final cornerSize = scanAreaSize * 0.12;
+    
     return [
-      // Top-left
       Positioned(
         top: 0,
         left: 0,
@@ -539,17 +599,16 @@ class _QrScanPageState extends State<QrScanPage>
           animation: _pulseAnimation,
           builder: (context, child) {
             return CustomPaint(
-              size: const Size(40, 40),
+              size: Size(cornerSize, cornerSize),
               painter: CornerPainter(
                 color: AppTheme.primary,
                 position: CornerPosition.topLeft,
-                thickness: 4 * _pulseAnimation.value,
+                thickness: 5 * _pulseAnimation.value,
               ),
             );
           },
         ),
       ),
-      // Top-right
       Positioned(
         top: 0,
         right: 0,
@@ -557,17 +616,16 @@ class _QrScanPageState extends State<QrScanPage>
           animation: _pulseAnimation,
           builder: (context, child) {
             return CustomPaint(
-              size: const Size(40, 40),
+              size: Size(cornerSize, cornerSize),
               painter: CornerPainter(
                 color: AppTheme.primary,
                 position: CornerPosition.topRight,
-                thickness: 4 * _pulseAnimation.value,
+                thickness: 5 * _pulseAnimation.value,
               ),
             );
           },
         ),
       ),
-      // Bottom-left
       Positioned(
         bottom: 0,
         left: 0,
@@ -575,17 +633,16 @@ class _QrScanPageState extends State<QrScanPage>
           animation: _pulseAnimation,
           builder: (context, child) {
             return CustomPaint(
-              size: const Size(40, 40),
+              size: Size(cornerSize, cornerSize),
               painter: CornerPainter(
                 color: AppTheme.primary,
                 position: CornerPosition.bottomLeft,
-                thickness: 4 * _pulseAnimation.value,
+                thickness: 5 * _pulseAnimation.value,
               ),
             );
           },
         ),
       ),
-      // Bottom-right
       Positioned(
         bottom: 0,
         right: 0,
@@ -593,11 +650,11 @@ class _QrScanPageState extends State<QrScanPage>
           animation: _pulseAnimation,
           builder: (context, child) {
             return CustomPaint(
-              size: const Size(40, 40),
+              size: Size(cornerSize, cornerSize),
               painter: CornerPainter(
                 color: AppTheme.primary,
                 position: CornerPosition.bottomRight,
-                thickness: 4 * _pulseAnimation.value,
+                thickness: 5 * _pulseAnimation.value,
               ),
             );
           },
@@ -605,6 +662,51 @@ class _QrScanPageState extends State<QrScanPage>
       ),
     ];
   }
+}
+
+class ScanAreaPainter extends CustomPainter {
+  final double scanAreaSize;
+  final Size screenSize;
+
+  ScanAreaPainter({
+    required this.scanAreaSize,
+    required this.screenSize,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black.withOpacity(0.6)
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..addRect(Rect.fromLTWH(0, 0, screenSize.width, screenSize.height));
+
+    final scanAreaRect = Rect.fromCenter(
+      center: Offset(screenSize.width / 2, screenSize.height / 2),
+      width: scanAreaSize,
+      height: scanAreaSize,
+    );
+
+    final scanAreaPath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          scanAreaRect,
+          const Radius.circular(20),
+        ),
+      );
+
+    final finalPath = Path.combine(
+      PathOperation.difference,
+      path,
+      scanAreaPath,
+    );
+
+    canvas.drawPath(finalPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(ScanAreaPainter oldDelegate) => false;
 }
 
 enum CornerPosition { topLeft, topRight, bottomLeft, bottomRight }
@@ -617,7 +719,7 @@ class CornerPainter extends CustomPainter {
   CornerPainter({
     required this.color,
     required this.position,
-    this.thickness = 4,
+    this.thickness = 5,
   });
 
   @override
@@ -629,7 +731,7 @@ class CornerPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final path = Path();
-    final cornerLength = size.width * 0.6;
+    final cornerLength = size.width * 0.5;
 
     switch (position) {
       case CornerPosition.topLeft:
