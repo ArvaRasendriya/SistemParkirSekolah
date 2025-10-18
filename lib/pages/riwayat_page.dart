@@ -142,7 +142,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
           ),
           // Content
           SafeArea(
-            top: false,
             child: RefreshIndicator(
               onRefresh: fetchRiwayat,
               child: _loading

@@ -78,7 +78,6 @@ class _PendingSimApprovalPageState extends State<PendingSimApprovalPage> {
             qrBytes,
             fileOptions: const FileOptions(contentType: "image/png"),
           );
-      final qrUrl = supabase.storage.from("siswa").getPublicUrl(qrPath);
 
       await supabase.from("siswa").insert({
         "id": id,
@@ -87,7 +86,7 @@ class _PendingSimApprovalPageState extends State<PendingSimApprovalPage> {
         "jurusan": data["jurusan"],
         "email": data["email"],
         "sim_url": data["sim_url"],
-        "qr_url": qrUrl,
+        "qr_url": qrPath,
         "status": "approved",
         "created_at": DateTime.now().toIso8601String(),
       });
@@ -96,6 +95,7 @@ class _PendingSimApprovalPageState extends State<PendingSimApprovalPage> {
 
       Future.microtask(() async {
         try {
+          final qrUrl = supabase.storage.from("siswa").getPublicUrl(qrPath);
           final response = await supabase.functions.invoke(
             "sendEmailQr",
             body: {

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'satgas_list_page.dart';
 import 'admin_sim_page.dart';
 import 'login_page.dart';
+import 'profile_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -46,15 +47,30 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           Positioned.fill(
             child: _pages[_selectedIndex], // ✅ full screen penuh
           ),
-          Positioned(
-            top: 30,
-            right: 20,
-            child: IconButton(
-              icon: const Icon(Icons.logout, color: Colors.white),
-              onPressed: _logout,
-              tooltip: 'Logout',
+          if (_selectedIndex == 0) // Only show buttons on dashboard tab
+            Positioned(
+              top: 30,
+              right: 20,
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.person, color: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ProfilePage()),
+                      );
+                    },
+                    tooltip: 'Profile',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.logout, color: Colors.white),
+                    onPressed: _logout,
+                    tooltip: 'Logout',
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
 
