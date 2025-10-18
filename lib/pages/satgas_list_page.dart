@@ -356,6 +356,7 @@ class _SatgasListPageState extends State<SatgasListPage> {
     return GradientScaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'Akun Satgas',
           style: AppTheme.h3.copyWith(
@@ -365,10 +366,6 @@ class _SatgasListPageState extends State<SatgasListPage> {
         centerTitle: true,  
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.textOnPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.pending_actions, color: AppTheme.textOnPrimary),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ScanResultPage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -111,7 +112,9 @@ class _ScanResultPageState extends State<ScanResultPage> {
                                 child: AspectRatio(
                                   aspectRatio: 4 / 3,
                                   child: Image.network(
-                                    widget.userData["sim_url"],
+                                    widget.userData["sim_url"].startsWith("http")
+                                        ? widget.userData["sim_url"]
+                                        : Supabase.instance.client.storage.from("siswa").getPublicUrl(widget.userData["sim_url"]),
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -139,8 +142,10 @@ class _ScanResultPageState extends State<ScanResultPage> {
                                       panEnabled: true,
                                       minScale: 0.8,
                                       maxScale: 4,
-                                      child: Image.network(
-                                        widget.userData["sim_url"],
+                                    child: Image.network(
+                                        widget.userData["sim_url"].startsWith("http")
+                                            ? widget.userData["sim_url"]
+                                            : Supabase.instance.client.storage.from("siswa").getPublicUrl(widget.userData["sim_url"]),
                                         fit: BoxFit.contain,
                                       ),
                                     ),

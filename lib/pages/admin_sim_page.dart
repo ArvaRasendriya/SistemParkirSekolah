@@ -98,7 +98,7 @@ class _AdminSimPageState extends State<AdminSimPage> {
       // 🔹 Jika cuma nama file (misal: abc123.jpg), generate via Supabase
       try {
         const bucketName = "siswa";
-        final filePath = "  $simFileName";
+        final filePath = simFileName;
         publicUrl = Supabase.instance.client.storage
             .from(bucketName)
             .getPublicUrl(filePath);
@@ -310,14 +310,11 @@ class _AdminSimPageState extends State<AdminSimPage> {
     return GradientScaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text('Data SIM', style: AppTheme.h3.copyWith(color: AppTheme.textOnPrimary)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.textOnPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
         actions: [
           // 🔹 Tombol ke Pending Approval (seperti di versi lama)
           Padding(

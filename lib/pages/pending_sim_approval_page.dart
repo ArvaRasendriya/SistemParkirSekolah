@@ -262,7 +262,9 @@ class _PendingSimApprovalPageState extends State<PendingSimApprovalPage> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(AppTheme.radiusM),
                       child: Image.network(
-                        sim["sim_url"],
+                        sim["sim_url"].startsWith("http")
+                            ? sim["sim_url"]
+                            : Supabase.instance.client.storage.from("siswa").getPublicUrl(sim["sim_url"]),
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: 200,

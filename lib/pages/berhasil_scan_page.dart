@@ -86,7 +86,9 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
-                              data!['siswa']['sim_url'], // sim_url dari supabase
+                              data!['siswa']['sim_url'] != null && data!['siswa']['sim_url'].startsWith("http")
+                                  ? data!['siswa']['sim_url']
+                                  : Supabase.instance.client.storage.from("siswa").getPublicUrl(data!['siswa']['sim_url']),
                               width: 100,
                               height: 100,
                               fit: BoxFit.cover,
