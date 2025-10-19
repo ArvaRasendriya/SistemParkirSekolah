@@ -43,8 +43,8 @@ class WelcomePage extends StatelessWidget {
                             ),
                             child: Image.asset(
                               'assets/images/logo.png',
-                              width: size.width * (isSmallScreen ? 0.40 : 0.38),
-                              height: size.width * (isSmallScreen ? 0.40 : 0.38),
+                              width: size.width * (isSmallScreen ? 1.2 : 1.12),
+                              height: size.width * (isSmallScreen ? 1.2 : 1.12),
                               fit: BoxFit.contain,
                             ),
                           ),
@@ -52,6 +52,8 @@ class WelcomePage extends StatelessWidget {
                       ),
 
                       SizedBox(height: isSmallScreen ? AppTheme.spaceM : AppTheme.spaceL),
+
+                      const Spacer(),
 
                       // Illustration image with responsive sizing
                       Padding(
@@ -67,6 +69,7 @@ class WelcomePage extends StatelessWidget {
                       SizedBox(height: isSmallScreen ? AppTheme.spaceM : AppTheme.spaceL),
 
                       // Text section with responsive sizing
+                      const Spacer(),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceL),
                         child: Column(
@@ -74,6 +77,8 @@ class WelcomePage extends StatelessWidget {
                             Text(
                               'Selamat datang di Zon4',
                               style: (isSmallScreen ? AppTheme.h3 : AppTheme.h2).copyWith(
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.w700,
                                 color: AppTheme.primary,
                               ),
                               textAlign: TextAlign.center,
@@ -84,6 +89,8 @@ class WelcomePage extends StatelessWidget {
                             Text(
                               'Solusi mudah untuk mengelola parkir khusus pengemudi berlisensi',
                               style: (isSmallScreen ? AppTheme.bodyMedium : AppTheme.bodyLarge).copyWith(
+                                fontFamily: 'Lato',
+                                fontWeight: FontWeight.w400,
                                 color: AppTheme.textPrimary,
                               ),
                               textAlign: TextAlign.center,
@@ -116,21 +123,26 @@ class WelcomePage extends StatelessWidget {
                             onPressed: () {
                               Navigator.pushReplacementNamed(context, '/auth');
                             },
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            child: Stack(
                               children: [
-                                Text(
-                                  'Mulai',
-                                  style: AppTheme.button.copyWith(
-                                    color: AppTheme.textOnPrimary,
-                                    fontSize: isSmallScreen ? 16 : 18,
+                                Center(
+                                  child: Text(
+                                    'Mulai',
+                                    style: AppTheme.button.copyWith(
+                                      fontFamily: 'Poppins',
+                                      fontWeight: FontWeight.w900,
+                                      color: AppTheme.textOnPrimary,
+                                      fontSize: isSmallScreen ? 16 : 18,
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(width: AppTheme.spaceM),
-                                Icon(
-                                  Icons.arrow_forward,
-                                  color: AppTheme.textOnPrimary,
-                                  size: isSmallScreen ? 22 : 26,
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Icon(
+                                    Icons.arrow_forward,
+                                    color: AppTheme.textOnPrimary,
+                                    size: isSmallScreen ? 22 : 26,
+                                  ),
                                 ),
                               ],
                             ),

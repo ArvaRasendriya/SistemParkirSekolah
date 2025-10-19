@@ -190,6 +190,9 @@ void dispose() {
       );
     }
 
+    final w = MediaQuery.of(context).size.width;
+    final isSmall = w < 380;
+
     final total = simAcc + simPending + akunSatgas + akunAdmin;
     double _percent(int value) => total == 0 ? 0 : value / total;
 
@@ -210,30 +213,62 @@ void dispose() {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 16),
+
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const[
+                      Text(
+                        'Selamat',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.0
+                        ),
+                      ),
+                      Text(
+                        'datang',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.0
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  Text(
+                    'ADMIN',
+                      style: TextStyle(
+                      fontSize: isSmall ? 36 : 48,
+                      color: Colors.white,
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.0
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 6),
+
               const Text(
-                "ADMIN DASHBOARD",
+                'Admin Dashboard',
                 style: TextStyle(
                   color: Colors.white70,
-                  fontSize: 12,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.w600,
-                ),
+                  fontSize: 14,
+                  fontFamily: 'Lato',
+                  fontWeight: FontWeight.w700,
+                )
               ),
-              const SizedBox(height: 4),
-              const Text(
-                "ADMIN",
-                style: TextStyle(
-                  fontSize: 32,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                "Selamat datang di admin dashboard",
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-              ),
+
               const SizedBox(height: 24),
 
               Row(
@@ -272,6 +307,7 @@ void dispose() {
                 "Aktivitas Terbaru",
                 style: TextStyle(
                     color: Colors.white,
+                    fontFamily: 'Poppins',
                     fontSize: 18,
                     fontWeight: FontWeight.bold),
               ),

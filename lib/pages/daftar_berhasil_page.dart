@@ -30,14 +30,24 @@ class DaftarBerhasilPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.check_circle,
-                    size: 100, color: Colors.green),
+                    size: 100, color: Color.fromARGB(223, 23, 238, 37)),
                 const SizedBox(height: 20),
                 const Text(
                   "Daftar Akun Berhasil",
                   style: TextStyle(
+                    fontFamily: 'Poppins',
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white, // Teks hitam
+                    fontWeight: FontWeight.w700,
+                    color: Color.fromARGB(242, 0, 0, 0), // Teks hitam
+                  ),
+                ),
+                const Text(
+                  "Silahkan konfirmasi QR kode kamu ke admin",
+                  style: TextStyle(
+                    fontFamily: 'Lato',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color.fromARGB(242, 0, 0, 0), // Teks hitam
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -52,7 +62,13 @@ class DaftarBerhasilPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: const Text("Kembali"),
+                  child: const Text("Kembali",
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white
+                  ),
+                  ),
                 ),
               ],
             ),
