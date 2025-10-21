@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-// Tambahan import biar tombol bawah bisa navigasi
-import 'qr_scan_page.dart';
+import './Qr/qr_scan_page.dart';
 import 'daftar_page.dart';
 
 class RiwayatPage extends StatefulWidget {

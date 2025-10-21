@@ -3,7 +3,7 @@ import 'package:tefa_parkir/auth/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'riwayat_page.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'qr_scan_page.dart';
+import './Qr/qr_scan_page.dart';
 import 'daftar_page.dart';
 import 'admin_dashboard_page.dart';
 import 'login_page.dart';

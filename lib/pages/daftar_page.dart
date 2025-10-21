@@ -177,9 +177,6 @@ class _DaftarPageState extends State<DaftarPage>
 
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final screenHeight = mediaQuery.size.height;
-    final screenWidth = mediaQuery.size.width;
     final size = MediaQuery.of(context).size;
     final bool isSmallScreen = size.height < 700;
 

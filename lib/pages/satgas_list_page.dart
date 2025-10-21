@@ -13,25 +13,46 @@ class SatgasListPage extends StatefulWidget {
 class _SatgasListPageState extends State<SatgasListPage> {
   final authService = AuthService();
   List<Map<String, dynamic>> satgasAccounts = [];
+  List<Map<String, dynamic>> filteredAccounts = [];
   bool isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     fetchSatgasAccounts();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredAccounts = satgasAccounts.where((account) {
+        final name = (account['full_name'] ?? '').toString().toLowerCase();
+        final email = (account['email'] ?? '').toString().toLowerCase();
+        final kelas = (account['kelas'] ?? '').toString().toLowerCase();
+        return name.contains(query) || email.contains(query) || kelas.contains(query);
+      }).toList();
+    });
   }
 
   Future<void> fetchSatgasAccounts() async {
     setState(() => isLoading = true);
     try {
       final accounts = await authService.getSatgasAccounts();
-      // Filter hanya yang approved
       final approvedAccounts = accounts.where((account) {
         return account['status'] == 'approved';
       }).toList();
       
       setState(() {
         satgasAccounts = approvedAccounts;
+        filteredAccounts = approvedAccounts;
         isLoading = false;
       });
     } catch (e) {
@@ -51,47 +72,107 @@ class _SatgasListPageState extends State<SatgasListPage> {
   Future<void> _deleteAccount(String userId, String email) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusL),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: AppTheme.error, size: 28),
-            const SizedBox(width: AppTheme.spaceS),
-            Expanded(
-              child: Text(
-                'Hapus Akun',
-                style: AppTheme.h3.copyWith(color: AppTheme.error),
-              ),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [
+                AppTheme.error.withOpacity(0.95),
+                AppTheme.error,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-        ),
-        content: Text(
-          'Apakah kamu yakin ingin menghapus akun untuk $email?\n\nTindakan ini tidak bisa dibatalkan.',
-          style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.textSecondary,
-            ),
-            child: const Text('Batal'),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.error,
-              foregroundColor: AppTheme.textOnPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusS),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.warning_rounded,
+                  color: Colors.white,
+                  size: 48,
+                ),
               ),
-            ),
-            child: const Text('Hapus'),
+              const SizedBox(height: 20),
+              const Text(
+                'Hapus Akun Satgas?',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins',
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Akun $email akan dihapus permanen.\n\nTindakan ini tidak dapat dibatalkan.',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                  fontFamily: 'Poppins',
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Batal',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppTheme.error,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Hapus',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 
@@ -101,19 +182,23 @@ class _SatgasListPageState extends State<SatgasListPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Akun berhasil dihapus'),
+              content: const Text('✓ Akun berhasil dihapus'),
               backgroundColor: AppTheme.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
         }
         fetchSatgasAccounts();
       } catch (e) {
-        debugPrint('Error menghapus akun: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error menghapus akun: $e'),
+              content: Text('✗ Error: $e'),
               backgroundColor: AppTheme.error,
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
@@ -122,194 +207,178 @@ class _SatgasListPageState extends State<SatgasListPage> {
   }
 
   void _showDetailDialog(Map<String, dynamic> account) {
-    final fullName = account['full_name'] ?? '-';
-    final email = account['email'] ?? 'No email';
-    final status = account['status'] ?? 'Unknown';
-    final kelas = account['kelas'] ?? '-';
-    final jurusan = account['jurusan'] ?? '-';
-    final createdAt = account['created_at'];
-    final formattedDate = createdAt != null
-        ? DateTime.parse(createdAt)
-            .toLocal()
-            .toString()
-            .substring(0, 16)
-        : 'Unknown date';
-
     showDialog(
       context: context,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.75,
-            ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-              gradient: AppTheme.primaryGradient,
-              boxShadow: AppTheme.shadowLarge(),
-            ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppTheme.spaceL),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(AppTheme.spaceM),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(AppTheme.radiusM),
-                        ),
-                        child: const Icon(
-                          Icons.security,
-                          color: AppTheme.textOnPrimary,
-                          size: 32,
-                        ),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.75,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: AppTheme.primaryGradient,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      const SizedBox(width: AppTheme.spaceM),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              fullName,
-                              style: AppTheme.h3.copyWith(
-                                color: AppTheme.textOnPrimary,
-                                fontSize: 18,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                      child: const Icon(
+                        Icons.security,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            account['full_name'] ?? '-',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Poppins',
                             ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppTheme.spaceS,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: status == 'approved'
-                                    ? AppTheme.success.withOpacity(0.3)
-                                    : AppTheme.warning.withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(AppTheme.radiusS),
-                              ),
-                              child: Text(
-                                status.toUpperCase(),
-                                style: AppTheme.bodySmall.copyWith(
-                                  color: AppTheme.textOnPrimary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 10,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppTheme.spaceL),
-
-                  // Info Cards
-                  _buildInfoCard(
-                    icon: Icons.email,
-                    label: "Email",
-                    value: email,
-                  ),
-                  const SizedBox(height: AppTheme.spaceM),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildInfoCard(
-                          icon: Icons.class_,
-                          label: "Kelas",
-                          value: kelas,
-                        ),
-                      ),
-                      const SizedBox(width: AppTheme.spaceM),
-                      Expanded(
-                        child: _buildInfoCard(
-                          icon: Icons.school,
-                          label: "Jurusan",
-                          value: jurusan,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppTheme.spaceM),
-
-                  _buildInfoCard(
-                    icon: Icons.calendar_today,
-                    label: "Terdaftar Sejak",
-                    value: formattedDate,
-                  ),
-                  const SizedBox(height: AppTheme.spaceL),
-
-                  // Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _deleteAccount(account['id'], email);
-                          },
-                          icon: const Icon(Icons.delete, size: 18),
-                          label: const Text("Hapus"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.error,
-                            foregroundColor: AppTheme.textOnPrimary,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
                             padding: const EdgeInsets.symmetric(
-                              vertical: AppTheme.spaceM,
+                              horizontal: 10,
+                              vertical: 4,
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                            decoration: BoxDecoration(
+                              color: AppTheme.success.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            child: const Text(
+                              'ACTIVE',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                _buildInfoCard(
+                  icon: Icons.email,
+                  label: "Email",
+                  value: account['email'] ?? '-',
+                ),
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoCard(
+                        icon: Icons.class_,
+                        label: "Kelas",
+                        value: account['kelas'] ?? '-',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildInfoCard(
+                        icon: Icons.school,
+                        label: "Jurusan",
+                        value: account['jurusan'] ?? '-',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                _buildInfoCard(
+                  icon: Icons.calendar_today,
+                  label: "Terdaftar",
+                  value: account['created_at'] != null
+                      ? DateTime.parse(account['created_at'])
+                          .toLocal()
+                          .toString()
+                          .substring(0, 16)
+                      : '-',
+                ),
+                const SizedBox(height: 24),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _deleteAccount(account['id'], account['email'] ?? '');
+                        },
+                        icon: const Icon(Icons.delete, size: 20),
+                        label: const Text("Hapus"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.error,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                       ),
-                      const SizedBox(width: AppTheme.spaceM),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white.withOpacity(0.2),
-                            foregroundColor: AppTheme.textOnPrimary,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppTheme.spaceM,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppTheme.radiusM),
-                            ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.2),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text("Tutup"),
                         ),
+                        child: const Text("Tutup"),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   Widget _buildInfoCard({
     required IconData icon,
     required String label,
-    required dynamic value,
+    required String value,
   }) {
     return Container(
-      padding: const EdgeInsets.all(AppTheme.spaceM),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Colors.white.withOpacity(0.3),
           width: 1,
@@ -317,28 +386,28 @@ class _SatgasListPageState extends State<SatgasListPage> {
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: AppTheme.textOnPrimary.withOpacity(0.8),
-            size: 20,
-          ),
-          const SizedBox(width: AppTheme.spaceS),
+          Icon(icon, color: Colors.white.withOpacity(0.9), size: 20),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: AppTheme.bodySmall.copyWith(
-                    color: AppTheme.textOnPrimary.withOpacity(0.7),
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 11,
+                    fontFamily: 'Poppins',
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  value?.toString() ?? '-',
-                  style: AppTheme.bodyMedium.copyWith(
-                    color: AppTheme.textOnPrimary,
-                    fontWeight: FontWeight.bold,
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    fontFamily: 'Poppins',
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -357,18 +426,27 @@ class _SatgasListPageState extends State<SatgasListPage> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(
+        title: const Text(
           'Akun Satgas',
-          style: AppTheme.h3.copyWith(
-            color: AppTheme.textOnPrimary,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Poppins',
           ),
         ),
-        centerTitle: true,  
+        centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.pending_actions, color: AppTheme.textOnPrimary),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.pending_actions, color: Colors.white, size: 20),
+            ),
             tooltip: 'Pending Approvals',
             onPressed: () {
               Navigator.push(
@@ -380,200 +458,208 @@ class _SatgasListPageState extends State<SatgasListPage> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: AppTheme.textOnPrimary),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: fetchSatgasAccounts,
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.textOnPrimary),
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 3,
+              ),
             )
-          : satgasAccounts.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.group_off,
-                        size: 80,
-                        color: AppTheme.textOnPrimary.withOpacity(0.5),
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
+              child: Column(
+                children: [
+                  // Search Bar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
                       ),
-                      const SizedBox(height: AppTheme.spaceL),
-                      Text(
-                        'Tidak ada akun satgas',
-                        style: AppTheme.bodyLarge.copyWith(
-                          color: AppTheme.textOnPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: fetchSatgasAccounts,
-                  color: AppTheme.primary,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.spaceL,
-                      100,
-                      AppTheme.spaceL,
-                      AppTheme.spaceL,
                     ),
-                    child: ListView.builder(
-                      itemCount: satgasAccounts.length,
-                      itemBuilder: (context, index) {
-                        final account = satgasAccounts[index];
-                        final fullName = account['full_name'] ?? 'No name';
-                        final email = account['email'] ?? 'No email';
-                        final status = account['status'] ?? 'Unknown';
-                        final kelas = account['kelas'] ?? '-';
-                        final jurusan = account['jurusan'] ?? '-';
+                    child: TextField(
+                      controller: _searchController,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'Poppins',
+                      ),
+                      decoration: InputDecoration(
+                        hintText: "Cari nama, email, atau kelas...",
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontFamily: 'Poppins',
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.clear,
+                                  color: Colors.white.withOpacity(0.8),
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                },
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: AppTheme.spaceM),
-                          child: GlassCard(
-                            padding: const EdgeInsets.all(AppTheme.spaceL),
-                            opacity: 0.15,
+                  // Results Count
+                  if (filteredAccounts.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          Text(
+                            '${filteredAccounts.length} Akun Satgas',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // List
+                  Expanded(
+                    child: filteredAccounts.isEmpty
+                        ? Center(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(AppTheme.spaceM),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(AppTheme.radiusM),
-                                      ),
-                                      child: const Icon(
-                                        Icons.security,
-                                        color: AppTheme.textOnPrimary,
-                                        size: 28,
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppTheme.spaceM),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            fullName,
-                                            style: AppTheme.h3.copyWith(
-                                              color: AppTheme.textOnPrimary,
-                                              fontSize: 16,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            "$kelas - $jurusan",
-                                            style: AppTheme.bodySmall.copyWith(
-                                              color: AppTheme.textOnPrimary.withOpacity(0.7),
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.info_outline,
-                                        color: AppTheme.textOnPrimary,
-                                      ),
-                                      onPressed: () => _showDetailDialog(account),
-                                    ),
-                                  ],
+                                Icon(
+                                  _searchController.text.isEmpty
+                                      ? Icons.group_off
+                                      : Icons.search_off,
+                                  size: 80,
+                                  color: Colors.white.withOpacity(0.5),
                                 ),
-                                const SizedBox(height: AppTheme.spaceM),
-
-                                // Email Container
-                                Container(
-                                  padding: const EdgeInsets.all(AppTheme.spaceM),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(AppTheme.radiusS),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _searchController.text.isEmpty
+                                      ? 'Tidak ada akun satgas'
+                                      : 'Tidak ditemukan',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 16,
+                                    fontFamily: 'Poppins',
                                   ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.email,
-                                        size: 16,
-                                        color: AppTheme.textOnPrimary.withOpacity(0.7),
-                                      ),
-                                      const SizedBox(width: AppTheme.spaceS),
-                                      Expanded(
-                                        child: Text(
-                                          email,
-                                          style: AppTheme.bodySmall.copyWith(
-                                            color: AppTheme.textOnPrimary.withOpacity(0.9),
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                const SizedBox(height: AppTheme.spaceS),
-
-                                // Status Badge & Delete Button
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: AppTheme.spaceM,
-                                        vertical: AppTheme.spaceS,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.success.withOpacity(0.3),
-                                        borderRadius: BorderRadius.circular(AppTheme.radiusS),
-                                        border: Border.all(
-                                          color: AppTheme.success.withOpacity(0.5),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.check_circle,
-                                            size: 14,
-                                            color: AppTheme.textOnPrimary,
-                                          ),
-                                          const SizedBox(width: AppTheme.spaceS),
-                                          Text(
-                                            'ACTIVE',
-                                            style: AppTheme.bodySmall.copyWith(
-                                              color: AppTheme.textOnPrimary,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 11,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.delete_outline,
-                                        color: AppTheme.error.withOpacity(0.9),
-                                        size: 24,
-                                      ),
-                                      onPressed: () => _deleteAccount(account['id'], email),
-                                      tooltip: 'Hapus akun',
-                                    ),
-                                  ],
                                 ),
                               ],
                             ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: fetchSatgasAccounts,
+                            color: AppTheme.primary,
+                            child: ListView.builder(
+                              itemCount: filteredAccounts.length,
+                              itemBuilder: (context, index) {
+                                final account = filteredAccounts[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.2),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: () => _showDetailDialog(account),
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white.withOpacity(0.2),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.security,
+                                                  color: Colors.white,
+                                                  size: 24,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 14),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      account['full_name'] ?? 'No name',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 15,
+                                                        fontWeight: FontWeight.w600,
+                                                        fontFamily: 'Poppins',
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      "${account['kelas'] ?? '-'} • ${account['jurusan'] ?? '-'}",
+                                                      style: TextStyle(
+                                                        color: Colors.white.withOpacity(0.7),
+                                                        fontSize: 13,
+                                                        fontFamily: 'Poppins',
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.delete_outline,
+                                                  color: Colors.red.shade300,
+                                                  size: 22,
+                                                ),
+                                                onPressed: () => _deleteAccount(
+                                                  account['id'],
+                                                  account['email'] ?? '',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        );
-                      },
-                    ),
                   ),
-                ),
+                ],
+              ),
+            ),
     );
   }
 }

@@ -9,8 +9,6 @@ import 'pages/profile_page.dart';
 import 'pages/admin_dashboard_page.dart';
 import 'pages/welcome_page.dart';
 import 'pages/splash_screen.dart';
-
-// ✅ Tambahkan import baru untuk halaman SIM
 import 'pages/admin_sim_page.dart';
 import 'pages/pending_sim_approval_page.dart';
 
@@ -44,11 +42,7 @@ class MyApp extends StatelessWidget {
         '/daftar': (context) => const SafeArea(child: DaftarPage()),
         '/auth': (context) => const SafeArea(child: AuthGate()),
         '/welcome': (context) => const SafeArea(child: WelcomePage()),
-
-        // ✅ Tambahkan route baru untuk halaman SIM
         '/adminSim': (context) => const SafeArea(child: AdminSimPage()),
-
-        // ✅ Tambahkan route untuk halaman Pending Approval SIM
         '/pendingSimApproval': (context) =>
             const SafeArea(child: PendingSimApprovalPage()),
       },

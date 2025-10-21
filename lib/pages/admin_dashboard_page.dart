@@ -17,7 +17,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   final List<Widget> _pages = [
     const DashboardContent(),
-    SatgasListPage(),
+    const SatgasListPage(),
     const AdminSimPage(),
   ];
 
@@ -40,72 +40,127 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: false, // 🚫 tidak tembus ke bawah
-      backgroundColor: const Color(0xFF1D1879), // warna dasar sama dg gradient
+      extendBody: false,
+      backgroundColor: const Color(0xFF1D1879),
       body: Stack(
         children: [
           Positioned.fill(
-            child: _pages[_selectedIndex], // ✅ full screen penuh
+            child: _pages[_selectedIndex],
           ),
-          if (_selectedIndex == 0) // Only show buttons on dashboard tab
+          if (_selectedIndex == 0)
             Positioned(
-              top: 30,
-              right: 20,
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.person, color: Colors.white),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ProfilePage()),
-                      );
-                    },
-                    tooltip: 'Profile',
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.logout, color: Colors.white),
-                    onPressed: _logout,
-                    tooltip: 'Logout',
-                  ),
-                ],
+              top: 40,
+              right: 16,
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    _buildTopIconButton(
+                      icon: Icons.person_outline,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ProfilePage()),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildTopIconButton(
+                      icon: Icons.logout,
+                      onPressed: _logout,
+                      isDestructive: true,
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
       ),
-
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFF8F8FF),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: BottomNavigationBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          selectedItemColor: const Color.fromARGB(254, 49, 54, 56),
-          unselectedItemColor: const Color.fromARGB(254, 49, 54, 56),
-          selectedLabelStyle: const TextStyle(fontSize: 10),
-          unselectedLabelStyle: const TextStyle(fontSize: 10),
-          type: BottomNavigationBarType.fixed,
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard, size: 28),
-              label: 'Dashboard',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.list, size: 28),
-              label: 'Satgas',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.credit_card, size: 28),
-              label: 'SIM',
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
           ],
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+          child: BottomNavigationBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            selectedItemColor: const Color(0xFF3F37C9),
+            unselectedItemColor: const Color(0xFF9E9E9E),
+            selectedLabelStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Poppins',
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Poppins',
+            ),
+            type: BottomNavigationBarType.fixed,
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard_outlined, size: 26),
+                activeIcon: Icon(Icons.dashboard, size: 26),
+                label: 'Dashboard',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.security_outlined, size: 26),
+                activeIcon: Icon(Icons.security, size: 26),
+                label: 'Satgas',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.credit_card_outlined, size: 26),
+                activeIcon: Icon(Icons.credit_card, size: 26),
+                label: 'SIM',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopIconButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    bool isDestructive = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(
+          icon,
+          color: isDestructive ? Colors.red.shade200 : Colors.white,
+          size: 22,
+        ),
+        padding: const EdgeInsets.all(8),
+        constraints: const BoxConstraints(
+          minWidth: 44,
+          minHeight: 44,
         ),
       ),
     );
@@ -128,7 +183,6 @@ class _DashboardContentState extends State<DashboardContent> {
   int akunSatgas = 0;
   int akunAdmin = 0;
   int jumlahParkir = 0;
-  int jumlahBlmP = 0;
   List<dynamic> aktivitas = [];
 
   @override
@@ -137,68 +191,51 @@ class _DashboardContentState extends State<DashboardContent> {
     _loadStats();
   }
 
-Future<void> _loadStats() async {
-  try {
-    final simAccRes = await supabase.from('siswa').select('*');
-    final simPendingRes = await supabase.from('pending_siswa').select('*');
-    final satgasRes = await supabase.from('profiles').select('*').eq('role', 'satgas');
-    final adminRes = await supabase.from('profiles').select('*').eq('role', 'admin');
+  Future<void> _loadStats() async {
+    try {
+      final results = await Future.wait([
+        supabase.from('siswa').select('*'),
+        supabase.from('pending_siswa').select('*'),
+        supabase.from('profiles').select('*').eq('role', 'satgas'),
+        supabase.from('profiles').select('*').eq('role', 'admin'),
+        supabase.from('siswa').select('nama, status').order('created_at', ascending: false).limit(5),
+        supabase.from('parkir').select('siswa_id').eq('tanggal', DateTime.now().toIso8601String().split('T')[0]),
+      ]);
 
-    final aktivitasRes = await supabase
-        .from('siswa')
-        .select('nama, status')
-        .order('created_at', ascending: false)
-        .limit(3);
+      if (!mounted) return;
 
-    final jumlahParkirRes = await supabase
-        .from('parkir')
-        .select('siswa_id')
-        .eq('tanggal', DateTime.now().toIso8601String().split('T')[0]);
-
-    if (!mounted) return; // ✅ Tambahkan ini!
-
-    setState(() {
-      simAcc = (simAccRes as List).length;
-      simPending = (simPendingRes as List).length;
-      akunSatgas = (satgasRes as List).length;
-      akunAdmin = (adminRes as List).length;
-      aktivitas = aktivitasRes as List;
-      jumlahParkir = (jumlahParkirRes as List).length;
-      loading = false;
-    });
-  } catch (e) {
-    if (!mounted) return; // ✅ Pastikan juga di sini
-    setState(() {
-      loading = false;
-    });
+      setState(() {
+        simAcc = (results[0] as List).length;
+        simPending = (results[1] as List).length;
+        akunSatgas = (results[2] as List).length;
+        akunAdmin = (results[3] as List).length;
+        aktivitas = results[4] as List;
+        jumlahParkir = (results[5] as List).length;
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+    }
   }
-}
-
-@override
-void dispose() {
-  super.dispose();
-  // Jika kamu pakai timer atau stream, pastikan cancel di sini:
-  // _timer?.cancel();
-  // _subscription?.cancel();
-}
 
   @override
   Widget build(BuildContext context) {
     if (loading) {
       return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+        child: CircularProgressIndicator(
+          color: Colors.white,
+          strokeWidth: 3,
+        ),
       );
     }
-
-    final w = MediaQuery.of(context).size.width;
-    final isSmall = w < 380;
 
     final total = simAcc + simPending + akunSatgas + akunAdmin;
     double _percent(int value) => total == 0 ? 0 : value / total;
 
     return Container(
       width: double.infinity,
-      height: double.infinity, // ✅ isi penuh layar
+      height: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF3F37C9), Color(0xFF1D1879)],
@@ -207,207 +244,381 @@ void dispose() {
         ),
       ),
       child: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
+        child: RefreshIndicator(
+          onRefresh: _loadStats,
+          color: Colors.white,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 50),
+                
+                // Header
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Selamat',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white70,
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w500,
+                            height: 1.2,
+                          ),
+                        ),
+                        Text(
+                          'Datang',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white70,
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w500,
+                            height: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'ADMIN',
+                      style: TextStyle(
+                        fontSize: 42,
+                        color: Colors.white,
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        height: 1,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Dashboard Overview',
+                  style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 14,
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 32),
 
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Column(
+                // Big Stats
+                Row(
+                  children: [
+                    Expanded(
+                      child: _bigStatCard(
+                        jumlahParkir.toString(),
+                        "Sudah Parkir",
+                        Icons.check_circle_outline,
+                        const Color(0xFF4CAF50),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _bigStatCard(
+                        (simAcc - jumlahParkir).toString(),
+                        "Belum Parkir",
+                        Icons.pending_outlined,
+                        const Color(0xFFFFA726),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 28),
+
+                // Mini Progress Circles
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const[
-                      Text(
-                        'Selamat',
+                    children: [
+                      const Text(
+                        "Statistik Akun",
                         style: TextStyle(
-                          fontSize: 14,
                           color: Colors.white,
                           fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.0
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      Text(
-                        'datang',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.0
-                        ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _miniProgressCircle(
+                            value: _percent(simAcc),
+                            label: "SIM",
+                            count: simAcc,
+                            color: const Color(0xFF2196F3),
+                          ),
+                          _miniProgressCircle(
+                            value: _percent(simPending),
+                            label: "Pending",
+                            count: simPending,
+                            color: const Color(0xFFFFA726),
+                          ),
+                          _miniProgressCircle(
+                            value: _percent(akunSatgas),
+                            label: "Satgas",
+                            count: akunSatgas,
+                            color: const Color(0xFF9C27B0),
+                          ),
+                          _miniProgressCircle(
+                            value: _percent(akunAdmin),
+                            label: "Admin",
+                            count: akunAdmin,
+                            color: const Color(0xFF4CAF50),
+                          ),
+                        ],
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 28),
 
-                  Text(
-                    'ADMIN',
+                // Recent Activity
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    Text(
+                      "Aktivitas Terbaru",
                       style: TextStyle(
-                      fontSize: isSmall ? 36 : 48,
-                      color: Colors.white,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.0
+                        color: Colors.white,
+                        fontFamily: 'Poppins',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-              const SizedBox(height: 6),
-
-              const Text(
-                'Admin Dashboard',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                  fontFamily: 'Lato',
-                  fontWeight: FontWeight.w700,
-                )
-              ),
-
-              const SizedBox(height: 24),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _bigStatCard(
-                        jumlahParkir.toString(), "Jumlah yg sudah parkir"),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _bigStatCard(
-                        jumlahBlmP.toString(), "Jumlah yg belum parkir"),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _miniProgressCircle(
-                      value: _percent(simAcc), label: "SIM Acc ($simAcc)"),
-                  _miniProgressCircle(
-                      value: _percent(simPending),
-                      label: "SIM Pending ($simPending)"),
-                  _miniProgressCircle(
-                      value: _percent(akunSatgas),
-                      label: "Satgas ($akunSatgas)"),
-                  _miniProgressCircle(
-                      value: _percent(akunAdmin), label: "Admin ($akunAdmin)"),
-                ],
-              ),
-              const SizedBox(height: 28),
-
-              const Text(
-                "Aktivitas Terbaru",
-                style: TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'Poppins',
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-
-              Column(
-                children: aktivitas.isNotEmpty
-                    ? aktivitas
-                        .map((data) => _activityCard(
-                            'Siswa "${data['nama']}" → ${data['status']}'))
-                        .toList()
-                    : [
-                        _activityCard("Belum ada aktivitas terbaru"),
-                      ],
-              ),
-            ],
+                if (aktivitas.isEmpty)
+                  _emptyActivityCard()
+                else
+                  ...aktivitas.map((data) => _activityCard(
+                        data['nama'] ?? 'Unknown',
+                        data['status'] ?? 'Unknown',
+                      )),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  static Widget _bigStatCard(String value, String label) {
+  Widget _bigStatCard(String value, String label, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF2B0A70),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          )
-        ],
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 48,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold)),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 28),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 36,
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'Poppins',
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70, fontSize: 14)),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Poppins',
+            ),
+          ),
         ],
       ),
     );
   }
 
-  static Widget _miniProgressCircle({
+  Widget _miniProgressCircle({
     required double value,
     required String label,
+    required int count,
+    required Color color,
   }) {
     return Column(
       children: [
         SizedBox(
-          width: 58,
-          height: 58,
+          width: 60,
+          height: 60,
           child: Stack(
             fit: StackFit.expand,
             children: [
               CircularProgressIndicator(
                 value: value,
-                strokeWidth: 6,
-                backgroundColor: Colors.white12,
-                color: Colors.white,
+                strokeWidth: 5,
+                backgroundColor: Colors.white.withOpacity(0.2),
+                color: color,
               ),
               Center(
                 child: Text(
-                  "${(value * 100).toInt()}%",
+                  count.toString(),
                   style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    fontFamily: 'Poppins',
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 6),
-        Text(label,
-            style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Poppins',
+          ),
+        ),
       ],
     );
   }
 
-  static Widget _activityCard(String text) {
+  Widget _activityCard(String nama, String status) {
+    IconData icon;
+    Color iconColor;
+
+    if (status.toLowerCase().contains('approved')) {
+      icon = Icons.check_circle;
+      iconColor = const Color(0xFF4CAF50);
+    } else if (status.toLowerCase().contains('pending')) {
+      icon = Icons.schedule;
+      iconColor = const Color(0xFFFFA726);
+    } else {
+      icon = Icons.info;
+      iconColor = const Color(0xFF2196F3);
+    }
+
     return Container(
-      width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF4B19B5),
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.15),
+          width: 1,
+        ),
       ),
-      child:
-          Text(text, style: const TextStyle(color: Colors.white, fontSize: 16)),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  nama,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Poppins',
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  status,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 13,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyActivityCard() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.15),
+          width: 1,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 48,
+              color: Colors.white.withOpacity(0.5),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Belum ada aktivitas",
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 14,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
