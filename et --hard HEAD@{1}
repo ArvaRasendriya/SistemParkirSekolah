@@ -1,0 +1,66 @@
+[33me0bd089[m[33m ([m[1;36mHEAD[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull origin main --rebase (start): checkout e0bd08944c12615d56eaa61f5feb48e230a526b1
+[33m79a161f[m[33m ([m[1;32mscan_improve[m[33m)[m HEAD@{1}: commit: Final
+[33m50fb764[m[33m ([m[1;31morigin/scan_improve[m[33m, [m[1;32mTheme[m[33m)[m HEAD@{2}: checkout: moving from Theme to scan_improve
+[33m50fb764[m[33m ([m[1;31morigin/scan_improve[m[33m, [m[1;32mTheme[m[33m)[m HEAD@{3}: commit: scan and improve dashboard
+[33m98dbccd[m[33m ([m[1;31morigin/Theme[m[33m)[m HEAD@{4}: pull origin Theme: Fast-forward
+[33m1c88222[m HEAD@{5}: reset: moving to HEAD
+[33m1c88222[m HEAD@{6}: commit: detail
+[33mdd16c5a[m HEAD@{7}: commit: pwe
+[33m5f81b5f[m[33m ([m[1;32msim_approve[m[33m)[m HEAD@{8}: checkout: moving from sim_approve to Theme
+[33m5f81b5f[m[33m ([m[1;32msim_approve[m[33m)[m HEAD@{9}: commit (merge): Baru
+[33mbcd6430[m HEAD@{10}: reset: moving to HEAD
+[33mbcd6430[m HEAD@{11}: reset: moving to HEAD
+[33mbcd6430[m HEAD@{12}: commit (merge): Merge branch 'main' of https://github.com/ArvaRasendriya/SistemParkirSekolah into sim_approve
+[33mad91aee[m HEAD@{13}: commit: hby
+[33m209abde[m[33m ([m[1;31morigin/sim_approve[m[33m)[m HEAD@{14}: commit: sim approve v2
+[33m5bba024[m HEAD@{15}: commit: sim approve
+[33m9be0492[m[33m ([m[1;32mcrop[m[33m)[m HEAD@{16}: checkout: moving from crop to sim_approve
+[33m9be0492[m[33m ([m[1;32mcrop[m[33m)[m HEAD@{17}: commit (merge): entah
+[33m4edab51[m HEAD@{18}: reset: moving to HEAD
+[33m4edab51[m HEAD@{19}: pull origin main: updating HEAD
+[33m4edab51[m HEAD@{20}: pull origin main: updating HEAD
+[33m4edab51[m HEAD@{21}: pull origin frontend_5: updating HEAD
+[33m4edab51[m HEAD@{22}: commit (merge): Merge branch 'main' of https://github.com/ArvaRasendriya/SistemParkirSekolah into crop
+[33mf233a15[m[33m ([m[1;31morigin/crop[m[33m, [m[1;32msim_scanner[m[33m)[m HEAD@{23}: checkout: moving from sim_scanner to crop
+[33mf233a15[m[33m ([m[1;31morigin/crop[m[33m, [m[1;32msim_scanner[m[33m)[m HEAD@{24}: commit: crop
+[33mc9ee57b[m HEAD@{25}: commit (merge): Merge branch 'main' of https://github.com/ArvaRasendriya/SistemParkirSekolah into sim_scanner
+[33mad908ac[m HEAD@{26}: commit (merge): Merge branch 'atmin' of https://github.com/ArvaRasendriya/SistemParkirSekolah into sim_scanner
+[33mb8e584c[m HEAD@{27}: commit: update: perbaikan scan API
+[33m90e1648[m HEAD@{28}: commit: scan
+[33m396c4c8[m HEAD@{29}: commit: Backend sim
+[33m523eab4[m[33m ([m[1;31morigin/sim_scanner[m[33m, [m[1;32mqr_scan_3[m[33m)[m HEAD@{30}: checkout: moving from qr_scan_3 to sim_scanner
+[33m523eab4[m[33m ([m[1;31morigin/sim_scanner[m[33m, [m[1;32mqr_scan_3[m[33m)[m HEAD@{31}: commit: Sim scanner
+[33m095cc3d[m HEAD@{32}: reset: moving to HEAD
+[33m095cc3d[m HEAD@{33}: reset: moving to HEAD
+[33m095cc3d[m HEAD@{34}: reset: moving to HEAD
+[33m095cc3d[m HEAD@{35}: commit (merge): Merge branch 'frontend_2' of https://github.com/ArvaRasendriya/SistemParkirSekolah into qr_scan_3
+[33m2e0305a[m HEAD@{36}: commit (merge): Merge branch 'edit' of https://github.com/ArvaRasendriya/SistemParkirSekolah into qr_scan_3
+[33mc4313a2[m HEAD@{37}: commit (merge): Merge branch 'qr_scan_10' of https://github.com/ArvaRasendriya/SistemParkirSekolah into qr_scan_3
+[33m05f4493[m HEAD@{38}: reset: moving to HEAD
+[33m05f4493[m HEAD@{39}: reset: moving to HEAD
+[33m05f4493[m HEAD@{40}: reset: moving to HEAD
+[33m05f4493[m HEAD@{41}: reset: moving to HEAD
+[33m05f4493[m HEAD@{42}: reset: moving to HEAD
+[33m05f4493[m HEAD@{43}: commit (merge): Merge branch 'main' of https://github.com/ArvaRasendriya/SistemParkirSekolah into qr_scan_3
+[33mac5b92b[m HEAD@{44}: commit (merge): Merge branch 'ui_arva' of https://github.com/ArvaRasendriya/SistemParkirSekolah into qr_scan_3
+[33m61fa8fe[m HEAD@{45}: pull origin frontend_2: Fast-forward
+[33m0ce7955[m[33m ([m[1;31morigin/qr_scan_3[m[33m)[m HEAD@{46}: pull origin qr_scan_3: Fast-forward
+[33md11dc1f[m HEAD@{47}: commit: qr_scan and result
+[33m484a17d[m[33m ([m[1;31morigin/qr_scan_2[m[33m, [m[1;32mqr_scan_2[m[33m, [m[1;32mqr_scan[m[33m)[m HEAD@{48}: checkout: moving from qr_scan_2 to qr_scan_3
+[33m484a17d[m[33m ([m[1;31morigin/qr_scan_2[m[33m, [m[1;32mqr_scan_2[m[33m, [m[1;32mqr_scan[m[33m)[m HEAD@{49}: checkout: moving from qr_scan to qr_scan_2
+[33m484a17d[m[33m ([m[1;31morigin/qr_scan_2[m[33m, [m[1;32mqr_scan_2[m[33m, [m[1;32mqr_scan[m[33m)[m HEAD@{50}: commit: /
+[33m197f7b8[m HEAD@{51}: commit: qr
+[33mff21c7c[m[33m ([m[1;31morigin/frontend[m[33m, [m[1;32mfrontend[m[33m)[m HEAD@{52}: checkout: moving from frontend to qr_scan
+[33mff21c7c[m[33m ([m[1;31morigin/frontend[m[33m, [m[1;32mfrontend[m[33m)[m HEAD@{53}: commit: hasybi
+[33mc9515ba[m HEAD@{54}: pull origin frontend: Fast-forward
+[33mdc052e6[m[33m ([m[1;32mmain[m[33m)[m HEAD@{55}: checkout: moving from main to frontend
+[33mdc052e6[m[33m ([m[1;32mmain[m[33m)[m HEAD@{56}: pull origin main: Fast-forward
+[33mcfa887a[m HEAD@{57}: commit: ubah api
+[33m781c277[m HEAD@{58}: commit (merge): Merge branch 'main' of https://github.com/ArvaRasendriya/SistemParkirSekolah
+[33m52e3572[m HEAD@{59}: commit: a
+[33m0648e69[m HEAD@{60}: reset: moving to HEAD
+[33m0648e69[m HEAD@{61}: reset: moving to HEAD
+[33m0648e69[m HEAD@{62}: commit: ubah
+[33m65234cd[m HEAD@{63}: commit: ubah
+[33m8fd3225[m HEAD@{64}: Branch: renamed refs/heads/main to refs/heads/main
+[33m8fd3225[m HEAD@{66}: commit (initial): first commit
