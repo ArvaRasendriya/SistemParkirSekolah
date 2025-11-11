@@ -15,6 +15,8 @@ class _SatgasListPageState extends State<SatgasListPage> {
   List<Map<String, dynamic>> satgasAccounts = [];
   List<Map<String, dynamic>> filteredAccounts = [];
   bool isLoading = true;
+  bool _hasError = false;
+  String? _errorMessage;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -43,7 +45,12 @@ class _SatgasListPageState extends State<SatgasListPage> {
   }
 
   Future<void> fetchSatgasAccounts() async {
-    setState(() => isLoading = true);
+    setState(() {
+      isLoading = true;
+      _hasError = false;
+      _errorMessage = null;
+    });
+
     try {
       final accounts = await authService.getSatgasAccounts();
       final approvedAccounts = accounts.where((account) {
@@ -54,18 +61,30 @@ class _SatgasListPageState extends State<SatgasListPage> {
         satgasAccounts = approvedAccounts;
         filteredAccounts = approvedAccounts;
         isLoading = false;
+        _hasError = false;
       });
     } catch (e) {
       debugPrint('Error fetching satgas accounts: $e');
-      setState(() => isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading satgas accounts: $e'),
-            backgroundColor: AppTheme.error,
-          ),
-        );
+      
+      String errorMsg;
+      if (e.toString().contains('connection') ||
+          e.toString().contains('network') ||
+          e.toString().contains('timeout')) {
+        errorMsg = 'Tidak ada koneksi internet';
+      } else if (e.toString().contains('permission') ||
+          e.toString().contains('denied')) {
+        errorMsg = 'Akses ditolak';
+      } else if (e.toString().contains('timeout')) {
+        errorMsg = 'Waktu permintaan habis';
+      } else {
+        errorMsg = 'Gagal memuat data akun satgas';
       }
+
+      setState(() {
+        isLoading = false;
+        _hasError = true;
+        _errorMessage = errorMsg;
+      });
     }
   }
 
@@ -225,7 +244,6 @@ class _SatgasListPageState extends State<SatgasListPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
                 Row(
                   children: [
                     Container(
@@ -323,7 +341,6 @@ class _SatgasListPageState extends State<SatgasListPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // Action Buttons
                 Row(
                   children: [
                     Expanded(
@@ -420,6 +437,98 @@ class _SatgasListPageState extends State<SatgasListPage> {
     );
   }
 
+  Widget _buildErrorState() {
+    IconData errorIcon;
+    String title;
+    String subtitle;
+    
+    if (_errorMessage?.contains('koneksi internet') ?? false) {
+      errorIcon = Icons.wifi_off_rounded;
+      title = 'Tidak Ada Koneksi';
+      subtitle = 'Pastikan Anda terhubung ke internet dan coba lagi.';
+    } else if (_errorMessage?.contains('Akses ditolak') ?? false) {
+      errorIcon = Icons.lock_outline_rounded;
+      title = 'Akses Ditolak';
+      subtitle = 'Anda tidak memiliki izin untuk melihat data ini.';
+    } else if (_errorMessage?.contains('timeout') ?? false) {
+      errorIcon = Icons.access_time_rounded;
+      title = 'Waktu Habis';
+      subtitle = 'Server membutuhkan waktu terlalu lama. Coba lagi.';
+    } else {
+      errorIcon = Icons.error_outline_rounded;
+      title = 'Terjadi Kesalahan';
+      subtitle = 'Gagal memuat data akun satgas. Silakan coba lagi.';
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626).withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                errorIcon,
+                size: 64,
+                color: const Color(0xFFDC2626),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Poppins',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 15,
+                fontFamily: 'Poppins',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: fetchSatgasAccounts,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+              label: const Text(
+                'Coba Lagi',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppTheme.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GradientScaffold(
@@ -427,239 +536,238 @@ class _SatgasListPageState extends State<SatgasListPage> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text(
-          'Akun Satgas',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Poppins',
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.pending_actions, color: Colors.white, size: 20),
+            'Akun Satgas',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Poppins',
             ),
-            tooltip: 'Pending Approvals',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AdminApprovalPage(),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: fetchSatgasAccounts,
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 3,
+                child: const Icon(Icons.pending_actions, color: Colors.white, size: 20),
               ),
-            )
-          : Padding(
-              padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
-              child: Column(
-                children: [
-                  // Search Bar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Poppins',
-                      ),
-                      decoration: InputDecoration(
-                        hintText: "Cari nama, email, atau kelas...",
-                        hintStyle: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontFamily: 'Poppins',
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(
-                                  Icons.clear,
-                                  color: Colors.white.withOpacity(0.8),
-                                ),
-                                onPressed: () {
-                                  _searchController.clear();
-                                },
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
+              tooltip: 'Pending Approvals',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminApprovalPage(),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Results Count
-                  if (filteredAccounts.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          Text(
-                            '${filteredAccounts.length} Akun Satgas',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'Poppins',
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: fetchSatgasAccounts,
+            ),
+            const SizedBox(width: 4),
+          ],
+        ),
+        body: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
+              )
+            : _hasError
+                ? _buildErrorState()
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
+                    child: Column(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                              width: 1,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
+                          child: TextField(
+                            controller: _searchController,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Poppins',
+                            ),
+                            decoration: InputDecoration(
+                              hintText: "Cari nama, email, atau kelas...",
+                              hintStyle: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontFamily: 'Poppins',
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: Colors.white.withOpacity(0.8),
+                              ),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: Icon(
+                                        Icons.clear,
+                                        color: Colors.white.withOpacity(0.8),
+                                      ),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                      },
+                                    )
+                                  : null,
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.all(16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
 
-                  // List
-                  Expanded(
-                    child: filteredAccounts.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                        if (filteredAccounts.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
                               children: [
-                                Icon(
-                                  _searchController.text.isEmpty
-                                      ? Icons.group_off
-                                      : Icons.search_off,
-                                  size: 80,
-                                  color: Colors.white.withOpacity(0.5),
-                                ),
-                                const SizedBox(height: 16),
                                 Text(
-                                  _searchController.text.isEmpty
-                                      ? 'Tidak ada akun satgas'
-                                      : 'Tidak ditemukan',
+                                  '${filteredAccounts.length} Akun Satgas',
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.8),
-                                    fontSize: 16,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
                                     fontFamily: 'Poppins',
                                   ),
                                 ),
                               ],
                             ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: fetchSatgasAccounts,
-                            color: AppTheme.primary,
-                            child: ListView.builder(
-                              itemCount: filteredAccounts.length,
-                              itemBuilder: (context, index) {
-                                final account = filteredAccounts[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Colors.white.withOpacity(0.2),
-                                        width: 1,
+                          ),
+
+                        Expanded(
+                          child: filteredAccounts.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        _searchController.text.isEmpty
+                                            ? Icons.group_off
+                                            : Icons.search_off,
+                                        size: 80,
+                                        color: Colors.white.withOpacity(0.5),
                                       ),
-                                    ),
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        onTap: () => _showDetailDialog(account),
-                                        borderRadius: BorderRadius.circular(16),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(12),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white.withOpacity(0.2),
-                                                  borderRadius: BorderRadius.circular(12),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.security,
-                                                  color: Colors.white,
-                                                  size: 24,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 14),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        _searchController.text.isEmpty
+                                            ? 'Tidak ada akun satgas'
+                                            : 'Tidak ditemukan',
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontSize: 16,
+                                          fontFamily: 'Poppins',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : RefreshIndicator(
+                                  onRefresh: fetchSatgasAccounts,
+                                  color: AppTheme.primary,
+                                  child: ListView.builder(
+                                    itemCount: filteredAccounts.length,
+                                    itemBuilder: (context, index) {
+                                      final account = filteredAccounts[index];
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 12),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(
+                                              color: Colors.white.withOpacity(0.2),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              onTap: () => _showDetailDialog(account),
+                                              borderRadius: BorderRadius.circular(16),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(16),
+                                                child: Row(
                                                   children: [
-                                                    Text(
-                                                      account['full_name'] ?? 'No name',
-                                                      style: const TextStyle(
+                                                    Container(
+                                                      padding: const EdgeInsets.all(12),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white.withOpacity(0.2),
+                                                        borderRadius: BorderRadius.circular(12),
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons.security,
                                                         color: Colors.white,
-                                                        fontSize: 15,
-                                                        fontWeight: FontWeight.w600,
-                                                        fontFamily: 'Poppins',
+                                                        size: 24,
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
                                                     ),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      "${account['kelas'] ?? '-'} • ${account['jurusan'] ?? '-'}",
-                                                      style: TextStyle(
-                                                        color: Colors.white.withOpacity(0.7),
-                                                        fontSize: 13,
-                                                        fontFamily: 'Poppins',
+                                                    const SizedBox(width: 14),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                            account['full_name'] ?? 'No name',
+                                                            style: const TextStyle(
+                                                              color: Colors.white,
+                                                              fontSize: 15,
+                                                              fontWeight: FontWeight.w600,
+                                                              fontFamily: 'Poppins',
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                          const SizedBox(height: 4),
+                                                          Text(
+                                                            "${account['kelas'] ?? '-'} • ${account['jurusan'] ?? '-'}",
+                                                            style: TextStyle(
+                                                              color: Colors.white.withOpacity(0.7),
+                                                              fontSize: 13,
+                                                              fontFamily: 'Poppins',
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                        ],
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                    IconButton(
+                                                      icon: Icon(
+                                                        Icons.delete_outline,
+                                                        color: Colors.red.shade300,
+                                                        size: 22,
+                                                      ),
+                                                      onPressed: () => _deleteAccount(
+                                                        account['id'],
+                                                        account['email'] ?? '',
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
                                               ),
-                                              IconButton(
-                                                icon: Icon(
-                                                  Icons.delete_outline,
-                                                  color: Colors.red.shade300,
-                                                  size: 22,
-                                                ),
-                                                onPressed: () => _deleteAccount(
-                                                  account['id'],
-                                                  account['email'] ?? '',
-                                                ),
-                                              ),
-                                            ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ),
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                            ),
-                          ),
+                                ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
-    );
+      );
   }
 }

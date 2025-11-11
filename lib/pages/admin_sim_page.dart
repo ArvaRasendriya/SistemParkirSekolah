@@ -14,6 +14,8 @@ class _AdminSimPageState extends State<AdminSimPage> {
   List<Map<String, dynamic>> simData = [];
   List<Map<String, dynamic>> filteredData = [];
   bool isLoading = true;
+  bool _hasError = false;
+  String? _errorMessage;
   String? selectedKelas;
   final TextEditingController _searchController = TextEditingController();
 
@@ -55,7 +57,12 @@ class _AdminSimPageState extends State<AdminSimPage> {
   }
 
   Future<void> _fetchSimData() async {
-    setState(() => isLoading = true);
+    setState(() {
+      isLoading = true;
+      _hasError = false;
+      _errorMessage = null;
+    });
+
     try {
       final response = await supabase
           .from("siswa")
@@ -64,18 +71,29 @@ class _AdminSimPageState extends State<AdminSimPage> {
       setState(() {
         simData = List<Map<String, dynamic>>.from(response);
         filteredData = simData;
+        _hasError = false;
       });
     } catch (e) {
       debugPrint("Error fetch data: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Gagal memuat data SIM: $e"),
-            backgroundColor: AppTheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      
+      String errorMsg;
+      if (e.toString().contains('connection') ||
+          e.toString().contains('network') ||
+          e.toString().contains('timeout')) {
+        errorMsg = 'Tidak ada koneksi internet';
+      } else if (e.toString().contains('permission') ||
+          e.toString().contains('denied')) {
+        errorMsg = 'Akses ditolak';
+      } else if (e.toString().contains('timeout')) {
+        errorMsg = 'Waktu permintaan habis';
+      } else {
+        errorMsg = 'Gagal memuat data SIM';
       }
+
+      setState(() {
+        _hasError = true;
+        _errorMessage = errorMsg;
+      });
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
@@ -456,6 +474,98 @@ class _AdminSimPageState extends State<AdminSimPage> {
     );
   }
 
+  Widget _buildErrorState() {
+    IconData errorIcon;
+    String title;
+    String subtitle;
+    
+    if (_errorMessage?.contains('koneksi internet') ?? false) {
+      errorIcon = Icons.wifi_off_rounded;
+      title = 'Tidak Ada Koneksi';
+      subtitle = 'Pastikan Anda terhubung ke internet dan coba lagi.';
+    } else if (_errorMessage?.contains('Akses ditolak') ?? false) {
+      errorIcon = Icons.lock_outline_rounded;
+      title = 'Akses Ditolak';
+      subtitle = 'Anda tidak memiliki izin untuk melihat data ini.';
+    } else if (_errorMessage?.contains('timeout') ?? false) {
+      errorIcon = Icons.access_time_rounded;
+      title = 'Waktu Habis';
+      subtitle = 'Server membutuhkan waktu terlalu lama. Coba lagi.';
+    } else {
+      errorIcon = Icons.error_outline_rounded;
+      title = 'Terjadi Kesalahan';
+      subtitle = 'Gagal memuat data SIM. Silakan coba lagi.';
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626).withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                errorIcon,
+                size: 64,
+                color: const Color(0xFFDC2626),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Poppins',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 15,
+                fontFamily: 'Poppins',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _fetchSimData,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+              label: const Text(
+                'Coba Lagi',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppTheme.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final kelasOptions = simData
@@ -471,280 +581,278 @@ class _AdminSimPageState extends State<AdminSimPage> {
         automaticallyImplyLeading: false,
         title: const Text(
           'Data SIM',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Poppins',
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.pending_actions, color: Colors.white, size: 20),
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Poppins',
             ),
-            onPressed: _goToPendingApproval,
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _fetchSimData,
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 3,
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.pending_actions, color: Colors.white, size: 20),
               ),
-            )
-          : Padding(
-              padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
-              child: Column(
-                children: [
-                  // Search Bar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Poppins',
-                      ),
-                      decoration: InputDecoration(
-                        hintText: "Cari nama, kelas, atau jurusan...",
-                        hintStyle: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontFamily: 'Poppins',
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                        suffixIcon: PopupMenuButton<String>(
-                          icon: Icon(
-                            Icons.filter_list,
-                            color: Colors.white.withOpacity(0.8),
+              onPressed: _goToPendingApproval,
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: _fetchSimData,
+            ),
+            const SizedBox(width: 4),
+          ],
+        ),
+        body: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
+              )
+            : _hasError
+                ? _buildErrorState()
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
+                    child: Column(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                              width: 1,
+                            ),
                           ),
-                          tooltip: 'Filter by Kelas',
-                          onSelected: (value) {
-                            setState(() {
-                              selectedKelas = value == 'Semua' ? null : value;
-                            });
-                            _filterData();
-                          },
-                          itemBuilder: (context) {
-                            return [
-                              PopupMenuItem(
-                                value: 'Semua',
-                                child: Row(
-                                  children: [
-                                    if (selectedKelas == null)
-                                      const Icon(Icons.check, size: 18),
-                                    if (selectedKelas == null)
-                                      const SizedBox(width: 8),
-                                    const Text('Semua Kelas'),
-                                  ],
-                                ),
-                              ),
-                              ...kelasOptions.map((k) => PopupMenuItem(
-                                    value: k,
-                                    child: Row(
-                                      children: [
-                                        if (selectedKelas == k)
-                                          const Icon(Icons.check, size: 18),
-                                        if (selectedKelas == k)
-                                          const SizedBox(width: 8),
-                                        Text(k),
-                                      ],
-                                    ),
-                                  )),
-                            ];
-                          },
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Filter Chip
-                  if (selectedKelas != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          Chip(
-                            label: Text('Kelas: $selectedKelas'),
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                            onDeleted: () {
-                              setState(() => selectedKelas = null);
-                              _filterData();
-                            },
-                            backgroundColor: Colors.white.withOpacity(0.2),
-                            labelStyle: const TextStyle(
+                          child: TextField(
+                            controller: _searchController,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontFamily: 'Poppins',
                             ),
-                            deleteIconColor: Colors.white,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  // Results Count
-                  if (filteredData.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          Text(
-                            '${filteredData.length} Data SIM',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  // List
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: _fetchSimData,
-                      color: AppTheme.primary,
-                      child: filteredData.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.search_off,
-                                    size: 80,
-                                    color: Colors.white.withOpacity(0.5),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Tidak ada hasil ditemukan',
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.8),
-                                      fontSize: 16,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                ],
+                            decoration: InputDecoration(
+                              hintText: "Cari nama, kelas, atau jurusan...",
+                              hintStyle: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontFamily: 'Poppins',
                               ),
-                            )
-                          : ListView.builder(
-                              itemCount: filteredData.length,
-                              itemBuilder: (context, index) {
-                                final sim = filteredData[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Colors.white.withOpacity(0.2),
-                                        width: 1,
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: Colors.white.withOpacity(0.8),
+                              ),
+                              suffixIcon: PopupMenuButton<String>(
+                                icon: Icon(
+                                  Icons.filter_list,
+                                  color: Colors.white.withOpacity(0.8),
+                                ),
+                                tooltip: 'Filter by Kelas',
+                                onSelected: (value) {
+                                  setState(() {
+                                    selectedKelas = value == 'Semua' ? null : value;
+                                  });
+                                  _filterData();
+                                },
+                                itemBuilder: (context) {
+                                  return [
+                                    PopupMenuItem(
+                                      value: 'Semua',
+                                      child: Row(
+                                        children: [
+                                          if (selectedKelas == null)
+                                            const Icon(Icons.check, size: 18),
+                                          if (selectedKelas == null)
+                                            const SizedBox(width: 8),
+                                          const Text('Semua Kelas'),
+                                        ],
                                       ),
                                     ),
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        onTap: () => _showSimDetail(sim),
-                                        borderRadius: BorderRadius.circular(16),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16),
+                                    ...kelasOptions.map((k) => PopupMenuItem(
+                                          value: k,
                                           child: Row(
                                             children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(12),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white.withOpacity(0.2),
-                                                  borderRadius: BorderRadius.circular(12),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.credit_card,
-                                                  color: Colors.white,
-                                                  size: 24,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 14),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                              if (selectedKelas == k)
+                                                const Icon(Icons.check, size: 18),
+                                              if (selectedKelas == k)
+                                                const SizedBox(width: 8),
+                                              Text(k),
+                                            ],
+                                          ),
+                                        )),
+                                  ];
+                                },
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.all(16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        if (selectedKelas != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              children: [
+                                Chip(
+                                  label: Text('Kelas: $selectedKelas'),
+                                  deleteIcon: const Icon(Icons.close, size: 18),
+                                  onDeleted: () {
+                                    setState(() => selectedKelas = null);
+                                    _filterData();
+                                  },
+                                  backgroundColor: Colors.white.withOpacity(0.2),
+                                  labelStyle: const TextStyle(
+                                    color: Colors.white,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                  deleteIconColor: Colors.white,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        if (filteredData.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              children: [
+                                Text(
+                                  '${filteredData.length} Data SIM',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        Expanded(
+                          child: RefreshIndicator(
+                            onRefresh: _fetchSimData,
+                            color: AppTheme.primary,
+                            child: filteredData.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.search_off,
+                                          size: 80,
+                                          color: Colors.white.withOpacity(0.5),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Tidak ada hasil ditemukan',
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(0.8),
+                                            fontSize: 16,
+                                            fontFamily: 'Poppins',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    itemCount: filteredData.length,
+                                    itemBuilder: (context, index) {
+                                      final sim = filteredData[index];
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 12),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(
+                                              color: Colors.white.withOpacity(0.2),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              onTap: () => _showSimDetail(sim),
+                                              borderRadius: BorderRadius.circular(16),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(16),
+                                                child: Row(
                                                   children: [
-                                                    Text(
-                                                      sim["nama"] ?? "-",
-                                                      style: const TextStyle(
+                                                    Container(
+                                                      padding: const EdgeInsets.all(12),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white.withOpacity(0.2),
+                                                        borderRadius: BorderRadius.circular(12),
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons.credit_card,
                                                         color: Colors.white,
-                                                        fontSize: 15,
-                                                        fontWeight: FontWeight.w600,
-                                                        fontFamily: 'Poppins',
+                                                        size: 24,
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
                                                     ),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      "${sim["kelas"] ?? "-"} • ${sim["jurusan"] ?? "-"}",
-                                                      style: TextStyle(
-                                                        color: Colors.white.withOpacity(0.7),
-                                                        fontSize: 13,
-                                                        fontFamily: 'Poppins',
+                                                    const SizedBox(width: 14),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                            sim["nama"] ?? "-",
+                                                            style: const TextStyle(
+                                                              color: Colors.white,
+                                                              fontSize: 15,
+                                                              fontWeight: FontWeight.w600,
+                                                              fontFamily: 'Poppins',
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                          const SizedBox(height: 4),
+                                                          Text(
+                                                            "${sim["kelas"] ?? "-"} • ${sim["jurusan"] ?? "-"}",
+                                                            style: TextStyle(
+                                                              color: Colors.white.withOpacity(0.7),
+                                                              fontSize: 13,
+                                                              fontFamily: 'Poppins',
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                        ],
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                    IconButton(
+                                                      icon: Icon(
+                                                        Icons.delete_outline,
+                                                        color: Colors.red.shade300,
+                                                        size: 22,
+                                                      ),
+                                                      onPressed: () => _deleteSim(
+                                                        sim["id"],
+                                                        sim["nama"] ?? "",
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
                                               ),
-                                              IconButton(
-                                                icon: Icon(
-                                                  Icons.delete_outline,
-                                                  color: Colors.red.shade300,
-                                                  size: 22,
-                                                ),
-                                                onPressed: () => _deleteSim(
-                                                  sim["id"],
-                                                  sim["nama"] ?? "",
-                                                ),
-                                              ),
-                                            ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ),
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-    );
+      );
   }
 }

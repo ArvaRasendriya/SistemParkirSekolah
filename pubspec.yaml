@@ -47,9 +47,9 @@ dependencies:
   image_picker: 1.2.0
   uuid: 4.5.1
   font_awesome_flutter: ^10.9.1
-
+  connectivity_plus: 7.0.0
+  crypto: ^3.0.3
   image: ^4.5.4
-  camerawesome: ^2.5.0
   open_file: ^3.5.4
   crop_your_image: ^2.0.0
   image_cropper: ^11.0.0

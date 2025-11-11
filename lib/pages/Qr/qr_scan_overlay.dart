@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../theme/app_theme.dart';
-import './corner_painter.dart';
+import 'corner_painter.dart';
 import 'qr_scan_dialogs.dart';
 import 'qr_scan_utils.dart';
 

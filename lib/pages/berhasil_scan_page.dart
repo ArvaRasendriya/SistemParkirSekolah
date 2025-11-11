@@ -119,8 +119,8 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
                     buildRow(
                         "Status",
                         data!['status'] == "Masuk"
-                            ? "✅ ${data!['status']}"
-                            : "❌ ${data!['status']}"),
+                            ? "âœ… ${data!['status']}"
+                            : "âŒ ${data!['status']}"),
 
                     const SizedBox(height: 30),
 

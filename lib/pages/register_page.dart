@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'dart:async';
 import 'package:tefa_parkir/auth/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
@@ -16,6 +17,7 @@ class _RegisterPageState extends State<RegisterPage>
     with SingleTickerProviderStateMixin {
   final authservice = AuthService();
   final _formKey = GlobalKey<FormState>();
+  final supabase = Supabase.instance.client;
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -28,19 +30,26 @@ class _RegisterPageState extends State<RegisterPage>
   String? _selectedJurusan;
 
   static const List<String> grades = ['X', 'XI', 'XII'];
-  static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ'];
+  static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ', 'TITL'];
   static const List<String> classes = ['1', '2', '3', '4', '5', '6'];
   static const List<String> jurusans = [
     'Rekayasa Perangkat Lunak',
     'Desain Komunikasi Visual',
     'Teknik Otomasi Industri',
     'Teknik Audio Video',
-    'Teknik Komputer Jaringan'
+    'Teknik Komputer Jaringan',
+    'Teknik Instalasi Tenaga Listrik'
   ];
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
+
+  // Email validation states
+  bool _isCheckingEmail = false;
+  bool? _isEmailAvailable;
+  String? _emailErrorMessage;
+  Timer? _debounceTimer;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -50,6 +59,7 @@ class _RegisterPageState extends State<RegisterPage>
   void initState() {
     super.initState();
     _setupAnimations();
+    _emailController.addListener(_onEmailChanged);
   }
 
   void _setupAnimations() {
@@ -76,6 +86,7 @@ class _RegisterPageState extends State<RegisterPage>
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _animController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -84,8 +95,89 @@ class _RegisterPageState extends State<RegisterPage>
     super.dispose();
   }
 
+  void _onEmailChanged() {
+    _debounceTimer?.cancel();
+
+    if (_emailController.text.trim().isEmpty) {
+      setState(() {
+        _isCheckingEmail = false;
+        _isEmailAvailable = null;
+        _emailErrorMessage = null;
+      });
+      return;
+    }
+
+    if (!_isValidEmail(_emailController.text.trim())) {
+      setState(() {
+        _isCheckingEmail = false;
+        _isEmailAvailable = false;
+        _emailErrorMessage = "Format email tidak valid";
+      });
+      return;
+    }
+
+    setState(() {
+      _isCheckingEmail = true;
+      _isEmailAvailable = null;
+      _emailErrorMessage = null;
+    });
+
+    _debounceTimer = Timer(const Duration(milliseconds: 800), () {
+      _checkEmailAvailability(_emailController.text.trim());
+    });
+  }
+
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return emailRegex.hasMatch(email);
+  }
+
+  Future<void> _checkEmailAvailability(String email) async {
+    try {
+      final normalizedEmail = email.trim().toLowerCase();
+      
+      // ✅ Hanya cek di tabel profiles (karena tidak pakai auth.users lagi)
+      final profileResponse = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('email', normalizedEmail)
+          .maybeSingle();
+
+      if (mounted) {
+        if (profileResponse != null) {
+          setState(() {
+            _isCheckingEmail = false;
+            _isEmailAvailable = false;
+            _emailErrorMessage = "Email sudah terdaftar";
+          });
+        } else {
+          setState(() {
+            _isCheckingEmail = false;
+            _isEmailAvailable = true;
+            _emailErrorMessage = null;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("❌ Error checking email: $e");
+      if (mounted) {
+        setState(() {
+          _isCheckingEmail = false;
+          _isEmailAvailable = null;
+          _emailErrorMessage = "Gagal memeriksa email";
+        });
+      }
+    }
+  }
+
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Validate email availability
+    if (_isEmailAvailable != true) {
+      _showSnackBar(_emailErrorMessage ?? 'Email tidak tersedia', isError: true);
+      return;
+    }
 
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -110,63 +202,122 @@ class _RegisterPageState extends State<RegisterPage>
     setState(() => _isLoading = true);
 
     try {
-      final response = await authservice.signUpWithEmailPassword(email, password);
-      final user = response.user;
+      // ✅ Sign up dengan custom auth (tidak pakai Supabase Auth)
+      debugPrint('🔄 Starting sign up...');
       
-      if (user != null) {
-        await authservice.createProfile(
-          user.id,
-          email,
-          full_name: fullName,
-          kelas: kelas,
-          jurusan: jurusan,
-        );
-      }
+      final result = await authservice.signUpWithEmailPassword(
+        email,
+        password,
+        fullName: fullName,
+        kelas: kelas,
+        jurusan: jurusan,
+      );
+
+      debugPrint('✅ Sign up successful: ${result['email']}');
 
       if (mounted) {
+        // Tampilkan dialog sukses
         await showDialog(
           context: context,
+          barrierDismissible: false,
           builder: (context) => AlertDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusL),
             ),
             title: Row(
               children: [
-                Icon(Icons.check_circle, color: AppTheme.success),
+                Icon(Icons.check_circle, color: AppTheme.success, size: 28),
                 const SizedBox(width: AppTheme.spaceS),
-                Text('Sukses', style: AppTheme.h3),
+                Expanded(
+                  child: Text('Pendaftaran Berhasil', style: AppTheme.h3),
+                ),
               ],
             ),
-            content: Text(
-              'Registrasi berhasil! Silakan cek email untuk verifikasi.',
-              style: AppTheme.bodyMedium,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Akun Anda berhasil didaftarkan!',
+                  style: AppTheme.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceM),
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.spaceM),
+                  decoration: BoxDecoration(
+                    color: AppTheme.warning.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                    border: Border.all(
+                      color: AppTheme.warning.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.hourglass_empty,
+                        color: AppTheme.warning,
+                        size: 20,
+                      ),
+                      const SizedBox(width: AppTheme.spaceS),
+                      Expanded(
+                        child: Text(
+                          'Akun Anda sedang menunggu persetujuan admin.',
+                          style: AppTheme.bodySmall.copyWith(
+                            color: AppTheme.warning,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceS),
+                Text(
+                  'Anda akan dapat login setelah admin menyetujui akun Anda.',
+                  style: AppTheme.bodySmall.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
             ),
             actions: [
               AppButton(
-                text: 'OK',
-                onPressed: () => Navigator.of(context).pop(),
+                text: 'Mengerti',
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                  );
+                },
                 height: 44,
               ),
             ],
           ),
         );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-        );
       }
     } catch (e) {
+      debugPrint('❌ Sign up error: $e');
+      
       if (mounted) {
-        String errorMessage = 'Terjadi kesalahan';
-        if (e is AuthException) {
-          errorMessage = e.message;
-          if (errorMessage.contains('already registered')) {
-            errorMessage = 'Email sudah terdaftar';
-          } else if (errorMessage.contains('Invalid email')) {
-            errorMessage = 'Format email tidak valid';
-          }
+        String errorMessage = 'Terjadi kesalahan saat mendaftar';
+        
+        final errorStr = e.toString().toLowerCase();
+        
+        if (errorStr.contains('email sudah terdaftar') || 
+            errorStr.contains('duplicate') ||
+            errorStr.contains('already')) {
+          errorMessage = 'Email sudah terdaftar. Silakan gunakan email lain atau login.';
+        } else if (errorStr.contains('invalid email')) {
+          errorMessage = 'Format email tidak valid';
+        } else if (errorStr.contains('password')) {
+          errorMessage = 'Password terlalu lemah. Minimal 6 karakter.';
+        } else if (errorStr.contains('network') || errorStr.contains('connection')) {
+          errorMessage = 'Gagal terhubung ke server. Cek koneksi internet Anda.';
         }
+        
         _showSnackBar(errorMessage, isError: true);
       }
     } finally {
@@ -183,6 +334,7 @@ class _RegisterPageState extends State<RegisterPage>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusM),
         ),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -252,23 +404,8 @@ class _RegisterPageState extends State<RegisterPage>
                                 children: [
                                   const SizedBox(height: AppTheme.spaceM),
 
-                                  // Email
-                                  AppTextField(
-                                    controller: _emailController,
-                                    labelText: 'Email',
-                                    hintText: 'john_doe67@gmail.com',
-                                    prefixIcon: Icons.email_outlined,
-                                    keyboardType: TextInputType.emailAddress,
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Email wajib diisi';
-                                      }
-                                      if (!value.contains('@')) {
-                                        return 'Format email tidak valid';
-                                      }
-                                      return null;
-                                    },
-                                  ),
+                                  // Email with validation
+                                  _buildEmailField(),
 
                                   const SizedBox(height: AppTheme.spaceL),
 
@@ -409,18 +546,19 @@ class _RegisterPageState extends State<RegisterPage>
                                   const SizedBox(height: AppTheme.spaceS),
                                   _buildDropdown(
                                     value: _selectedJurusan,
-                                    hint: 'Rekayasa Perangkat Lunak',
+                                    hint: 'Pilih Jurusan',
                                     items: jurusans,
                                     onChanged: (v) => setState(() => _selectedJurusan = v),
                                   ),
-                                  
 
                                   const SizedBox(height: AppTheme.spaceXL),
 
                                   // Register Button
                                   AppButton(
-                                    text: 'Register',
-                                    onPressed: _signUp,
+                                    text: 'Daftar',
+                                    onPressed: (_isEmailAvailable != true || _isLoading) 
+                                        ? null 
+                                        : _signUp,
                                     isLoading: _isLoading,
                                     height: 56,
                                   ),
@@ -444,12 +582,14 @@ class _RegisterPageState extends State<RegisterPage>
                                             ),
                                             recognizer: TapGestureRecognizer()
                                               ..onTap = () {
-                                                Navigator.pushReplacement(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) => const LoginPage(),
-                                                  ),
-                                                );
+                                                if (!_isLoading) {
+                                                  Navigator.pushReplacement(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (_) => const LoginPage(),
+                                                    ),
+                                                  );
+                                                }
                                               },
                                           ),
                                         ],
@@ -472,6 +612,94 @@ class _RegisterPageState extends State<RegisterPage>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildEmailField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppTextField(
+          controller: _emailController,
+          labelText: 'Email',
+          hintText: 'john_doe67@gmail.com',
+          prefixIcon: Icons.email_outlined,
+          keyboardType: TextInputType.emailAddress,
+          suffixIcon: _isCheckingEmail
+              ? const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                )
+              : _isEmailAvailable != null
+                  ? Icon(
+                      _isEmailAvailable! 
+                          ? Icons.check_circle 
+                          : Icons.cancel,
+                      color: _isEmailAvailable! 
+                          ? AppTheme.success
+                          : AppTheme.error,
+                      size: 24,
+                    )
+                  : null,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Email wajib diisi';
+            }
+            if (!value.contains('@')) {
+              return 'Format email tidak valid';
+            }
+            return null;
+          },
+        ),
+        if (_emailErrorMessage != null) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: AppTheme.error,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  _emailErrorMessage!,
+                  style: AppTheme.bodySmall.copyWith(
+                    color: AppTheme.error,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ] else if (_isEmailAvailable == true) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                size: 16,
+                color: AppTheme.success,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                "Email tersedia",
+                style: AppTheme.bodySmall.copyWith(
+                  color: AppTheme.success,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 

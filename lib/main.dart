@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tefa_parkir/auth/auth_gate.dart';
-
-// Import halaman lain
 import 'pages/daftar_page.dart';
 import 'pages/login_page.dart';
 import 'pages/profile_page.dart';
@@ -11,6 +9,7 @@ import 'pages/welcome_page.dart';
 import 'pages/splash_screen.dart';
 import 'pages/admin_sim_page.dart';
 import 'pages/pending_sim_approval_page.dart';
+import 'pages/connectivity_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,9 +42,12 @@ class MyApp extends StatelessWidget {
         '/auth': (context) => const SafeArea(child: AuthGate()),
         '/welcome': (context) => const SafeArea(child: WelcomePage()),
         '/adminSim': (context) => const SafeArea(child: AdminSimPage()),
-        '/pendingSimApproval': (context) =>
-            const SafeArea(child: PendingSimApprovalPage()),
+        '/pendingSimApproval': (context) =>const SafeArea(child: PendingSimApprovalPage()),
+
+        
       },
+      builder: (context, child) {
+        return ConnectivityBanner(child: child ?? const SizedBox()); }
     );
   }
 }

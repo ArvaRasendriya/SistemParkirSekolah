@@ -45,95 +45,95 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: _pages[_selectedIndex],
-          ),
-          if (_selectedIndex == 0)
-            Positioned(
-              top: 40,
-              right: 16,
-              child: SafeArea(
-                child: Row(
-                  children: [
-                    _buildTopIconButton(
-                      icon: Icons.person_outline,
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ProfilePage()),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    _buildTopIconButton(
-                      icon: Icons.logout,
-                      onPressed: _logout,
-                      isDestructive: true,
-                    ),
-                  ],
+              child: _pages[_selectedIndex],
+            ),
+            if (_selectedIndex == 0)
+              Positioned(
+                top: 40,
+                right: 16,
+                child: SafeArea(
+                  child: Row(
+                    children: [
+                      _buildTopIconButton(
+                        icon: Icons.person_outline,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ProfilePage()),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      _buildTopIconButton(
+                        icon: Icons.logout,
+                        onPressed: _logout,
+                        isDestructive: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
           ],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
         ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-          child: BottomNavigationBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            selectedItemColor: const Color(0xFF3F37C9),
-            unselectedItemColor: const Color(0xFF9E9E9E),
-            selectedLabelStyle: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Poppins',
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Poppins',
-            ),
-            type: BottomNavigationBarType.fixed,
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard_outlined, size: 26),
-                activeIcon: Icon(Icons.dashboard, size: 26),
-                label: 'Dashboard',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.security_outlined, size: 26),
-                activeIcon: Icon(Icons.security, size: 26),
-                label: 'Satgas',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.credit_card_outlined, size: 26),
-                activeIcon: Icon(Icons.credit_card, size: 26),
-                label: 'SIM',
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
               ),
             ],
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+            child: BottomNavigationBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              selectedItemColor: const Color(0xFF3F37C9),
+              unselectedItemColor: const Color(0xFF9E9E9E),
+              selectedLabelStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Poppins',
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Poppins',
+              ),
+              type: BottomNavigationBarType.fixed,
+              currentIndex: _selectedIndex,
+              onTap: _onItemTapped,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.dashboard_outlined, size: 26),
+                  activeIcon: Icon(Icons.dashboard, size: 26),
+                  label: 'Dashboard',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.security_outlined, size: 26),
+                  activeIcon: Icon(Icons.security, size: 26),
+                  label: 'Satgas',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.credit_card_outlined, size: 26),
+                  activeIcon: Icon(Icons.credit_card, size: 26),
+                  label: 'SIM',
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildTopIconButton({
@@ -177,6 +177,8 @@ class DashboardContent extends StatefulWidget {
 class _DashboardContentState extends State<DashboardContent> {
   final supabase = Supabase.instance.client;
   bool loading = true;
+  bool _hasError = false;
+  String? _errorMessage;
 
   int simAcc = 0;
   int simPending = 0;
@@ -192,6 +194,12 @@ class _DashboardContentState extends State<DashboardContent> {
   }
 
   Future<void> _loadStats() async {
+    setState(() {
+      loading = true;
+      _hasError = false;
+      _errorMessage = null;
+    });
+
     try {
       final results = await Future.wait([
         supabase.from('siswa').select('*'),
@@ -212,11 +220,124 @@ class _DashboardContentState extends State<DashboardContent> {
         aktivitas = results[4] as List;
         jumlahParkir = (results[5] as List).length;
         loading = false;
+        _hasError = false;
       });
     } catch (e) {
+      debugPrint('Error loading stats: $e');
+      
+      String errorMsg;
+      if (e.toString().contains('connection') ||
+          e.toString().contains('network') ||
+          e.toString().contains('timeout')) {
+        errorMsg = 'Tidak ada koneksi internet';
+      } else if (e.toString().contains('permission') ||
+          e.toString().contains('denied')) {
+        errorMsg = 'Akses ditolak';
+      } else if (e.toString().contains('timeout')) {
+        errorMsg = 'Waktu permintaan habis';
+      } else {
+        errorMsg = 'Gagal memuat statistik dashboard';
+      }
+
       if (!mounted) return;
-      setState(() => loading = false);
+      setState(() {
+        loading = false;
+        _hasError = true;
+        _errorMessage = errorMsg;
+      });
     }
+  }
+
+  Widget _buildErrorState() {
+    IconData errorIcon;
+    String title;
+    String subtitle;
+    
+    if (_errorMessage?.contains('koneksi internet') ?? false) {
+      errorIcon = Icons.wifi_off_rounded;
+      title = 'Tidak Ada Koneksi';
+      subtitle = 'Pastikan Anda terhubung ke internet dan coba lagi.';
+    } else if (_errorMessage?.contains('Akses ditolak') ?? false) {
+      errorIcon = Icons.lock_outline_rounded;
+      title = 'Akses Ditolak';
+      subtitle = 'Anda tidak memiliki izin untuk melihat data ini.';
+    } else if (_errorMessage?.contains('timeout') ?? false) {
+      errorIcon = Icons.access_time_rounded;
+      title = 'Waktu Habis';
+      subtitle = 'Server membutuhkan waktu terlalu lama. Coba lagi.';
+    } else {
+      errorIcon = Icons.error_outline_rounded;
+      title = 'Terjadi Kesalahan';
+      subtitle = 'Gagal memuat statistik dashboard. Silakan coba lagi.';
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626).withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                errorIcon,
+                size: 64,
+                color: const Color(0xFFDC2626),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Poppins',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 15,
+                fontFamily: 'Poppins',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _loadStats,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+              label: const Text(
+                'Coba Lagi',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF3F37C9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -226,6 +347,23 @@ class _DashboardContentState extends State<DashboardContent> {
         child: CircularProgressIndicator(
           color: Colors.white,
           strokeWidth: 3,
+        ),
+      );
+    }
+
+    if (_hasError) {
+      return Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF3F37C9), Color(0xFF1D1879)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: _buildErrorState(),
         ),
       );
     }
@@ -255,7 +393,6 @@ class _DashboardContentState extends State<DashboardContent> {
               children: [
                 const SizedBox(height: 50),
                 
-                // Header
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -310,7 +447,6 @@ class _DashboardContentState extends State<DashboardContent> {
                 ),
                 const SizedBox(height: 32),
 
-                // Big Stats
                 Row(
                   children: [
                     Expanded(
@@ -334,7 +470,6 @@ class _DashboardContentState extends State<DashboardContent> {
                 ),
                 const SizedBox(height: 28),
 
-                // Mini Progress Circles
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -392,7 +527,6 @@ class _DashboardContentState extends State<DashboardContent> {
                 ),
                 const SizedBox(height: 28),
 
-                // Recent Activity
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: const [

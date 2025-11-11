@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'daftar_berhasil_page.dart';
 import 'daftar_gagal_page.dart';
 import 'profile_page.dart';
-import 'sim_scanner.dart';
+import 'crop_page.dart';
 
 // UI theme constants to match register_page
 const Color _primary = Color(0xFF4F46E5);
@@ -25,6 +26,7 @@ class DaftarPage extends StatefulWidget {
 class _DaftarPageState extends State<DaftarPage>
     with SingleTickerProviderStateMixin {
   final supabase = Supabase.instance.client;
+  final ImagePicker _picker = ImagePicker();
 
   final namaC = TextEditingController();
   final kelasC = TextEditingController();
@@ -37,14 +39,15 @@ class _DaftarPageState extends State<DaftarPage>
   String? _selectedJurusan;
 
   static const List<String> grades = ['X', 'XI', 'XII'];
-  static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ'];
+  static const List<String> majors = ['RPL', 'DKV', 'TOI', 'TAV', 'TKJ', 'TITL'];
   static const List<String> classes = ['1', '2', '3', '4', '5', '6'];
   static const List<String> jurusans = [
     'Rekayasa Perangkat Lunak',
     'Desain Komunikasi Visual',
     'Teknik Otomasi Industri',
     'Teknik Audio Video',
-    'Teknik Komputer Jaringan'
+    'Teknik Komputer Jaringan',
+    'Teknik Instalasi Tenaga Listrik'
   ];
 
   Uint8List? _simBytes;
@@ -83,26 +86,183 @@ class _DaftarPageState extends State<DaftarPage>
     super.dispose();
   }
 
-  Future<void> _pickSimImage() async {
-    try {
-      final result = await Navigator.push<File>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const SimScannerPage(),
+  Future<void> _showImageSourceDialog() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
         ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 16),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  'Pilih Sumber Foto',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: mainBlue,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Camera option
+              _buildImageSourceOption(
+                icon: Icons.camera_alt,
+                title: 'Ambil Foto',
+                subtitle: 'Gunakan kamera perangkat',
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // Gallery option
+              _buildImageSourceOption(
+                icon: Icons.photo_library,
+                title: 'Pilih dari Galeri',
+                subtitle: 'Pilih foto yang sudah ada',
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageSourceOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          decoration: BoxDecoration(
+            border: Border.all(color: _stroke),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: mainBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: mainBlue,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: blackColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.grey[400],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1920,
       );
 
-      if (result != null) {
-        final bytes = await result.readAsBytes();
+      if (image != null) {
+        // Navigate to crop page
+        final croppedFile = await Navigator.push<File?>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CropPage(imageFile: File(image.path)),
+          ),
+        );
 
-        setState(() {
-          _simBytes = bytes;
-        });
+        if (croppedFile != null) {
+          final bytes = await croppedFile.readAsBytes();
+          setState(() {
+            _simBytes = bytes;
+          });
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal membuka kamera: $e")),
-      );
+      debugPrint("Error picking image: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Gagal mengambil foto: $e"),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -110,21 +270,42 @@ class _DaftarPageState extends State<DaftarPage>
     try {
       if (_simBytes == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Pilih foto SIM dulu")),
+          SnackBar(
+            content: const Text("Pilih foto SIM dulu"),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         );
         return;
       }
 
       if (_selectedGrade == null || _selectedMajor == null || _selectedClass == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Pilih kelas lengkap")),
+          SnackBar(
+            content: const Text("Pilih kelas lengkap"),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         );
         return;
       }
 
       if (_selectedJurusan == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Pilih jurusan dulu")),
+          SnackBar(
+            content: const Text("Pilih jurusan dulu"),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         );
         return;
       }
@@ -219,7 +400,8 @@ class _DaftarPageState extends State<DaftarPage>
                   style: TextStyle(
                     fontFamily: 'Lato',
                     fontWeight: FontWeight.w900,
-                    fontSize: 26,                    color: whiteColor,
+                    fontSize: 26,
+                    color: whiteColor,
                   ),
                 ),
               ),
@@ -343,54 +525,100 @@ class _DaftarPageState extends State<DaftarPage>
                           keyboardType: TextInputType.emailAddress),
                       const SizedBox(height: 16),
 
-                      _buildLabel("Foto Sim"),
+                      _buildLabel("Foto SIM"),
+                      const SizedBox(height: 8),
                       GestureDetector(
-                        onTap: _pickSimImage,
+                        onTap: _showImageSourceDialog,
                         child: Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: whiteColor.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(20),
+                            color: _simBytes == null 
+                                ? Colors.white 
+                                : const Color(0xFF4CAF50).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: whiteColor.withOpacity(0.25),
+                              color: _simBytes == null 
+                                  ? _stroke 
+                                  : const Color(0xFF4CAF50),
+                              width: 2,
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.camera_alt_rounded,
-                                color: _simBytes == null ? Colors.grey : Colors.greenAccent,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _simBytes == null ? "Pilih Foto Sim" : "SIM berhasil dipilih",
-                                  style: GoogleFonts.poppins(
-                                    color: blackColor.withOpacity(0.7),
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                          child: _simBytes == null
+                              ? Column(
+                                  children: [
+                                    Icon(
+                                      Icons.add_photo_alternate,
+                                      size: 48,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      "Ambil atau Pilih Foto SIM",
+                                      style: GoogleFonts.poppins(
+                                        color: blackColor.withOpacity(0.6),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Tap untuk memilih",
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.grey[500],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Column(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.memory(
+                                        _simBytes!,
+                                        width: double.infinity,
+                                        height: 150,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.check_circle,
+                                          color: Color(0xFF4CAF50),
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          "Foto berhasil dipilih",
+                                          style: GoogleFonts.poppins(
+                                            color: const Color(0xFF4CAF50),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      "Tap untuk mengganti foto",
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              if (_simBytes != null)
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.memory(
-                                    _simBytes!,
-                                    width: 60,
-                                    height: 40,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                            ],
-                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
 
                       SizedBox(
                         width: double.infinity,
-                        height: isSmallScreen ? 60 : 80,
+                        height: isSmallScreen ? 60 : 70,
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _daftarUser,
                           style: ElevatedButton.styleFrom(
@@ -401,12 +629,11 @@ class _DaftarPageState extends State<DaftarPage>
                             elevation: 5,
                           ),
                           child: _isLoading
-                          
                               ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
+                                  width: 24,
+                                  height: 24,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                                    strokeWidth: 3,
                                     color: Colors.white,
                                   ),
                                 )
@@ -586,11 +813,11 @@ Widget buildDropdown({
       prefixIcon: hasIcon
           ? Icon(
               Icons.school,
-              color: (textColor ?? Colors.white).withValues(alpha: 0.7),
+              color: (textColor ?? Colors.white).withOpacity(0.7),
             )
           : null,
       filled: true,
-      fillColor: fillColor ?? Colors.black.withValues(alpha: 0.2),
+      fillColor: fillColor ?? Colors.black.withOpacity(0.2),
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(30),
