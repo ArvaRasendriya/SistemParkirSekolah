@@ -412,7 +412,7 @@ class _DaftarPageState extends State<DaftarPage>
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "Silahkan isi data dengan benar",
+                  "Silahkan isi data dengan benar!",
                   style: TextStyle(
                     fontFamily: 'Lato',
                     fontWeight: FontWeight.w700,

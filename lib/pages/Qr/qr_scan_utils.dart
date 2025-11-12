@@ -147,9 +147,15 @@ Future<_LogScanResult> _logScan(SupabaseClient supabase, String siswaId) async {
     }
 
     // Insert baru jika lolos cooldown
+    final now = DateTime.now(); // local time, matches DateTime.now() used elsewhere
+    final iso = now.toIso8601String();
+
     await supabase.from('parkir').insert({
       'siswa_id': siswaId,
       'scanned_by': supabase.auth.currentUser?.email ?? supabase.auth.currentUser?.id,
+      'tanggal': iso.substring(0, 10),     // YYYY-MM-DD
+      'waktu': iso.substring(11, 19),      // HH:MM:SS
+      'created_at': iso,                   // local ISO string (matches QR creation)
     });
 
     return _LogScanResult(
@@ -164,6 +170,7 @@ Future<_LogScanResult> _logScan(SupabaseClient supabase, String siswaId) async {
     );
   }
 }
+
 
 
 class QrScanAnimations {

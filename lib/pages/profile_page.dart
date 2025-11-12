@@ -582,7 +582,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         final jam = createdAtStr != null
                                             ? (() {
                                                 final createdAt =
-                                                    DateTime.parse(createdAtStr).toLocal();
+                                                    DateTime.parse(createdAtStr);
                                                 return '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
                                               })()
                                             : '--:--';

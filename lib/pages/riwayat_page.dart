@@ -24,12 +24,15 @@ class _RiwayatPageState extends State<RiwayatPage> {
   @override
   void initState() {
     super.initState();
+    debugPrint('🟢 RiwayatPage: initState called');
     fetchRiwayat();
   }
 
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   Future<void> fetchRiwayat() async {
+    debugPrint('🔵 fetchRiwayat: Starting data fetch...');
+    
     setState(() {
       _loading = true;
       _hasError = false;
@@ -37,25 +40,42 @@ class _RiwayatPageState extends State<RiwayatPage> {
     });
 
     try {
-      // ✅ Ambil data 7 hari terakhir saja
       final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7)).toIso8601String();
+      debugPrint('🔵 fetchRiwayat: Querying data from $sevenDaysAgo');
+      
       final response = await supabase
           .from('parkir')
           .select('id, created_at, siswa(nama, kelas)')
           .gte('created_at', sevenDaysAgo)
           .order('created_at', ascending: false);
 
+      debugPrint('🔵 fetchRiwayat: Raw response type: ${response.runtimeType}');
+      debugPrint('🔵 fetchRiwayat: Response data: $response');
+
       final List<Map<String, dynamic>> rows = (response as List)
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
+
+      debugPrint('✅ fetchRiwayat: Successfully loaded ${rows.length} records');
+      
+      // Debug: Print first record if available
+      if (rows.isNotEmpty) {
+        debugPrint('🔍 fetchRiwayat: Sample record: ${rows.first}');
+      } else {
+        debugPrint('⚠️ fetchRiwayat: No records found in the last 7 days');
+      }
 
       setState(() {
         _rows = rows;
         _hasError = false;
         _errorMessage = null;
       });
-    } catch (e) {
-      debugPrint('fetchRiwayat error: $e');
+      
+      debugPrint('✅ fetchRiwayat: State updated successfully');
+      
+    } catch (e, stackTrace) {
+      debugPrint('❌ fetchRiwayat ERROR: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
 
       String errorMsg;
       IconData errorIcon;
@@ -65,24 +85,31 @@ class _RiwayatPageState extends State<RiwayatPage> {
           e.toString().contains('timeout')) {
         errorMsg = 'Tidak ada koneksi internet';
         errorIcon = Icons.wifi_off;
+        debugPrint('❌ Error type: Network/Connection issue');
       } else if (e.toString().contains('permission') ||
           e.toString().contains('denied')) {
         errorMsg = 'Akses ditolak';
         errorIcon = Icons.lock_outline;
+        debugPrint('❌ Error type: Permission denied');
       } else if (e.toString().contains('timeout')) {
         errorMsg = 'Waktu permintaan habis';
         errorIcon = Icons.access_time;
+        debugPrint('❌ Error type: Timeout');
       } else {
         errorMsg = 'Gagal memuat riwayat absensi';
         errorIcon = Icons.error_outline;
+        debugPrint('❌ Error type: Unknown/General error');
       }
 
       setState(() {
         _hasError = true;
         _errorMessage = errorMsg;
       });
+      
+      debugPrint('❌ fetchRiwayat: Error state updated with message: $errorMsg');
 
       if (mounted) {
+        debugPrint('🔔 fetchRiwayat: Showing error SnackBar');
         _scaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
             content: Row(
@@ -110,9 +137,16 @@ class _RiwayatPageState extends State<RiwayatPage> {
             ),
           ),
         );
+      } else {
+        debugPrint('⚠️ fetchRiwayat: Widget not mounted, SnackBar not shown');
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        debugPrint('🔵 fetchRiwayat: Loading state set to false');
+      } else {
+        debugPrint('⚠️ fetchRiwayat: Widget not mounted in finally block');
+      }
     }
   }
 
@@ -120,7 +154,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
   String formatTime(DateTime t) => DateFormat('dd MMM yyyy HH:mm').format(t);
 
-  // ✅ Get nama hari dalam Bahasa Indonesia
   String getDayName(DateTime date) {
     const days = [
       'Senin',
@@ -134,8 +167,9 @@ class _RiwayatPageState extends State<RiwayatPage> {
     return days[date.weekday - 1];
   }
 
-  // ✅ Group rows dengan nama hari dinamis
   Map<String, List<Map<String, dynamic>>> groupRows(List<Map<String, dynamic>> rows) {
+    debugPrint('🔵 groupRows: Grouping ${rows.length} rows');
+    
     final Map<String, List<Map<String, dynamic>>> groups = {};
     
     final now = DateTime.now();
@@ -147,47 +181,75 @@ class _RiwayatPageState extends State<RiwayatPage> {
       String key;
       
       if (i == 0) {
-        key = 'Hari Ini'; // Hari ini
+        key = 'Hari Ini';
       } else if (i == 1) {
-        key = 'Kemarin'; // Kemarin
+        key = 'Kemarin';
       } else {
-        // 2 hari ke belakang pakai nama hari
         key = getDayName(date);
       }
       
       groups[key] = [];
     }
 
+    int processedCount = 0;
+    int skippedCount = 0;
+
     // Distribusikan data ke grup yang sesuai
     for (final r in rows) {
-      final createdAtRaw = r['created_at'];
-      if (createdAtRaw == null) continue;
-      final createdAt = DateTime.parse(createdAtRaw).toLocal();
-      final createdAtStart = startOfDay(createdAt);
+      try {
+        final createdAtRaw = r['created_at'];
+        if (createdAtRaw == null) {
+          debugPrint('⚠️ groupRows: Skipped record with null created_at: $r');
+          skippedCount++;
+          continue;
+        }
+        
+        final createdAt = DateTime.parse(createdAtRaw);
+        final createdAtStart = startOfDay(createdAt);
 
-      // Cari selisih hari dengan hari ini
-      final daysDifference = startToday.difference(createdAtStart).inDays;
+        final daysDifference = startToday.difference(createdAtStart).inDays;
 
-      if (daysDifference < 0 || daysDifference >= 7) continue; // Skip jika di luar range 7 hari
+        if (daysDifference < 0 || daysDifference >= 7) {
+          debugPrint('⚠️ groupRows: Skipped record outside 7-day range (${daysDifference} days): ${r['id']}');
+          skippedCount++;
+          continue;
+        }
 
-      String targetKey;
-      if (daysDifference == 0) {
-        targetKey = 'Hari Ini';
-      } else if (daysDifference == 1) {
-        targetKey = 'Kemarin';
-      } else {
-        targetKey = getDayName(createdAtStart);
-      }
+        String targetKey;
+        if (daysDifference == 0) {
+          targetKey = 'Hari Ini';
+        } else if (daysDifference == 1) {
+          targetKey = 'Kemarin';
+        } else {
+          targetKey = getDayName(createdAtStart);
+        }
 
-      if (groups.containsKey(targetKey)) {
-        groups[targetKey]!.add(r);
+        if (groups.containsKey(targetKey)) {
+          groups[targetKey]!.add(r);
+          processedCount++;
+        }
+      } catch (e) {
+        debugPrint('❌ groupRows: Error processing record: $r');
+        debugPrint('❌ Error: $e');
+        skippedCount++;
       }
     }
+
+    debugPrint('✅ groupRows: Processed $processedCount records, skipped $skippedCount');
+    
+    // Debug: Print group summary
+    groups.forEach((key, value) {
+      if (value.isNotEmpty) {
+        debugPrint('📊 groupRows: "$key" has ${value.length} records');
+      }
+    });
 
     return groups;
   }
 
   Widget _buildErrorState() {
+    debugPrint('🔴 Building error state UI');
+    
     IconData errorIcon;
     String title;
     String subtitle;
@@ -281,15 +343,18 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔵 Building RiwayatPage UI - _loading: $_loading, _hasError: $_hasError, rows count: ${_rows.length}');
+    
     final filteredRows = _rows.where((r) {
       final nama = (r['siswa'] ?? {})['nama']?.toString().toLowerCase() ?? '';
       final kelas = (r['siswa'] ?? {})['kelas']?.toString() ?? '';
       return nama.contains(_searchQuery) && (_selectedKelas == null || kelas == _selectedKelas);
     }).toList();
 
+    debugPrint('🔍 Filtered rows: ${filteredRows.length} (search: "$_searchQuery", kelas: $_selectedKelas)');
+
     final grouped = groupRows(filteredRows);
     
-    // ✅ Generate display order secara dinamis
     final now = DateTime.now();
     final startToday = startOfDay(now);
     final List<String> displayOrder = [];
@@ -386,6 +451,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                 setState(() {
                                   _searchQuery = value.toLowerCase();
                                 });
+                                debugPrint('🔍 Search query changed: "$value"');
                               },
                               style: const TextStyle(color: Color(0xFF313638)),
                               decoration: InputDecoration(
@@ -404,6 +470,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                           setState(() {
                                             _searchQuery = '';
                                           });
+                                          debugPrint('🔍 Search cleared');
                                         },
                                       )
                                     : null,
@@ -458,6 +525,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                               setState(() {
                                 _selectedKelas = value;
                               });
+                              debugPrint('🔍 Kelas filter changed: $value');
                             },
                           ),
                         ),
@@ -491,29 +559,37 @@ class _RiwayatPageState extends State<RiwayatPage> {
                       : _hasError
                           ? _buildErrorState()
                           : RefreshIndicator(
-                              onRefresh: fetchRiwayat,
+                              onRefresh: () {
+                                debugPrint('🔄 Pull-to-refresh triggered');
+                                return fetchRiwayat();
+                              },
                               color: const Color(0xFF3F37C9),
                               child: filteredRows.isEmpty
-                                  ? Center(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.inbox_rounded,
-                                            size: 64,
-                                            color: const Color(0xFFF8F8FF).withOpacity(0.5),
+                                  ? ListView(
+                                      children: [
+                                        SizedBox(
+                                          height: MediaQuery.of(context).size.height * 0.5,
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.inbox_rounded,
+                                                size: 64,
+                                                color: const Color(0xFFF8F8FF).withOpacity(0.5),
+                                              ),
+                                              const SizedBox(height: 16),
+                                              Text(
+                                                'Tidak ada riwayat absensi',
+                                                style: TextStyle(
+                                                  color: const Color(0xFFF8F8FF).withOpacity(0.7),
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(height: 16),
-                                          Text(
-                                            'Tidak ada riwayat absensi',
-                                            style: TextStyle(
-                                              color: const Color(0xFFF8F8FF).withOpacity(0.7),
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     )
                                   : SingleChildScrollView(
                                       padding: const EdgeInsets.only(bottom: 96),
@@ -523,140 +599,167 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                           children: [
                                             for (final key in displayOrder)
                                               if ((grouped[key]?.isNotEmpty ?? false))
-                                                Container(
-                                                  margin: const EdgeInsets.only(bottom: 16),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(0xFFF8F8FF).withOpacity(0.12),
-                                                    borderRadius: BorderRadius.circular(20),
-                                                  ),
-                                                  child: Theme(
-                                                    data: Theme.of(context).copyWith(
-                                                      dividerColor: Colors.transparent,
-                                                    ),
-                                                    child: ExpansionTile(
-                                                      initiallyExpanded: key == 'Hari Ini',
-                                                      iconColor: const Color(0xFFF8F8FF),
-                                                      collapsedIconColor: const Color(0xFFF8F8FF).withOpacity(0.7),
-                                                      tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                                      childrenPadding: const EdgeInsets.only(bottom: 12),
-                                                      title: Row(
-                                                        children: [
-                                                          Icon(
-                                                            key == 'Hari Ini'
-                                                                ? Icons.today
-                                                                : key == 'Kemarin'
-                                                                    ? Icons.calendar_today
-                                                                    : Icons.date_range,
-                                                            color: const Color(0xFFF8F8FF),
-                                                            size: 20,
-                                                          ),
-                                                          const SizedBox(width: 12),
-                                                          Text(
-                                                            key,
-                                                            style: const TextStyle(
-                                                              color: Color(0xFFF8F8FF),
-                                                              fontWeight: FontWeight.bold,
-                                                              fontSize: 16,
-                                                            ),
-                                                          ),
-                                                          const Spacer(),
-                                                          Container(
-                                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                                            decoration: BoxDecoration(
-                                                              color: const Color(0xFFF8F8FF).withOpacity(0.25),
-                                                              borderRadius: BorderRadius.circular(12),
-                                                            ),
-                                                            child: Text(
-                                                              '${grouped[key]!.length}',
-                                                              style: const TextStyle(
-                                                                color: Color(0xFFF8F8FF),
-                                                                fontWeight: FontWeight.bold,
-                                                                fontSize: 12,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
+                                                Builder(
+                                                  builder: (context) {
+                                                    debugPrint('🎨 Rendering UI for group: "$key" with ${grouped[key]!.length} items');
+                                                    return Container(
+                                                      margin: const EdgeInsets.only(bottom: 16),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFF8F8FF).withOpacity(0.12),
+                                                        borderRadius: BorderRadius.circular(20),
                                                       ),
-                                                      children: grouped[key]!.map((r) {
-                                                        final siswa = (r['siswa'] ?? {}) as Map<String, dynamic>;
-                                                        final nama = siswa['nama'] ?? '—';
-                                                        final kelas = siswa['kelas'] ?? '—';
-                                                        final createdAt = DateTime.parse(r['created_at']).toLocal();
-
-                                                        return Container(
-                                                          margin: const EdgeInsets.symmetric(
-                                                            horizontal: 16,
-                                                            vertical: 6,
-                                                          ),
-                                                          decoration: BoxDecoration(
-                                                            color: const Color(0xFFF8F8FF).withOpacity(0.08),
-                                                            borderRadius: BorderRadius.circular(16),
-                                                            border: Border.all(
-                                                              color: const Color(0xFFF8F8FF).withOpacity(0.15),
-                                                            ),
-                                                          ),
-                                                          child: ListTile(
-                                                            contentPadding: const EdgeInsets.symmetric(
-                                                              horizontal: 16,
-                                                              vertical: 8,
-                                                            ),
-                                                            leading: Container(
-                                                              width: 48,
-                                                              height: 48,
-                                                              decoration: BoxDecoration(
-                                                                color: const Color(0xFFF8F8FF).withOpacity(0.2),
-                                                                shape: BoxShape.circle,
+                                                      child: Theme(
+                                                        data: Theme.of(context).copyWith(
+                                                          dividerColor: Colors.transparent,
+                                                        ),
+                                                        child: ExpansionTile(
+                                                          initiallyExpanded: key == 'Hari Ini',
+                                                          iconColor: const Color(0xFFF8F8FF),
+                                                          collapsedIconColor: const Color(0xFFF8F8FF).withOpacity(0.7),
+                                                          tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                                          childrenPadding: const EdgeInsets.only(bottom: 12),
+                                                          title: Row(
+                                                            children: [
+                                                              Icon(
+                                                                key == 'Hari Ini'
+                                                                    ? Icons.today
+                                                                    : key == 'Kemarin'
+                                                                        ? Icons.calendar_today
+                                                                        : Icons.date_range,
+                                                                color: const Color(0xFFF8F8FF),
+                                                                size: 20,
                                                               ),
-                                                              child: const Icon(
-                                                                Icons.person,
-                                                                color: Color(0xFFF8F8FF),
-                                                                size: 24,
-                                                              ),
-                                                            ),
-                                                            title: Text(
-                                                              nama,
-                                                              style: const TextStyle(
-                                                                color: Color(0xFFF8F8FF),
-                                                                fontWeight: FontWeight.w600,
-                                                                fontSize: 15,
-                                                              ),
-                                                            ),
-                                                            subtitle: Padding(
-                                                              padding: const EdgeInsets.only(top: 4),
-                                                              child: Text(
-                                                                "Kelas: $kelas",
-                                                                style: TextStyle(
-                                                                  color: const Color(0xFFF8F8FF).withOpacity(0.7),
-                                                                  fontSize: 13,
+                                                              const SizedBox(width: 12),
+                                                              Text(
+                                                                key,
+                                                                style: const TextStyle(
+                                                                  color: Color(0xFFF8F8FF),
+                                                                  fontWeight: FontWeight.bold,
+                                                                  fontSize: 16,
                                                                 ),
                                                               ),
-                                                            ),
-                                                            trailing: Column(
-                                                              mainAxisAlignment: MainAxisAlignment.center,
-                                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                                              children: [
-                                                                Text(
-                                                                  DateFormat('HH:mm').format(createdAt),
+                                                              const Spacer(),
+                                                              Container(
+                                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                                decoration: BoxDecoration(
+                                                                  color: const Color(0xFFF8F8FF).withOpacity(0.25),
+                                                                  borderRadius: BorderRadius.circular(12),
+                                                                ),
+                                                                child: Text(
+                                                                  '${grouped[key]!.length}',
                                                                   style: const TextStyle(
                                                                     color: Color(0xFFF8F8FF),
-                                                                    fontSize: 16,
                                                                     fontWeight: FontWeight.bold,
+                                                                    fontSize: 12,
                                                                   ),
                                                                 ),
-                                                                Text(
-                                                                  DateFormat('dd MMM').format(createdAt),
-                                                                  style: TextStyle(
-                                                                    color: const Color(0xFFF8F8FF).withOpacity(0.6),
-                                                                    fontSize: 11,
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
+                                                              ),
+                                                            ],
                                                           ),
-                                                        );
-                                                      }).toList(),
-                                                    ),
-                                                  ),
+                                                          children: grouped[key]!.map((r) {
+                                                            try {
+                                                              final siswa = (r['siswa'] ?? {}) as Map<String, dynamic>;
+                                                              final nama = siswa['nama'] ?? '—';
+                                                              final kelas = siswa['kelas'] ?? '—';
+                                                              final createdAt = DateTime.parse(r['created_at']);
+
+                                                              return Container(
+                                                                margin: const EdgeInsets.symmetric(
+                                                                  horizontal: 16,
+                                                                  vertical: 6,
+                                                                ),
+                                                                decoration: BoxDecoration(
+                                                                  color: const Color(0xFFF8F8FF).withOpacity(0.08),
+                                                                  borderRadius: BorderRadius.circular(16),
+                                                                  border: Border.all(
+                                                                    color: const Color(0xFFF8F8FF).withOpacity(0.15),
+                                                                  ),
+                                                                ),
+                                                                child: ListTile(
+                                                                  contentPadding: const EdgeInsets.symmetric(
+                                                                    horizontal: 16,
+                                                                    vertical: 8,
+                                                                  ),
+                                                                  leading: Container(
+                                                                    width: 48,
+                                                                    height: 48,
+                                                                    decoration: BoxDecoration(
+                                                                      color: const Color(0xFFF8F8FF).withOpacity(0.2),
+                                                                      shape: BoxShape.circle,
+                                                                    ),
+                                                                    child: const Icon(
+                                                                      Icons.person,
+                                                                      color: Color(0xFFF8F8FF),
+                                                                      size: 24,
+                                                                    ),
+                                                                  ),
+                                                                  title: Text(
+                                                                    nama,
+                                                                    style: const TextStyle(
+                                                                      color: Color(0xFFF8F8FF),
+                                                                      fontWeight: FontWeight.w600,
+                                                                      fontSize: 15,
+                                                                    ),
+                                                                  ),
+                                                                  subtitle: Padding(
+                                                                    padding: const EdgeInsets.only(top: 4),
+                                                                    child: Text(
+                                                                      "Kelas: $kelas",
+                                                                      style: TextStyle(
+                                                                        color: const Color(0xFFF8F8FF).withOpacity(0.7),
+                                                                        fontSize: 13,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  trailing: Column(
+                                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                                                    children: [
+                                                                      Text(
+                                                                        DateFormat('HH:mm').format(createdAt),
+                                                                        style: const TextStyle(
+                                                                          color: Color(0xFFF8F8FF),
+                                                                          fontSize: 16,
+                                                                          fontWeight: FontWeight.bold,
+                                                                        ),
+                                                                      ),
+                                                                      Text(
+                                                                        DateFormat('dd MMM').format(createdAt),
+                                                                        style: TextStyle(
+                                                                          color: const Color(0xFFF8F8FF).withOpacity(0.6),
+                                                                          fontSize: 11,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            } catch (e) {
+                                                              debugPrint('❌ Error rendering ListTile for record: $r');
+                                                              debugPrint('❌ Error: $e');
+                                                              return Container(
+                                                                margin: const EdgeInsets.symmetric(
+                                                                  horizontal: 16,
+                                                                  vertical: 6,
+                                                                ),
+                                                                padding: const EdgeInsets.all(16),
+                                                                decoration: BoxDecoration(
+                                                                  color: Colors.red.withOpacity(0.1),
+                                                                  borderRadius: BorderRadius.circular(16),
+                                                                ),
+                                                                child: Text(
+                                                                  'Error rendering item',
+                                                                  style: TextStyle(
+                                                                    color: const Color(0xFFF8F8FF).withOpacity(0.7),
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            }
+                                                          }).toList(),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
                                                 ),
                                           ],
                                         ),
