@@ -9,6 +9,7 @@ import './Qr/qr_scan_page.dart';
 import 'daftar_page.dart';
 import 'admin_dashboard_page.dart';
 import 'login_page.dart';
+import 'daftar_page_guru.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -67,6 +68,80 @@ class _ProfilePageState extends State<ProfilePage> {
       debugPrint('Error checking connectivity: $e');
     }
   }
+  
+  void _showTambahPilihan() {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1D1879),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            const Text(
+              "Tambah Data",
+              style: TextStyle(
+                color: Color(0xFFF8F8FF),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 👉 Daftar Siswa
+            _buildTambahItem(
+              icon: Icons.school,
+              title: "Daftar Siswa",
+              subtitle: "Tambah data siswa baru",
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DaftarPage()),
+                );
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            // 👉 Daftar Guru
+            _buildTambahItem(
+              icon: Icons.person,
+              title: "Daftar Guru",
+              subtitle: "Tambah data guru baru",
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DaftarPageGuru()),
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+          ],
+        ),
+      );
+    },
+  );
+}
 
   void _setupConnectivityListener() {
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
@@ -770,12 +845,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon: Icons.person_add_rounded,
                   label: 'Tambah',
                   isActive: false,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const DaftarPage()),
-                    );
-                  },
+                  onTap: _showTambahPilihan,
                 ),
               ],
             ),
@@ -827,6 +897,72 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
+  Widget _buildTambahItem({
+  required IconData icon,
+  required String title,
+  required String subtitle,
+  required VoidCallback onTap,
+}) {
+  return Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F8FF).withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFFF8F8FF).withOpacity(0.25),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F8FF).withOpacity(0.25),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: const Color(0xFFF8F8FF)),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Color(0xFFF8F8FF),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: const Color(0xFFF8F8FF).withOpacity(0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 14,
+              color: Color(0xFFF8F8FF),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
   Widget _buildQRButton() {
     return GestureDetector(

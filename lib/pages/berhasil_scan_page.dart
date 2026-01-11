@@ -20,20 +20,32 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
     fetchData();
   }
 
-  Future<void> fetchData() async {
-    final response = await supabase
-        .from('parkir')
-        .select('id, waktu, tanggal, status, siswa (id, nama, kelas, jurusan, sim_url)')
-        .eq('id', widget.parkirId)
-        .single();
+Future<void> fetchData() async {
+  final response = await supabase
+      .from('parkir')
+      .select('''
+        id,
+        waktu,
+        tanggal,
+        status,
+        siswa:siswa_id (id, nama, kelas, jurusan, sim_url),
+        guru:guru_id (id, nama, mapel, sim_url)
+      ''')
+      .eq('id', widget.parkirId)
+      .single();
 
-    setState(() {
-      data = response;
-    });
-  }
+  setState(() {
+    data = response;
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
+    final isSiswa = data!['siswa'] != null;
+    final userData = isSiswa ? data!['siswa'] : data!['guru'];
+    final simUrl = userData['sim_url'];
+
     return Scaffold(
       backgroundColor: Colors.blue[400],
       appBar: AppBar(
@@ -86,9 +98,12 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
-                              data!['siswa']['sim_url'] != null && data!['siswa']['sim_url'].startsWith("http")
-                                  ? data!['siswa']['sim_url']
-                                  : Supabase.instance.client.storage.from("siswa").getPublicUrl(data!['siswa']['sim_url']),
+                              simUrl != null && simUrl.startsWith("http")
+                                  ? simUrl
+                                  : Supabase.instance.client
+                                      .storage
+                                      .from("siswa")
+                                      .getPublicUrl(simUrl),
                               width: 100,
                               height: 100,
                               fit: BoxFit.cover,
@@ -111,9 +126,13 @@ class _BerhasilScanPageState extends State<BerhasilScanPage> {
                     const SizedBox(height: 20),
 
                     // Informasi siswa + parkir
-                    buildRow("Nama", data!['siswa']['nama']),
-                    buildRow("Kelas", data!['siswa']['kelas']),
-                    buildRow("Jurusan", data!['siswa']['jurusan']),
+                    buildRow("Nama", userData['nama']),
+                    if (isSiswa) ...[
+                      buildRow("Kelas", userData['kelas']),
+                      buildRow("Jurusan", userData['jurusan']),
+                    ] else ...[
+                      buildRow("Mapel", userData['mapel']),
+                    ],
                     buildRow("Waktu", data!['waktu']),
                     buildRow("Tanggal", data!['tanggal']),
                     buildRow(

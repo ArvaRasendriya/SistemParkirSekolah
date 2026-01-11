@@ -10,6 +10,7 @@ import 'pages/splash_screen.dart';
 import 'pages/admin_sim_page.dart';
 import 'pages/pending_sim_approval_page.dart';
 import 'pages/connectivity_service.dart';
+import 'pages/daftar_page_guru.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const SafeArea(child: ProfilePage()),
         '/admin': (context) => const SafeArea(child: AdminDashboardPage()),
         '/daftar': (context) => const SafeArea(child: DaftarPage()),
+        '/daftarGuru': (context) => const SafeArea(child: DaftarPageGuru()),
         '/auth': (context) => const SafeArea(child: AuthGate()),
         '/welcome': (context) => const SafeArea(child: WelcomePage()),
         '/adminSim': (context) => const SafeArea(child: AdminSimPage()),
